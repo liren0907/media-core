@@ -1,0 +1,46 @@
+# Node / Svelte / Vite
+node_modules/
+.svelte-kit/
+.vite/
+dist/
+build/
+*.tsbuildinfo
+
+# Environment & credentials
+.env
+.env.*
+*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+
+# Tauri / Rust
+/target/
+/src-tauri/target/
+/src-tauri/.cargo/
+
+**/target/
+**/.git
+# Ignore nested git directory to prevent watcher loops
+src-tauri/crates/media_core/.git/
+
+
+# Generated media / temp
+hls_media_dev/
+tmp/
+data/
+
+# Deprecated/legacy dirs
+deprecated/
+src-tauri/deprecated/
+data/
+
+reference/
+references/

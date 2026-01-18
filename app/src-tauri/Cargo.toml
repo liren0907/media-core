@@ -1,0 +1,48 @@
+[package]
+name = "media-app"
+version = "0.1.0"
+description = "A Tauri App"
+authors = ["you"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+# The `_lib` suffix may seem redundant but it is necessary
+# to make the lib name unique and wouldn't conflict with the bin name.
+# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
+name = "media_app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2.0.0-beta.23", features = ["protocol-asset"] }
+tauri-plugin-shell = "2.0.0-beta.8"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+image = "0.25.1"
+opencv = { version = "0.93.0", features = ["highgui", "imgproc", "videoio"] }
+prettytable = "0.10.0"
+rfd = "0.15.0"
+anyhow = "1.0.82"
+csv = "1.3.0"
+base64 = "0.22"
+tempfile = "3.13.0"
+tauri-plugin-dialog = "2.2.0"
+chrono = "0.4.38"
+lazy_static = "1.4.0"
+media_core = { path = "crates/media_core" }
+annotation = { path = "crates/annotation" }
+thiserror = "1.0.63"
+log = "0.4.22"
+simple_logger = "5.0.0"
+tauri-plugin-fs = "2.2.0"
+tiny_http = "0.12.0"
+
+[features]
+# by default Tauri runs in production mode
+# when `tauri dev` runs it is executed with `cargo run --no-default-features` if `devPath` is an URL
+# this feature is used for production builds or when `devPath` points to the filesystem
+

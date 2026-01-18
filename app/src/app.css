@@ -1,0 +1,38 @@
+@import '@fontsource/fira-mono';
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Noto+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+	--font-body: 'Noto Sans', sans-serif;
+	--font-display: 'Space Grotesk', sans-serif;
+	--font-mono: 'Fira Mono', monospace;
+}
+
+body {
+    font-family: var(--font-body);
+}
+
+.font-display {
+    font-family: var(--font-display);
+}
+
+/* Material Symbols classes */
+.material-symbols-outlined {
+  font-variation-settings:
+  'FILL' 0,
+  'wght' 400,
+  'GRAD' 0,
+  'opsz' 24
+}
+
+.material-symbols-outlined.filled {
+  font-variation-settings:
+  'FILL' 1,
+  'wght' 400,
+  'GRAD' 0,
+  'opsz' 24
+}

@@ -1,35 +1,22 @@
 <script>
 	import "../app.css";
     import { page } from '$app/stores';
-    import { onMount } from 'svelte';
+    import { theme, effectiveTheme } from '$lib/theme';
 
     let isSidebarOpen = true;
-    let isDarkMode = false;
 
     function toggleSidebar() {
         isSidebarOpen = !isSidebarOpen;
     }
 
     function toggleTheme() {
-        isDarkMode = !isDarkMode;
-        if (isDarkMode) {
-            document.documentElement.classList.add('dark');
-            localStorage.setItem('theme', 'dark');
+        // Quick toggle always exits 'auto' mode and switches visual state
+        if ($theme === 'auto') {
+            theme.set($effectiveTheme === 'dark' ? 'light' : 'dark');
         } else {
-            document.documentElement.classList.remove('dark');
-            localStorage.setItem('theme', 'light');
+            theme.set($theme === 'dark' ? 'light' : 'dark');
         }
     }
-
-    onMount(() => {
-        if (localStorage.theme === 'dark') {
-            isDarkMode = true;
-            document.documentElement.classList.add('dark');
-        } else {
-            isDarkMode = false;
-            document.documentElement.classList.remove('dark');
-        }
-    });
 </script>
 
 <div class="flex h-screen w-full bg-[#f6f7f8] dark:bg-[#101922] text-slate-900 dark:text-slate-50 overflow-hidden font-body">
@@ -115,20 +102,31 @@
                             </div>
                         {/if}
                     </a>
+
+                    <a href="/settings" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group relative {$page.url.pathname.startsWith('/settings') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
+                        <span class="material-symbols-outlined shrink-0">settings</span>
+                        <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Settings</span>
+                        
+                        {#if !isSidebarOpen}
+                            <div class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
+                                Settings
+                            </div>
+                        {/if}
+                    </a>
                 </nav>
             </div>
 
             <!-- Bottom Section: User Profile -->
             <div class="flex flex-col gap-2">
                 <button on:click={toggleTheme} class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group relative text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]">
-                    <span class="material-symbols-outlined shrink-0">{isDarkMode ? 'light_mode' : 'dark_mode'}</span>
+                    <span class="material-symbols-outlined shrink-0">{$effectiveTheme === 'dark' ? 'light_mode' : 'dark_mode'}</span>
                     <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">
-                        {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+                        {$effectiveTheme === 'dark' ? 'Light Mode' : 'Dark Mode'}
                     </span>
                     
                     {#if !isSidebarOpen}
                         <div class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-                            {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+                            {$effectiveTheme === 'dark' ? 'Light Mode' : 'Dark Mode'}
                         </div>
                     {/if}
                 </button>
@@ -160,6 +158,8 @@
                         Video Analytics Console
                     {:else if $page.url.pathname.startsWith('/annotator')}
                         Video Annotator
+                    {:else if $page.url.pathname.startsWith('/settings')}
+                        Global Settings
                     {:else}
                          Media Core
                     {/if}

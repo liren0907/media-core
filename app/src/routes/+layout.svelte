@@ -1,60 +1,145 @@
 <script>
 	import "../app.css";
     import { page } from '$app/stores';
+    import { onMount } from 'svelte';
+
+    let isSidebarOpen = true;
+    let isDarkMode = false;
+
+    function toggleSidebar() {
+        isSidebarOpen = !isSidebarOpen;
+    }
+
+    function toggleTheme() {
+        isDarkMode = !isDarkMode;
+        if (isDarkMode) {
+            document.documentElement.classList.add('dark');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+            localStorage.setItem('theme', 'light');
+        }
+    }
+
+    onMount(() => {
+        if (localStorage.theme === 'dark') {
+            isDarkMode = true;
+            document.documentElement.classList.add('dark');
+        } else {
+            isDarkMode = false;
+            document.documentElement.classList.remove('dark');
+        }
+    });
 </script>
 
 <div class="flex h-screen w-full bg-[#f6f7f8] dark:bg-[#101922] text-slate-900 dark:text-slate-50 overflow-hidden font-body">
     <!-- Side Navigation -->
-    <aside class="flex w-64 flex-col border-r border-slate-200 dark:border-[#2a3441] bg-white dark:bg-[#1a222c]">
+    <aside class="flex {isSidebarOpen ? 'w-64' : 'w-20'} flex-col border-r border-slate-200 dark:border-[#2a3441] bg-white dark:bg-[#1a222c] transition-all duration-300 ease-in-out">
         <div class="flex flex-col h-full justify-between p-4">
             <div class="flex flex-col gap-6">
                 <!-- Branding -->
-                <div class="flex items-center gap-3 px-2">
-                    <div class="flex items-center justify-center size-10 rounded-lg bg-[#137fec] text-white">
-                        <span class="material-symbols-outlined text-2xl">hub</span>
+                <div class="flex items-center justify-between px-2">
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center justify-center size-10 rounded-lg bg-[#137fec] text-white shrink-0">
+                            <span class="material-symbols-outlined text-2xl">hub</span>
+                        </div>
+                        <div class="flex flex-col overflow-hidden transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">
+                            <h1 class="text-base font-bold leading-tight font-display whitespace-nowrap">Media Core</h1>
+                            <p class="text-slate-500 dark:text-slate-400 text-xs font-normal whitespace-nowrap">v2.4.0 <span class="text-green-500">• Online</span></p>
+                        </div>
                     </div>
-                    <div class="flex flex-col">
-                        <h1 class="text-base font-bold leading-tight font-display">Media Core</h1>
-                        <p class="text-slate-500 dark:text-slate-400 text-xs font-normal">v2.4.0 <span class="text-green-500">• Online</span></p>
-                    </div>
+                    
+                    <button on:click={toggleSidebar} class="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#283039] transition-colors {isSidebarOpen ? '' : 'hidden'}">
+                        <span class="material-symbols-outlined text-[20px]">first_page</span>
+                    </button>
                 </div>
+
+                <!-- Collapsed Toggle Button (Centered when sidebar is closed) -->
+                <button on:click={toggleSidebar} class="mx-auto p-2 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#283039] transition-colors {!isSidebarOpen ? 'block' : 'hidden'}">
+                    <span class="material-symbols-outlined text-[24px]">last_page</span>
+                </button>
 
                 <!-- Navigation Links -->
                 <nav class="flex flex-col gap-2">
-                    <a href="/" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {$page.url.pathname === '/' ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
-                        <span class="material-symbols-outlined {$page.url.pathname === '/' ? 'filled' : ''}">dashboard</span>
-                        <span class="text-sm font-medium leading-normal font-display">Dashboard</span>
+                    <a href="/" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group relative {$page.url.pathname === '/' ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
+                        <span class="material-symbols-outlined {$page.url.pathname === '/' ? 'filled' : ''} shrink-0">dashboard</span>
+                        <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Dashboard</span>
+                        
+                        {#if !isSidebarOpen}
+                            <div class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
+                                Dashboard
+                            </div>
+                        {/if}
                     </a>
 
-                    <a href="/stream" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {$page.url.pathname.startsWith('/stream') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
-                        <span class="material-symbols-outlined">videocam</span>
-                        <span class="text-sm font-medium leading-normal font-display">Streams</span>
+                    <a href="/stream" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group relative {$page.url.pathname.startsWith('/stream') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
+                        <span class="material-symbols-outlined shrink-0">videocam</span>
+                        <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Streams</span>
+                        
+                        {#if !isSidebarOpen}
+                            <div class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
+                                Streams
+                            </div>
+                        {/if}
                     </a>
 
-                    <a href="/inferencer" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {$page.url.pathname.startsWith('/inferencer') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
-                        <span class="material-symbols-outlined">bar_chart</span>
-                        <span class="text-sm font-medium leading-normal font-display">Analytics</span>
+                    <a href="/inferencer" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group relative {$page.url.pathname.startsWith('/inferencer') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
+                        <span class="material-symbols-outlined shrink-0">bar_chart</span>
+                        <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Analytics</span>
+                        
+                        {#if !isSidebarOpen}
+                            <div class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
+                                Analytics
+                            </div>
+                        {/if}
                     </a>
 
-                    <a href="/annotator" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {$page.url.pathname.startsWith('/annotator') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
-                        <span class="material-symbols-outlined">edit_square</span>
-                        <span class="text-sm font-medium leading-normal font-display">Annotator</span>
+                    <a href="/annotator" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group relative {$page.url.pathname.startsWith('/annotator') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
+                        <span class="material-symbols-outlined shrink-0">edit_square</span>
+                        <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Annotator</span>
+                        
+                        {#if !isSidebarOpen}
+                            <div class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
+                                Annotator
+                            </div>
+                        {/if}
                     </a>
 
-                    <a href="/hlsViewer" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group {$page.url.pathname.startsWith('/hlsViewer') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
-                        <span class="material-symbols-outlined">play_circle</span>
-                        <span class="text-sm font-medium leading-normal font-display">Player</span>
+                    <a href="/hlsViewer" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group relative {$page.url.pathname.startsWith('/hlsViewer') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
+                        <span class="material-symbols-outlined shrink-0">play_circle</span>
+                        <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Player</span>
+                        
+                        {#if !isSidebarOpen}
+                            <div class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
+                                Player
+                            </div>
+                        {/if}
                     </a>
                 </nav>
             </div>
 
-            <!-- Bottom User Profile -->
-            <div class="border-t border-slate-200 dark:border-[#2a3441] pt-4">
-                <div class="flex items-center gap-3 px-2">
-                    <div class="bg-center bg-no-repeat bg-cover rounded-full size-9 shrink-0 bg-gradient-to-br from-blue-500 to-indigo-600"></div>
-                    <div class="flex flex-col overflow-hidden">
-                        <p class="text-sm font-medium text-slate-900 dark:text-white truncate font-display">Admin User</p>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 truncate">admin@mediacore.io</p>
+            <!-- Bottom Section: User Profile -->
+            <div class="flex flex-col gap-2">
+                <button on:click={toggleTheme} class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group relative text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]">
+                    <span class="material-symbols-outlined shrink-0">{isDarkMode ? 'light_mode' : 'dark_mode'}</span>
+                    <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">
+                        {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+                    </span>
+                    
+                    {#if !isSidebarOpen}
+                        <div class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
+                            {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+                        </div>
+                    {/if}
+                </button>
+
+                <div class="border-t border-slate-200 dark:border-[#2a3441] pt-4">
+                    <div class="flex items-center gap-3 px-2">
+                        <div class="bg-center bg-no-repeat bg-cover rounded-full size-9 shrink-0 bg-gradient-to-br from-blue-500 to-indigo-600"></div>
+                        <div class="flex flex-col overflow-hidden transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">
+                            <p class="text-sm font-medium text-slate-900 dark:text-white truncate font-display">Admin User</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 truncate">admin@mediacore.io</p>
+                        </div>
                     </div>
                 </div>
             </div>

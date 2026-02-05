@@ -83,9 +83,9 @@ pub fn get_hls_status(outputDir: &str) -> Result<String, String> {
 
 #[tauri::command]
 pub async fn start_hls_playback(url: String) -> Result<String, String> {
-    // For development, place media files in the project root for easy inspection.
+    // Use hls_output as the default directory (configurable via frontend settings)
     let dev_path = std::env::current_dir().map_err(|e| e.to_string())?;
-    let hls_root_dir = dev_path.join("hls_media_dev");
+    let hls_root_dir = dev_path.join("hls_output");
     let stream_dir = hls_root_dir.join("stream_0");
 
     // Clean up previous HLS files in the specific stream directory
@@ -169,9 +169,9 @@ pub async fn start_multiple_hls_playback(urls: Vec<String>) -> Result<Vec<String
     let mut handles = vec![];
     let mut playlist_paths = vec![];
 
-    // For development, place media files in the project root for easy inspection.
+    // Use hls_output as the default directory (configurable via frontend settings)
     let dev_path = env::current_dir().map_err(|e| e.to_string())?;
-    let base_hls_dir = dev_path.join("hls_media_dev");
+    let base_hls_dir = dev_path.join("hls_output");
 
     for (index, url) in urls.into_iter().enumerate() {
         // Create a unique directory for each stream's HLS segments.

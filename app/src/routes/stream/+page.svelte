@@ -1,11 +1,38 @@
 <script lang="ts">
   import { open } from "@tauri-apps/plugin-dialog";
   import { convertFileSrc, invoke } from "@tauri-apps/api/core";
-  import { onDestroy } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import Hls from "hls.js";
+  import { appConfig, getDefaultRtspUrl, getHlsOutputDir } from "$lib/config";
 
+  // Stream stats from backend
+  interface StreamStatus {
+    id: string;
+    name: string;
+    status: string;
+    streamType: string;
+    codec: string | null;
+    resolution: string | null;
+    fps: number | null;
+    bitrateKbps: number | null;
+    durationSeconds: number | null;
+    latencyMs: number | null;
+  }
+
+  interface StreamStats {
+    activeCount: number;
+    totalCount: number;
+    avgLatencyMs: number;
+    totalBitrateKbps: number;
+    streams: StreamStatus[];
+  }
+
+  let streamStats: StreamStats | null = null;
+  let statsInterval: ReturnType<typeof setInterval>;
+
+  // Initialize with config values
   let rtspConfig = {
-    rtsp_url: "rtsp://localhost:8554/mystream",
+    rtsp_url: "",
     rtsp_url_list: [""],
     output_directory: "", // User must select or default to empty
     show_preview: false,
@@ -15,7 +42,7 @@
     fps: 30.0,
     hls: {
       enabled: false,
-      output_directory: "hls_output", // Relative default, or use dialog
+      output_directory: "", // Will be set from config
       segment_duration: 6,
       playlist_size: 10,
     },
@@ -26,6 +53,14 @@
   let urlCount = 1;
   let hls: Hls | null = null;
   let videoElement: HTMLVideoElement;
+
+  async function fetchStreamStats() {
+    try {
+      streamStats = await invoke('get_stream_stats');
+    } catch (e) {
+      console.error('Failed to fetch stream stats:', e);
+    }
+  }
 
   function addUrlField() {
     rtspConfig.rtsp_url_list = [...rtspConfig.rtsp_url_list, ""];
@@ -62,6 +97,9 @@
         payload: rtspConfig,
       });
       status = result as string;
+      
+      // Refresh stats after starting capture
+      await fetchStreamStats();
     } catch (error) {
       status = `Error: ${error}`;
       isStreaming = false;
@@ -101,6 +139,9 @@
 
         videoElement.style.display = "block";
         status = "HLS stream is loading...";
+        
+        // Refresh stats
+        await fetchStreamStats();
       } else if (videoElement.canPlayType("application/vnd.apple.mpegurl")) {
         videoElement.src = playlistUrl as string;
         videoElement.style.display = "block";
@@ -121,9 +162,42 @@
     }
   }
 
+  function getHealthStatus(): { text: string; class: string } {
+    if (!streamStats) return { text: 'Unknown', class: 'text-slate-500' };
+    
+    const activeRatio = streamStats.totalCount > 0 
+      ? streamStats.activeCount / streamStats.totalCount 
+      : 0;
+    
+    if (activeRatio >= 0.9) return { text: 'Healthy', class: 'text-[#0bda5b]' };
+    if (activeRatio >= 0.5) return { text: 'Degraded', class: 'text-orange-500' };
+    if (streamStats.activeCount > 0) return { text: 'Limited', class: 'text-yellow-500' };
+    return { text: 'Idle', class: 'text-slate-500' };
+  }
+
+  function getLatencyBarWidth(): number {
+    if (!streamStats || streamStats.avgLatencyMs <= 0) return 0;
+    // Cap at 200ms for visual purposes
+    return Math.min((streamStats.avgLatencyMs / 200) * 100, 100);
+  }
+
+  onMount(() => {
+    // Initialize from config
+    rtspConfig.rtsp_url = getDefaultRtspUrl();
+    rtspConfig.hls.output_directory = getHlsOutputDir() || 'hls_output';
+    
+    fetchStreamStats();
+    statsInterval = setInterval(fetchStreamStats, 3000);
+  });
+
   onDestroy(() => {
     isStreaming = false;
+    if (statsInterval) clearInterval(statsInterval);
+    if (hls) hls.destroy();
   });
+
+  $: healthStatus = getHealthStatus();
+  $: latencyBarWidth = getLatencyBarWidth();
 </script>
 
 <div class="p-8 max-w-[1600px] w-full mx-auto space-y-8">
@@ -153,12 +227,17 @@
             </div>
             <p class="text-slate-500 dark:text-[#9dabb9] text-sm font-medium font-display uppercase tracking-wider">Active Streams</p>
             <div class="flex items-baseline gap-2 mt-2">
-                <p class="text-slate-900 dark:text-white text-3xl font-bold font-display">12</p>
-                <span class="text-slate-400 dark:text-[#55606d] text-lg font-medium">/ 15</span>
+                <p class="text-slate-900 dark:text-white text-3xl font-bold font-display">{streamStats?.activeCount ?? 0}</p>
+                <span class="text-slate-400 dark:text-[#55606d] text-lg font-medium">/ {streamStats?.totalCount ?? 0}</span>
             </div>
-            <div class="flex items-center gap-1.5 mt-2 text-[#0bda5b] text-sm font-medium">
-                <span class="material-symbols-outlined text-sm">trending_up</span>
-                <span>+2 connected recently</span>
+            <div class="flex items-center gap-1.5 mt-2 text-sm font-medium {streamStats && streamStats.activeCount > 0 ? 'text-[#0bda5b]' : 'text-slate-400'}">
+                {#if streamStats && streamStats.activeCount > 0}
+                    <span class="material-symbols-outlined text-sm">trending_up</span>
+                    <span>{streamStats.activeCount} stream{streamStats.activeCount !== 1 ? 's' : ''} active</span>
+                {:else}
+                    <span class="material-symbols-outlined text-sm">radio_button_unchecked</span>
+                    <span>No active streams</span>
+                {/if}
             </div>
         </div>
         <div class="flex flex-col p-5 rounded-xl bg-white dark:bg-[#182129] border border-slate-200 dark:border-[#283039] shadow-sm relative overflow-hidden group">
@@ -167,10 +246,15 @@
             </div>
             <p class="text-slate-500 dark:text-[#9dabb9] text-sm font-medium font-display uppercase tracking-wider">Avg Latency</p>
             <div class="flex items-baseline gap-2 mt-2">
-                <p class="text-slate-900 dark:text-white text-3xl font-bold font-display">45<span class="text-lg text-slate-400 dark:text-[#9dabb9] ml-1">ms</span></p>
+                <p class="text-slate-900 dark:text-white text-3xl font-bold font-display">
+                    {streamStats?.avgLatencyMs?.toFixed(0) ?? '--'}<span class="text-lg text-slate-400 dark:text-[#9dabb9] ml-1">ms</span>
+                </p>
             </div>
             <div class="w-full bg-slate-100 dark:bg-[#283039] h-1.5 rounded-full mt-3 overflow-hidden">
-                <div class="bg-[#137fec] h-full rounded-full" style="width: 45%"></div>
+                <div 
+                    class="h-full rounded-full transition-all duration-500 {streamStats && streamStats.avgLatencyMs > 100 ? 'bg-orange-500' : 'bg-[#137fec]'}" 
+                    style="width: {latencyBarWidth}%"
+                ></div>
             </div>
         </div>
         <div class="flex flex-col p-5 rounded-xl bg-white dark:bg-[#182129] border border-slate-200 dark:border-[#283039] shadow-sm relative overflow-hidden group">
@@ -179,9 +263,15 @@
             </div>
             <p class="text-slate-500 dark:text-[#9dabb9] text-sm font-medium font-display uppercase tracking-wider">HLS Generation</p>
             <div class="flex items-baseline gap-2 mt-2">
-                <p class="text-[#0bda5b] text-3xl font-bold font-display">Healthy</p>
+                <p class="{healthStatus.class} text-3xl font-bold font-display">{healthStatus.text}</p>
             </div>
-            <p class="text-slate-500 dark:text-[#9dabb9] text-sm mt-2">99.9% playlist uptime</p>
+            <p class="text-slate-500 dark:text-[#9dabb9] text-sm mt-2">
+                {#if streamStats && streamStats.totalBitrateKbps > 0}
+                    {(streamStats.totalBitrateKbps / 1000).toFixed(1)} Mbps total throughput
+                {:else}
+                    Ready for streaming
+                {/if}
+            </p>
         </div>
     </div>
 
@@ -327,6 +417,29 @@
                     <p class="text-sm text-slate-500 dark:text-[#9dabb9]">System idle. Ready to start capture.</p>
                 {/if}
             </div>
+
+            <!-- Active Streams List -->
+            {#if streamStats && streamStats.streams.length > 0}
+                <div class="rounded-xl border border-slate-200 dark:border-[#283039] bg-white dark:bg-[#182129] p-5 shadow-sm">
+                    <h3 class="text-sm font-bold text-slate-900 dark:text-white font-display mb-4 uppercase tracking-wider">Active Streams</h3>
+                    <div class="space-y-2">
+                        {#each streamStats.streams as stream}
+                            <div class="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-[#1a242d] border border-slate-100 dark:border-[#283039]">
+                                <div class="flex items-center gap-3">
+                                    <div class="size-2 rounded-full {stream.status === 'active' ? 'bg-green-500' : 'bg-slate-400'}"></div>
+                                    <div>
+                                        <p class="text-sm font-medium text-slate-900 dark:text-white">{stream.name}</p>
+                                        <p class="text-xs text-slate-500">{stream.codec ?? 'Unknown'} • {stream.resolution ?? 'N/A'}</p>
+                                    </div>
+                                </div>
+                                {#if stream.latencyMs}
+                                    <span class="text-xs font-mono text-slate-500">{stream.latencyMs}ms</span>
+                                {/if}
+                            </div>
+                        {/each}
+                    </div>
+                </div>
+            {/if}
 
             <div class="rounded-xl border border-slate-200 dark:border-[#283039] bg-white dark:bg-[#182129] p-5 shadow-sm flex-1">
                 <h3 class="text-sm font-bold text-slate-900 dark:text-white font-display mb-4 uppercase tracking-wider">Help & Docs</h3>

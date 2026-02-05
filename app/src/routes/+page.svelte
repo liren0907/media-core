@@ -1,16 +1,132 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
+  import { invoke } from '@tauri-apps/api/core';
 
   // Dashboard Overview - Tactical Command Style Redesign
   
   let currentTime = new Date();
   
+  // System metrics state
+  interface SystemMetrics {
+    cpu: { usagePercent: number; coreCount: number; frequencyMhz: number | null };
+    memory: { totalGb: number; usedGb: number; availableGb: number; usagePercent: number };
+    disk: { totalGb: number; usedGb: number; availableGb: number; usagePercent: number; readSpeedMbps: number | null; writeSpeedMbps: number | null };
+    uptimeSeconds: number;
+  }
+
+  interface StreamStatus {
+    id: string;
+    name: string;
+    status: string;
+    streamType: string;
+    codec: string | null;
+    resolution: string | null;
+    fps: number | null;
+    bitrateKbps: number | null;
+    durationSeconds: number | null;
+    latencyMs: number | null;
+  }
+
+  interface StreamStats {
+    activeCount: number;
+    totalCount: number;
+    avgLatencyMs: number;
+    totalBitrateKbps: number;
+    streams: StreamStatus[];
+  }
+
+  interface ThroughputPoint {
+    timestamp: number;
+    networkMbps: number;
+    fps: number;
+    cpuPercent: number;
+  }
+
+  interface ThroughputHistory {
+    points: ThroughputPoint[];
+    periodSeconds: number;
+  }
+
+  let metrics: SystemMetrics | null = null;
+  let streamStats: StreamStats | null = null;
+  let throughputHistory: ThroughputHistory | null = null;
+  let cpuHistory: number[] = [40, 60, 45, 30, 70, 45, 55, 35]; // Initial values for chart
+  
+  let metricsInterval: ReturnType<typeof setInterval>;
+  let clockInterval: ReturnType<typeof setInterval>;
+
+  async function fetchMetrics() {
+    try {
+      metrics = await invoke('get_system_metrics');
+      // Update CPU history for mini chart
+      if (metrics) {
+        cpuHistory = [...cpuHistory.slice(1), metrics.cpu.usagePercent];
+      }
+    } catch (e) {
+      console.error('Failed to fetch system metrics:', e);
+    }
+  }
+
+  async function fetchStreamStats() {
+    try {
+      streamStats = await invoke('get_stream_stats');
+    } catch (e) {
+      console.error('Failed to fetch stream stats:', e);
+    }
+  }
+
+  async function fetchThroughputHistory() {
+    try {
+      throughputHistory = await invoke('get_throughput_history', { periodSeconds: 3600 });
+    } catch (e) {
+      console.error('Failed to fetch throughput history:', e);
+    }
+  }
+
+  function formatUptime(seconds: number): string {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
+
+  function getStatusColor(status: string): string {
+    switch (status.toLowerCase()) {
+      case 'active': return 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20';
+      case 'idle': return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20';
+      case 'error': return 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20';
+      default: return 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20';
+    }
+  }
+
   onMount(() => {
-    const timer = setInterval(() => {
+    clockInterval = setInterval(() => {
       currentTime = new Date();
     }, 1000);
-    return () => clearInterval(timer);
+
+    // Fetch metrics immediately and then every 2 seconds
+    fetchMetrics();
+    fetchStreamStats();
+    fetchThroughputHistory();
+    
+    metricsInterval = setInterval(() => {
+      fetchMetrics();
+      fetchStreamStats();
+    }, 2000);
   });
+
+  onDestroy(() => {
+    if (clockInterval) clearInterval(clockInterval);
+    if (metricsInterval) clearInterval(metricsInterval);
+  });
+
+  // Reactive values with fallbacks
+  $: cpuPercent = metrics?.cpu.usagePercent ?? 0;
+  $: memoryUsedGb = metrics?.memory.usedGb ?? 0;
+  $: memoryPercent = metrics?.memory.usagePercent ?? 0;
+  $: diskPercent = metrics?.disk.usagePercent ?? 0;
+  $: diskTotalGb = metrics?.disk.totalGb ?? 0;
+  $: writeSpeed = metrics?.disk.writeSpeedMbps ?? 0;
 </script>
 
 <svelte:head>
@@ -59,8 +175,10 @@
                         <div>
                             <h3 class="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">CPU Load</h3>
                             <div class="flex items-baseline gap-2">
-                                <span class="text-3xl font-bold font-display text-slate-900 dark:text-white">45%</span>
-                                <span class="text-xs font-bold text-green-500">+2.4%</span>
+                                <span class="text-3xl font-bold font-display text-slate-900 dark:text-white">{cpuPercent.toFixed(0)}%</span>
+                                {#if metrics}
+                                    <span class="text-xs font-mono text-slate-500">{metrics.cpu.coreCount} cores</span>
+                                {/if}
                             </div>
                         </div>
                         <div class="size-8 rounded bg-slate-100 dark:bg-[#1f2937] flex items-center justify-center text-[#137fec]">
@@ -69,26 +187,26 @@
                     </div>
                     <!-- Micro Chart -->
                     <div class="h-8 w-full flex items-end gap-1">
-                        <div class="bg-[#137fec]/20 group-hover:bg-[#137fec]/40 w-full h-[40%] rounded-sm transition-all"></div>
-                        <div class="bg-[#137fec]/20 group-hover:bg-[#137fec]/40 w-full h-[60%] rounded-sm transition-all"></div>
-                        <div class="bg-[#137fec]/20 group-hover:bg-[#137fec]/40 w-full h-[45%] rounded-sm transition-all"></div>
-                        <div class="bg-[#137fec]/20 group-hover:bg-[#137fec]/40 w-full h-[30%] rounded-sm transition-all"></div>
-                        <div class="bg-[#137fec]/20 group-hover:bg-[#137fec]/40 w-full h-[70%] rounded-sm transition-all"></div>
-                        <div class="bg-[#137fec] group-hover:bg-[#137fec] w-full h-[45%] rounded-sm transition-all shadow-[0_0_8px_rgba(19,127,236,0.5)]"></div>
-                        <div class="bg-[#137fec]/20 group-hover:bg-[#137fec]/40 w-full h-[55%] rounded-sm transition-all"></div>
-                        <div class="bg-[#137fec]/20 group-hover:bg-[#137fec]/40 w-full h-[35%] rounded-sm transition-all"></div>
+                        {#each cpuHistory as value, i}
+                            <div 
+                                class="w-full rounded-sm transition-all {i === cpuHistory.length - 1 ? 'bg-[#137fec] shadow-[0_0_8px_rgba(19,127,236,0.5)]' : 'bg-[#137fec]/20 group-hover:bg-[#137fec]/40'}"
+                                style="height: {value}%"
+                            ></div>
+                        {/each}
                     </div>
                 </div>
 
-                <!-- GPU Card -->
+                <!-- Memory Card -->
                 <div class="bg-white dark:bg-[#161e27] rounded-lg border border-slate-200 dark:border-[#2a3441] p-6 shadow-sm relative overflow-hidden group">
                     <div class="absolute top-0 right-0 w-24 h-24 bg-orange-500/5 rounded-bl-full -mr-6 -mt-6 transition-transform group-hover:scale-110"></div>
                     <div class="flex justify-between items-start relative z-10 mb-4">
                         <div>
-                            <h3 class="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">GPU Usage</h3>
+                            <h3 class="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">Memory Usage</h3>
                             <div class="flex items-baseline gap-2">
-                                <span class="text-3xl font-bold font-display text-slate-900 dark:text-white">82%</span>
-                                <span class="text-[10px] px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-500 font-bold uppercase">High Load</span>
+                                <span class="text-3xl font-bold font-display text-slate-900 dark:text-white">{memoryPercent.toFixed(0)}%</span>
+                                {#if memoryPercent > 80}
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-500 font-bold uppercase">High</span>
+                                {/if}
                             </div>
                         </div>
                         <div class="size-8 rounded bg-slate-100 dark:bg-[#1f2937] flex items-center justify-center text-orange-500">
@@ -96,18 +214,21 @@
                         </div>
                     </div>
                     <div class="w-full bg-slate-100 dark:bg-[#1f2937] rounded-full h-1.5 mt-auto overflow-hidden">
-                        <div class="bg-orange-500 h-1.5 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.5)]" style="width: 82%"></div>
+                        <div class="bg-orange-500 h-1.5 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.5)] transition-all" style="width: {memoryPercent}%"></div>
+                    </div>
+                    <div class="mt-2 text-[10px] text-slate-500 font-mono">
+                        {memoryUsedGb.toFixed(1)} GB / {metrics?.memory.totalGb?.toFixed(1) ?? '0'} GB
                     </div>
                 </div>
 
-                <!-- Memory Card -->
+                <!-- RAM Card -->
                 <div class="bg-white dark:bg-[#161e27] rounded-lg border border-slate-200 dark:border-[#2a3441] p-6 shadow-sm relative overflow-hidden group">
                     <div class="absolute top-0 right-0 w-24 h-24 bg-purple-500/5 rounded-bl-full -mr-6 -mt-6 transition-transform group-hover:scale-110"></div>
                     <div class="flex justify-between items-start relative z-10 mb-4">
                         <div>
-                            <h3 class="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">Memory</h3>
+                            <h3 class="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">Available RAM</h3>
                             <div class="flex items-baseline gap-2">
-                                <span class="text-3xl font-bold font-display text-slate-900 dark:text-white">12.4</span>
+                                <span class="text-3xl font-bold font-display text-slate-900 dark:text-white">{metrics?.memory.availableGb?.toFixed(1) ?? '0'}</span>
                                 <span class="text-xs font-mono text-slate-500">GB</span>
                             </div>
                         </div>
@@ -116,9 +237,8 @@
                         </div>
                     </div>
                     <div class="flex gap-1 mt-auto">
-                        <div class="h-1.5 flex-1 bg-purple-500 rounded-sm shadow-[0_0_8px_rgba(168,85,247,0.5)]"></div>
-                        <div class="h-1.5 flex-1 bg-purple-500/40 rounded-sm"></div>
-                        <div class="h-1.5 flex-1 bg-slate-100 dark:bg-[#1f2937] rounded-sm"></div>
+                        <div class="h-1.5 rounded-sm shadow-[0_0_8px_rgba(168,85,247,0.5)] bg-purple-500 transition-all" style="flex: {memoryPercent}"></div>
+                        <div class="h-1.5 rounded-sm bg-slate-100 dark:bg-[#1f2937]" style="flex: {100 - memoryPercent}"></div>
                     </div>
                 </div>
             </div>
@@ -163,18 +283,29 @@
                             <line stroke="#2a3441" stroke-dasharray="2 4" stroke-width="1" x1="0" x2="800" y1="100" y2="100" opacity="0.5"></line>
                             <line stroke="#2a3441" stroke-dasharray="2 4" stroke-width="1" x1="0" x2="800" y1="50" y2="50" opacity="0.5"></line>
                             <!-- Primary Line (Area) -->
-                            <path d="M0 200 C 100 180, 200 220, 300 150 S 500 80, 600 120 S 700 60, 800 80 V 250 H 0 Z" fill="url(#chartGradient)"></path>
-                            <path d="M0 200 C 100 180, 200 220, 300 150 S 500 80, 600 120 S 700 60, 800 80" fill="none" stroke="#137fec" stroke-width="2"></path>
+                            {#if throughputHistory && throughputHistory.points.length > 0}
+                                {@const points = throughputHistory.points}
+                                {@const pathData = points.map((p, i) => {
+                                    const x = (i / (points.length - 1)) * 800;
+                                    const y = 220 - (p.networkMbps / 30 * 170);
+                                    return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+                                }).join(' ')}
+                                <path d="{pathData} V 250 H 0 Z" fill="url(#chartGradient)"></path>
+                                <path d="{pathData}" fill="none" stroke="#137fec" stroke-width="2"></path>
+                            {:else}
+                                <path d="M0 200 C 100 180, 200 220, 300 150 S 500 80, 600 120 S 700 60, 800 80 V 250 H 0 Z" fill="url(#chartGradient)"></path>
+                                <path d="M0 200 C 100 180, 200 220, 300 150 S 500 80, 600 120 S 700 60, 800 80" fill="none" stroke="#137fec" stroke-width="2"></path>
+                            {/if}
                             <!-- Secondary Line -->
                             <path d="M0 180 C 120 190, 250 160, 350 170 S 550 150, 650 140 S 750 160, 800 150" fill="none" opacity="0.5" stroke="#94a3b8" stroke-dasharray="5 5" stroke-width="2"></path>
                         </svg>
                         <!-- X Axis Labels -->
                         <div class="flex justify-between mt-2 text-[10px] text-slate-500 font-mono uppercase tracking-wider">
-                            <span>10:00</span>
-                            <span>10:15</span>
-                            <span>10:30</span>
-                            <span>10:45</span>
-                            <span>11:00</span>
+                            <span>{new Date(Date.now() - 3600000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
+                            <span>{new Date(Date.now() - 2700000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
+                            <span>{new Date(Date.now() - 1800000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
+                            <span>{new Date(Date.now() - 900000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
+                            <span>{currentTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
                     </div>
                 </div>
@@ -194,21 +325,21 @@
                                 <!-- Background Circle -->
                                 <path class="text-slate-100 dark:text-slate-700" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="2"></path>
                                 <!-- Value Circle -->
-                                <path class="text-[#137fec]" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="75, 100" stroke-width="2"></path>
+                                <path class="text-[#137fec]" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="{diskPercent}, 100" stroke-width="2"></path>
                             </svg>
                             <div class="absolute inset-0 flex flex-col items-center justify-center text-slate-900 dark:text-white">
-                                <span class="text-3xl font-bold font-display">75%</span>
+                                <span class="text-3xl font-bold font-display">{diskPercent.toFixed(0)}%</span>
                                 <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">USED</span>
                             </div>
                         </div>
                         <div class="w-full flex flex-col gap-3 mt-6">
                             <div class="flex justify-between items-center p-3 rounded bg-slate-50 dark:bg-[#1f2937] border border-slate-100 dark:border-[#2a3441]">
-                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">SSD (NVMe)</span>
-                                <span class="text-xs font-mono font-bold text-slate-700 dark:text-slate-200">1.2 TB</span>
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total</span>
+                                <span class="text-xs font-mono font-bold text-slate-700 dark:text-slate-200">{diskTotalGb.toFixed(0)} GB</span>
                             </div>
                             <div class="flex justify-between items-center p-3 rounded bg-slate-50 dark:bg-[#1f2937] border border-slate-100 dark:border-[#2a3441]">
                                 <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Write Spd</span>
-                                <span class="text-xs font-mono font-bold text-slate-700 dark:text-slate-200">450 MB/s</span>
+                                <span class="text-xs font-mono font-bold text-slate-700 dark:text-slate-200">{writeSpeed > 0 ? writeSpeed.toFixed(0) : '--'} MB/s</span>
                             </div>
                         </div>
                     </div>
@@ -220,9 +351,12 @@
                 <div class="px-4 py-2 border-b border-slate-200 dark:border-[#2a3441] flex justify-between items-center bg-slate-50 dark:bg-[#1f2937]/50">
                     <div class="flex items-center gap-2">
                         <span class="material-symbols-outlined text-slate-500 text-[18px]">list_alt</span>
-                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">Active Processes</h3>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">Active Streams</h3>
+                        {#if streamStats}
+                            <span class="text-[10px] px-1.5 py-0.5 rounded bg-[#137fec]/10 text-[#137fec] font-bold">{streamStats.activeCount} / {streamStats.totalCount}</span>
+                        {/if}
                     </div>
-                    <button class="text-[10px] font-bold uppercase tracking-wider text-[#137fec] hover:text-blue-400">View All</button>
+                    <a href="/multi-stream-viewer" class="text-[10px] font-bold uppercase tracking-wider text-[#137fec] hover:text-blue-400">View All</a>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs font-mono">
@@ -232,43 +366,37 @@
                                 <th class="px-4 py-2 font-medium">TYPE</th>
                                 <th class="px-4 py-2 font-medium">STATUS</th>
                                 <th class="px-4 py-2 font-medium">CODEC</th>
-                                <th class="px-4 py-2 font-medium">DURATION</th>
+                                <th class="px-4 py-2 font-medium">LATENCY</th>
                                 <th class="px-4 py-2 font-medium text-right w-16"></th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 dark:divide-[#2a3441]">
-                            <tr class="hover:bg-slate-50 dark:hover:bg-[#1f2937]/50 transition-colors">
-                                <td class="px-4 py-2 text-slate-900 dark:text-white font-bold">stream_01</td>
-                                <td class="px-4 py-2 text-slate-600 dark:text-slate-400">Live Encoding</td>
-                                <td class="px-4 py-2">
-                                    <span class="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20 uppercase tracking-wide">
-                                        Processing
-                                    </span>
-                                </td>
-                                <td class="px-4 py-2 text-slate-600 dark:text-slate-400">H.265</td>
-                                <td class="px-4 py-2 text-slate-600 dark:text-slate-400">02:14:55</td>
-                                <td class="px-4 py-2 text-right">
-                                    <button class="text-slate-400 hover:text-[#137fec] transition-colors">
-                                        <span class="material-symbols-outlined text-[16px]">more_vert</span>
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr class="hover:bg-slate-50 dark:hover:bg-[#1f2937]/50 transition-colors">
-                                <td class="px-4 py-2 text-slate-900 dark:text-white font-bold">archive_x86</td>
-                                <td class="px-4 py-2 text-slate-600 dark:text-slate-400">Data Backup</td>
-                                <td class="px-4 py-2">
-                                    <span class="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 uppercase tracking-wide">
-                                        Queued
-                                    </span>
-                                </td>
-                                <td class="px-4 py-2 text-slate-600 dark:text-slate-400">N/A</td>
-                                <td class="px-4 py-2 text-slate-600 dark:text-slate-400">--:--:--</td>
-                                <td class="px-4 py-2 text-right">
-                                    <button class="text-slate-400 hover:text-[#137fec] transition-colors">
-                                        <span class="material-symbols-outlined text-[16px]">more_vert</span>
-                                    </button>
-                                </td>
-                            </tr>
+                            {#if streamStats && streamStats.streams.length > 0}
+                                {#each streamStats.streams as stream}
+                                    <tr class="hover:bg-slate-50 dark:hover:bg-[#1f2937]/50 transition-colors">
+                                        <td class="px-4 py-2 text-slate-900 dark:text-white font-bold">{stream.id}</td>
+                                        <td class="px-4 py-2 text-slate-600 dark:text-slate-400 capitalize">{stream.streamType}</td>
+                                        <td class="px-4 py-2">
+                                            <span class="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded text-[10px] font-bold border uppercase tracking-wide {getStatusColor(stream.status)}">
+                                                {stream.status}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-2 text-slate-600 dark:text-slate-400">{stream.codec ?? 'N/A'}</td>
+                                        <td class="px-4 py-2 text-slate-600 dark:text-slate-400">{stream.latencyMs ? `${stream.latencyMs}ms` : '--'}</td>
+                                        <td class="px-4 py-2 text-right">
+                                            <button class="text-slate-400 hover:text-[#137fec] transition-colors">
+                                                <span class="material-symbols-outlined text-[16px]">more_vert</span>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                {/each}
+                            {:else}
+                                <tr>
+                                    <td colspan="6" class="px-4 py-8 text-center text-slate-500">
+                                        No active streams. <a href="/stream" class="text-[#137fec] hover:underline">Add a stream</a> to get started.
+                                    </td>
+                                </tr>
+                            {/if}
                         </tbody>
                     </table>
                 </div>

@@ -1,5 +1,7 @@
-<script>
+<script lang="ts">
     import { theme, effectiveTheme } from '$lib/theme';
+    import { appConfig, type StreamConfig, type PathConfig } from '$lib/config';
+    import { open } from '@tauri-apps/plugin-dialog';
     import { onMount } from 'svelte';
 
     // Options for the dropdown
@@ -10,6 +12,107 @@
     ];
     
     let selectedLanguage = 'en'; // Placeholder
+    
+    // Stream settings
+    let hlsServerUrl = '';
+    let hlsServerPort = 1521;
+    let defaultRtspUrl = '';
+    let hlsOutputDir = '';
+    
+    // Path settings
+    let defaultVideoDir = '';
+    let defaultImageDir = '';
+    let defaultOutputDir = '';
+    let annotationDir = '';
+    
+    let saveStatus = '';
+    
+    onMount(() => {
+        // Load current config
+        const config = $appConfig;
+        hlsServerUrl = config.streams.hlsServerUrl;
+        hlsServerPort = config.streams.hlsServerPort;
+        defaultRtspUrl = config.streams.defaultRtspUrl;
+        hlsOutputDir = config.streams.hlsOutputDir;
+        defaultVideoDir = config.paths.defaultVideoDir;
+        defaultImageDir = config.paths.defaultImageDir;
+        defaultOutputDir = config.paths.defaultOutputDir;
+        annotationDir = config.paths.annotationDir;
+    });
+    
+    function saveStreamSettings() {
+        appConfig.updateStreams({
+            hlsServerUrl,
+            hlsServerPort,
+            defaultRtspUrl,
+            hlsOutputDir,
+        });
+        showSaveStatus();
+    }
+    
+    function savePathSettings() {
+        appConfig.updatePaths({
+            defaultVideoDir,
+            defaultImageDir,
+            defaultOutputDir,
+            annotationDir,
+        });
+        showSaveStatus();
+    }
+    
+    function showSaveStatus() {
+        saveStatus = 'Settings saved!';
+        setTimeout(() => { saveStatus = ''; }, 2000);
+    }
+    
+    function resetToDefaults() {
+        if (confirm('Reset all settings to defaults?')) {
+            appConfig.reset();
+            // Reload values
+            const config = $appConfig;
+            hlsServerUrl = config.streams.hlsServerUrl;
+            hlsServerPort = config.streams.hlsServerPort;
+            defaultRtspUrl = config.streams.defaultRtspUrl;
+            hlsOutputDir = config.streams.hlsOutputDir;
+            defaultVideoDir = config.paths.defaultVideoDir;
+            defaultImageDir = config.paths.defaultImageDir;
+            defaultOutputDir = config.paths.defaultOutputDir;
+            annotationDir = config.paths.annotationDir;
+            showSaveStatus();
+        }
+    }
+    
+    async function browseDirectory(field: 'video' | 'image' | 'output' | 'annotation' | 'hls') {
+        try {
+            const selected = await open({
+                directory: true,
+                multiple: false,
+                title: 'Select Directory'
+            });
+            
+            if (selected && typeof selected === 'string') {
+                switch (field) {
+                    case 'video':
+                        defaultVideoDir = selected;
+                        break;
+                    case 'image':
+                        defaultImageDir = selected;
+                        break;
+                    case 'output':
+                        defaultOutputDir = selected;
+                        break;
+                    case 'annotation':
+                        annotationDir = selected;
+                        break;
+                    case 'hls':
+                        hlsOutputDir = selected;
+                        break;
+                }
+            }
+        } catch (err) {
+            console.error('Failed to open directory picker:', err);
+        }
+    }
 </script>
 
 <svelte:head>
@@ -112,6 +215,186 @@
         </div>
     </div>
 
+    <!-- Stream Settings -->
+    <div class="bg-white dark:bg-[#161e27] rounded-xl border border-slate-200 dark:border-[#2a3441] p-6 shadow-sm">
+        <div class="flex items-center gap-3 mb-6">
+            <div class="p-2 bg-green-500/10 rounded-lg">
+                <span class="material-symbols-outlined text-green-500">stream</span>
+            </div>
+            <div>
+                <h2 class="text-lg font-bold text-slate-900 dark:text-white font-display">Stream Settings</h2>
+                <p class="text-sm text-slate-500">Configure HLS and RTSP stream defaults</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- HLS Server URL -->
+            <div class="flex flex-col gap-1">
+                <label for="hlsServerUrl" class="text-sm font-medium text-slate-700 dark:text-slate-300">HLS Server URL</label>
+                <input 
+                    id="hlsServerUrl"
+                    type="text" 
+                    bind:value={hlsServerUrl}
+                    placeholder="http://127.0.0.1"
+                    class="bg-white dark:bg-[#1a222c] border border-slate-200 dark:border-[#2a3441] text-slate-900 dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#137fec]"
+                />
+            </div>
+            
+            <!-- HLS Server Port -->
+            <div class="flex flex-col gap-1">
+                <label for="hlsServerPort" class="text-sm font-medium text-slate-700 dark:text-slate-300">HLS Server Port</label>
+                <input 
+                    id="hlsServerPort"
+                    type="number" 
+                    bind:value={hlsServerPort}
+                    placeholder="1521"
+                    class="bg-white dark:bg-[#1a222c] border border-slate-200 dark:border-[#2a3441] text-slate-900 dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#137fec]"
+                />
+            </div>
+            
+            <!-- Default RTSP URL -->
+            <div class="flex flex-col gap-1 md:col-span-2">
+                <label for="defaultRtspUrl" class="text-sm font-medium text-slate-700 dark:text-slate-300">Default RTSP URL</label>
+                <input 
+                    id="defaultRtspUrl"
+                    type="text" 
+                    bind:value={defaultRtspUrl}
+                    placeholder="rtsp://localhost:8554/mystream"
+                    class="bg-white dark:bg-[#1a222c] border border-slate-200 dark:border-[#2a3441] text-slate-900 dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#137fec]"
+                />
+            </div>
+            
+            <!-- HLS Output Directory -->
+            <div class="flex flex-col gap-1 md:col-span-2">
+                <label for="hlsOutputDir" class="text-sm font-medium text-slate-700 dark:text-slate-300">HLS Output Directory</label>
+                <div class="flex gap-2">
+                    <input 
+                        id="hlsOutputDir"
+                        type="text" 
+                        bind:value={hlsOutputDir}
+                        placeholder="hls_output"
+                        class="flex-1 bg-white dark:bg-[#1a222c] border border-slate-200 dark:border-[#2a3441] text-slate-900 dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#137fec]"
+                    />
+                    <button 
+                        on:click={() => browseDirectory('hls')}
+                        class="px-4 py-2.5 bg-slate-100 dark:bg-[#1a222c] border border-slate-200 dark:border-[#2a3441] text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-[#242d38] transition-colors"
+                    >
+                        <span class="material-symbols-outlined text-[20px]">folder_open</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <button 
+            on:click={saveStreamSettings}
+            class="mt-4 px-4 py-2 bg-[#137fec] text-white rounded-lg hover:bg-[#0f6dd3] transition-colors"
+        >
+            Save Stream Settings
+        </button>
+    </div>
+
+    <!-- Path Settings -->
+    <div class="bg-white dark:bg-[#161e27] rounded-xl border border-slate-200 dark:border-[#2a3441] p-6 shadow-sm">
+        <div class="flex items-center gap-3 mb-6">
+            <div class="p-2 bg-orange-500/10 rounded-lg">
+                <span class="material-symbols-outlined text-orange-500">folder</span>
+            </div>
+            <div>
+                <h2 class="text-lg font-bold text-slate-900 dark:text-white font-display">Default Paths</h2>
+                <p class="text-sm text-slate-500">Configure default directories for file operations</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4">
+            <!-- Default Video Directory -->
+            <div class="flex flex-col gap-1">
+                <label for="defaultVideoDir" class="text-sm font-medium text-slate-700 dark:text-slate-300">Default Video Directory</label>
+                <div class="flex gap-2">
+                    <input 
+                        id="defaultVideoDir"
+                        type="text" 
+                        bind:value={defaultVideoDir}
+                        placeholder="Select default video directory..."
+                        class="flex-1 bg-white dark:bg-[#1a222c] border border-slate-200 dark:border-[#2a3441] text-slate-900 dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#137fec]"
+                    />
+                    <button 
+                        on:click={() => browseDirectory('video')}
+                        class="px-4 py-2.5 bg-slate-100 dark:bg-[#1a222c] border border-slate-200 dark:border-[#2a3441] text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-[#242d38] transition-colors"
+                    >
+                        <span class="material-symbols-outlined text-[20px]">folder_open</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Default Image Directory -->
+            <div class="flex flex-col gap-1">
+                <label for="defaultImageDir" class="text-sm font-medium text-slate-700 dark:text-slate-300">Default Image Directory</label>
+                <div class="flex gap-2">
+                    <input 
+                        id="defaultImageDir"
+                        type="text" 
+                        bind:value={defaultImageDir}
+                        placeholder="Select default image directory..."
+                        class="flex-1 bg-white dark:bg-[#1a222c] border border-slate-200 dark:border-[#2a3441] text-slate-900 dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#137fec]"
+                    />
+                    <button 
+                        on:click={() => browseDirectory('image')}
+                        class="px-4 py-2.5 bg-slate-100 dark:bg-[#1a222c] border border-slate-200 dark:border-[#2a3441] text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-[#242d38] transition-colors"
+                    >
+                        <span class="material-symbols-outlined text-[20px]">folder_open</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Default Output Directory -->
+            <div class="flex flex-col gap-1">
+                <label for="defaultOutputDir" class="text-sm font-medium text-slate-700 dark:text-slate-300">Default Output Directory</label>
+                <div class="flex gap-2">
+                    <input 
+                        id="defaultOutputDir"
+                        type="text" 
+                        bind:value={defaultOutputDir}
+                        placeholder="Select default output directory..."
+                        class="flex-1 bg-white dark:bg-[#1a222c] border border-slate-200 dark:border-[#2a3441] text-slate-900 dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#137fec]"
+                    />
+                    <button 
+                        on:click={() => browseDirectory('output')}
+                        class="px-4 py-2.5 bg-slate-100 dark:bg-[#1a222c] border border-slate-200 dark:border-[#2a3441] text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-[#242d38] transition-colors"
+                    >
+                        <span class="material-symbols-outlined text-[20px]">folder_open</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Annotation Directory -->
+            <div class="flex flex-col gap-1">
+                <label for="annotationDir" class="text-sm font-medium text-slate-700 dark:text-slate-300">Annotation Directory</label>
+                <div class="flex gap-2">
+                    <input 
+                        id="annotationDir"
+                        type="text" 
+                        bind:value={annotationDir}
+                        placeholder="Select annotation directory..."
+                        class="flex-1 bg-white dark:bg-[#1a222c] border border-slate-200 dark:border-[#2a3441] text-slate-900 dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#137fec]"
+                    />
+                    <button 
+                        on:click={() => browseDirectory('annotation')}
+                        class="px-4 py-2.5 bg-slate-100 dark:bg-[#1a222c] border border-slate-200 dark:border-[#2a3441] text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-[#242d38] transition-colors"
+                    >
+                        <span class="material-symbols-outlined text-[20px]">folder_open</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <button 
+            on:click={savePathSettings}
+            class="mt-4 px-4 py-2 bg-[#137fec] text-white rounded-lg hover:bg-[#0f6dd3] transition-colors"
+        >
+            Save Path Settings
+        </button>
+    </div>
+
     <!-- Language Settings (Placeholder) -->
     <div class="bg-white dark:bg-[#161e27] rounded-xl border border-slate-200 dark:border-[#2a3441] p-6 shadow-sm opacity-75">
         <div class="flex items-center justify-between mb-6">
@@ -144,5 +427,22 @@
             </div>
             <p class="mt-2 text-xs text-slate-400">Language switching functionality is currently under development.</p>
         </div>
+    </div>
+    
+    <!-- Reset & Status -->
+    <div class="flex items-center justify-between">
+        <button 
+            on:click={resetToDefaults}
+            class="px-4 py-2 bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 rounded-lg hover:bg-red-500/20 transition-colors"
+        >
+            Reset All to Defaults
+        </button>
+        
+        {#if saveStatus}
+            <div class="flex items-center gap-2 text-green-600 dark:text-green-400">
+                <span class="material-symbols-outlined">check_circle</span>
+                <span>{saveStatus}</span>
+            </div>
+        {/if}
     </div>
 </div>

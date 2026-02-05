@@ -114,13 +114,46 @@
                         {/if}
                     </a>
 
-                    <a href="/hlsViewer" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group relative {$page.url.pathname.startsWith('/hlsViewer') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
-                        <span class="material-symbols-outlined shrink-0">play_circle</span>
-                        <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Player</span>
+                    <a href="/analysis" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group relative {$page.url.pathname.startsWith('/analysis') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
+                        <span class="material-symbols-outlined shrink-0">query_stats</span>
+                        <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Analysis</span>
                         
                         {#if !isSidebarOpen}
                             <div class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-                                Player
+                                Analysis
+                            </div>
+                        {/if}
+                    </a>
+
+                    <a href="/viewVideo" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group relative {$page.url.pathname.startsWith('/viewVideo') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
+                        <span class="material-symbols-outlined shrink-0">movie</span>
+                        <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Video Player</span>
+                        
+                        {#if !isSidebarOpen}
+                            <div class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
+                                Video Player
+                            </div>
+                        {/if}
+                    </a>
+
+                    <a href="/camera" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group relative {$page.url.pathname.startsWith('/camera') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
+                        <span class="material-symbols-outlined shrink-0">photo_camera</span>
+                        <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Camera</span>
+                        
+                        {#if !isSidebarOpen}
+                            <div class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
+                                Camera
+                            </div>
+                        {/if}
+                    </a>
+
+                    <a href="/hlsViewer" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group relative {$page.url.pathname.startsWith('/hlsViewer') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
+                        <span class="material-symbols-outlined shrink-0">play_circle</span>
+                        <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">HLS Player</span>
+                        
+                        {#if !isSidebarOpen}
+                            <div class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
+                                HLS Player
                             </div>
                         {/if}
                     </a>
@@ -184,6 +217,14 @@
                         Video Analytics Console
                     {:else if $page.url.pathname.startsWith('/annotator')}
                         Video Annotator
+                    {:else if $page.url.pathname.startsWith('/analysis')}
+                        Media Analysis
+                    {:else if $page.url.pathname.startsWith('/viewVideo')}
+                        Video Player
+                    {:else if $page.url.pathname.startsWith('/camera')}
+                        Camera Capture
+                    {:else if $page.url.pathname.startsWith('/hlsViewer')}
+                        HLS Stream Player
                     {:else if $page.url.pathname.startsWith('/settings')}
                         Global Settings
                     {:else}

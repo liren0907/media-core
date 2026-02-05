@@ -2551,6 +2551,7 @@ dependencies = [
  "tempfile",
  "thiserror 1.0.69",
  "tiny_http",
+ "uuid",
 ]
 
 [[package]]

@@ -36,6 +36,34 @@ fn main() {
             commands::camera::get_available_cameras,
             commands::camera::check_camera_access,
             commands::camera::capture_camera_snapshot,
+            // Pipeline executor commands
+            commands::pipeline::execute_metadata_pipeline,
+            commands::pipeline::execute_motion_pipeline,
+            commands::pipeline::execute_similarity_pipeline,
+            commands::pipeline::execute_compare_pipeline,
+            commands::pipeline::execute_extract_frames_pipeline,
+            commands::pipeline::execute_hls_pipeline,
+            commands::pipeline::execute_extract_to_disk_pipeline,
+            commands::pipeline::execute_camera_pipeline,
+            commands::pipeline::execute_full_analysis_pipeline,
+            commands::pipeline::execute_batch_pipeline,
+            // System metrics commands
+            commands::system::get_system_metrics,
+            commands::system::get_stream_stats,
+            commands::system::get_throughput_history,
+            commands::system::record_bytes_processed,
+            commands::system::record_frames_processed,
+            commands::system::reset_metrics,
+            // Event system commands
+            commands::events::start_metrics_stream,
+            commands::events::stop_metrics_stream,
+            commands::events::is_metrics_streaming,
+            commands::events::start_pipeline_tracking,
+            commands::events::cancel_pipeline,
+            commands::events::is_pipeline_cancelled,
+            commands::events::finish_pipeline_tracking,
+            commands::events::get_active_pipelines,
+            commands::events::emit_progress,
         ])
         .on_window_event(|_app_handle, event| {
             if let tauri::WindowEvent::Destroyed = event {

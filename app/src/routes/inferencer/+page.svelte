@@ -117,9 +117,9 @@
             
             <div class="flex flex-col gap-4">
                 <div>
-                    <label class="text-xs font-medium text-slate-500 mb-1 block">Source Video</label>
+                    <label for="sourceVideoPath" class="text-xs font-medium text-slate-500 mb-1 block">Source Video</label>
                     <div class="flex gap-2">
-                        <input type="text" value={videoPath ? '...'+videoPath.slice(-20) : ''} readonly class="flex-1 bg-[#1e2936] border border-[#2d3b4f] rounded text-xs text-white px-2 py-1.5 focus:outline-none" placeholder="No file selected">
+                        <input id="sourceVideoPath" type="text" value={videoPath ? '...'+videoPath.slice(-20) : ''} readonly class="flex-1 bg-[#1e2936] border border-[#2d3b4f] rounded text-xs text-white px-2 py-1.5 focus:outline-none" placeholder="No file selected">
                         <button on:click={openVideoFile} class="bg-[#137fec] hover:bg-[#0f6bd0] text-white px-3 py-1.5 rounded text-xs font-bold transition-colors">
                             BROWSE
                         </button>
@@ -127,9 +127,9 @@
                 </div>
 
                 <div>
-                    <label class="text-xs font-medium text-slate-500 mb-1 block">Annotation Data</label>
+                    <label for="annotationDataPath" class="text-xs font-medium text-slate-500 mb-1 block">Annotation Data</label>
                     <div class="flex gap-2">
-                        <input type="text" value={annotationPath ? '...'+annotationPath.slice(-20) : ''} readonly class="flex-1 bg-[#1e2936] border border-[#2d3b4f] rounded text-xs text-white px-2 py-1.5 focus:outline-none" placeholder="No file selected">
+                        <input id="annotationDataPath" type="text" value={annotationPath ? '...'+annotationPath.slice(-20) : ''} readonly class="flex-1 bg-[#1e2936] border border-[#2d3b4f] rounded text-xs text-white px-2 py-1.5 focus:outline-none" placeholder="No file selected">
                         <button on:click={openAnnotationFile} class="bg-[#1e2936] hover:bg-[#2d3b4f] border border-[#2d3b4f] text-slate-300 px-3 py-1.5 rounded text-xs font-bold transition-colors">
                             LOAD
                         </button>
@@ -215,9 +215,13 @@
             <!-- Video Container -->
             <div class="relative flex-1 bg-black rounded-lg border border-[#2d3b4f] overflow-hidden shadow-2xl flex items-center justify-center">
                 {#if processedVideoPath}
-                    <video src={convertFileSrc(processedVideoPath)} controls class="w-full h-full object-contain"></video>
+                    <video src={convertFileSrc(processedVideoPath)} controls class="w-full h-full object-contain">
+                        <track kind="captions" />
+                    </video>
                 {:else if videoPath}
-                    <video bind:this={videoPlayer} controls class="w-full h-full object-contain opacity-80"></video>
+                    <video bind:this={videoPlayer} controls class="w-full h-full object-contain opacity-80">
+                        <track kind="captions" />
+                    </video>
                     <!-- Grid Overlay -->
                     <div class="absolute inset-0 pointer-events-none opacity-10" style="background-image: linear-gradient(to right, #2d3b4f 1px, transparent 1px), linear-gradient(to bottom, #2d3b4f 1px, transparent 1px); background-size: 40px 40px;"></div>
                 {:else}

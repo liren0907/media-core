@@ -23,16 +23,20 @@
     }
   }
 
-  function formatVideoInfo(jsonStr: string) {
+  function formatVideoInfo(jsonStr: string): Record<string, string> {
     try {
       const data = JSON.parse(jsonStr);
       return {
-        Codec: data.codec_name,
-        Format: data.codec_str.toUpperCase(),
-        Duration: `${Math.floor(data.duration_seconds / 60)}m ${Math.round(data.duration_seconds % 60)}s`,
-        "Frame Rate": `${data.fps} FPS`,
-        "Total Frames": data.frame_count.toLocaleString(),
-        Resolution: data.resolution,
+        Codec: String(data.codec_name ?? "N/A"),
+        Format: String(data.codec_str ?? "N/A").toUpperCase(),
+        Duration: Number.isFinite(data.duration_seconds)
+          ? `${Math.floor(data.duration_seconds / 60)}m ${Math.round(data.duration_seconds % 60)}s`
+          : "N/A",
+        "Frame Rate": Number.isFinite(data.fps) ? `${data.fps} FPS` : "N/A",
+        "Total Frames": Number.isFinite(data.frame_count)
+          ? data.frame_count.toLocaleString()
+          : "N/A",
+        Resolution: String(data.resolution ?? "N/A"),
       };
     } catch (e) {
       return {};
@@ -86,7 +90,7 @@
                 {#each Object.entries(formatVideoInfo(videoResult)) as [key, value]}
                     <div class="flex flex-col p-3 bg-base-200 rounded-box text-center">
                         <span class="text-xs uppercase tracking-wider opacity-60 mb-1">{key}</span>
-                        <span class="font-bold text-sm truncate" title={value as string}>{value}</span>
+                        <span class="font-bold text-sm truncate" title={value}>{value}</span>
                     </div>
                 {/each}
             </div>

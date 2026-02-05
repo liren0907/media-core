@@ -171,10 +171,10 @@
         <h2 class="card-title text-sm opacity-70">Playback Controls</h2>
         
         <div class="form-control w-full">
-          <label class="label">
+          <label for="playlistUrl" class="label">
             <span class="label-text">Playlist URL</span>
           </label>
-          <input type="text" bind:value={playlistUrl} class="input input-bordered w-full" />
+          <input id="playlistUrl" type="text" bind:value={playlistUrl} class="input input-bordered w-full" />
         </div>
 
         <div class="divider my-2"></div>

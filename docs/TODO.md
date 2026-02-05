@@ -1,7 +1,7 @@
 # TODO（待確認）
 
 ## Rust 後端（`media_core` 子模組已完成）
-- [ ] 依賴指向：`src-tauri/Cargo.toml` 的 `media_core` 改成 `crates/media_core`（開發用 path），發版改 git tag/commit。
+
 - [ ] 確認 backend 只作為 `media_core` 的接口層，不修改子模組程式碼。
 
 ## 現有功能修正（保持 backend 僅作接口）

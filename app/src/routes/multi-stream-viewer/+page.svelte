@@ -70,10 +70,11 @@
     <div class="card bg-base-100 shadow-xl mb-8">
       <div class="card-body">
         <div class="form-control">
-            <label class="label">
+            <label for="rtspUrlsInput" class="label">
                 <span class="label-text font-bold">RTSP Stream URLs (one per line)</span>
             </label>
             <textarea
+                id="rtspUrlsInput"
                 bind:value={urlsInput}
                 class="textarea textarea-bordered h-32 font-mono text-sm"
                 placeholder="rtsp://192.168.1.100/stream1&#10;rtsp://192.168.1.101/stream2"
@@ -108,7 +109,9 @@
                 controls 
                 muted
                 class="w-full h-full object-contain"
-              ></video>
+              >
+                <track kind="captions" />
+              </video>
               <div class="absolute top-2 left-2 badge badge-sm badge-neutral opacity-70 group-hover:opacity-100 transition-opacity">
                  CAM {i + 1}
               </div>

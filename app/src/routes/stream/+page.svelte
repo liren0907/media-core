@@ -200,15 +200,18 @@
                         controls
                         class="w-full max-h-[400px]"
                         style="display: none;"
-                    ></video>
+                    >
+                        <track kind="captions" />
+                    </video>
                 </div>
 
                 <form on:submit|preventDefault={startCapture} class="space-y-6">
                     <!-- Main URL Section -->
                     <div class="space-y-2">
-                        <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Main RTSP URL</label>
+                        <label for="mainRtspUrl" class="text-sm font-medium text-slate-700 dark:text-slate-300">Main RTSP URL</label>
                         <div class="flex gap-2">
                             <input
+                                id="mainRtspUrl"
                                 type="text"
                                 bind:value={rtspConfig.rtsp_url}
                                 class="flex-1 bg-white dark:bg-[#111418] border border-slate-200 dark:border-[#283039] rounded-lg px-4 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-[#137fec] focus:ring-1 focus:ring-[#137fec]"
@@ -221,14 +224,16 @@
 
                     <!-- Additional URLs -->
                     <div class="space-y-2">
-                        <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Additional URLs ({rtspConfig.rtsp_url_list.length})</label>
+                        <div class="text-sm font-medium text-slate-700 dark:text-slate-300">Additional URLs ({rtspConfig.rtsp_url_list.length})</div>
                         {#each rtspConfig.rtsp_url_list as url, i}
                             <div class="flex gap-2">
                                 <input
+                                    id={`additionalRtspUrl-${i}`}
                                     type="text"
                                     bind:value={rtspConfig.rtsp_url_list[i]}
                                     class="flex-1 bg-white dark:bg-[#111418] border border-slate-200 dark:border-[#283039] rounded-lg px-4 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-[#137fec] focus:ring-1 focus:ring-[#137fec]"
                                     placeholder="rtsp://..."
+                                    aria-label={`Additional RTSP URL ${i + 1}`}
                                 />
                                 <button type="button" on:click={() => removeUrlField(i)} class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
                                     <span class="material-symbols-outlined">delete</span>
@@ -242,15 +247,15 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="space-y-2">
-                            <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Output Directory</label>
+                            <label for="outputDirectory" class="text-sm font-medium text-slate-700 dark:text-slate-300">Output Directory</label>
                             <div class="flex gap-2">
-                                <input type="text" readonly bind:value={rtspConfig.output_directory} class="flex-1 bg-white dark:bg-[#111418] border border-slate-200 dark:border-[#283039] rounded-lg px-4 py-2 text-sm text-slate-900 dark:text-white" placeholder="Select output directory..." />
+                                <input id="outputDirectory" type="text" readonly bind:value={rtspConfig.output_directory} class="flex-1 bg-white dark:bg-[#111418] border border-slate-200 dark:border-[#283039] rounded-lg px-4 py-2 text-sm text-slate-900 dark:text-white" placeholder="Select output directory..." />
                                 <button type="button" on:click={selectOutputDirectory} class="px-4 py-2 bg-slate-100 dark:bg-[#283039] hover:bg-slate-200 dark:hover:bg-[#3b4754] text-slate-700 dark:text-white rounded-lg font-medium text-sm transition-colors">Browse</button>
                             </div>
                         </div>
                         <div class="space-y-2">
-                            <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Segment Duration (sec)</label>
-                            <input type="number" bind:value={rtspConfig.saved_time_duration} min="1" class="w-full bg-white dark:bg-[#111418] border border-slate-200 dark:border-[#283039] rounded-lg px-4 py-2 text-sm text-slate-900 dark:text-white" />
+                            <label for="segmentDuration" class="text-sm font-medium text-slate-700 dark:text-slate-300">Segment Duration (sec)</label>
+                            <input id="segmentDuration" type="number" bind:value={rtspConfig.saved_time_duration} min="1" class="w-full bg-white dark:bg-[#111418] border border-slate-200 dark:border-[#283039] rounded-lg px-4 py-2 text-sm text-slate-900 dark:text-white" />
                         </div>
                     </div>
 
@@ -285,12 +290,12 @@
                         {#if rtspConfig.hls.enabled}
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                                 <div class="space-y-2">
-                                    <label class="text-xs font-medium text-slate-500">HLS Output Dir</label>
-                                    <input type="text" bind:value={rtspConfig.hls.output_directory} class="w-full bg-white dark:bg-[#111418] border border-slate-200 dark:border-[#283039] rounded px-3 py-1.5 text-sm" />
+                                    <label for="hlsOutputDir" class="text-xs font-medium text-slate-500">HLS Output Dir</label>
+                                    <input id="hlsOutputDir" type="text" bind:value={rtspConfig.hls.output_directory} class="w-full bg-white dark:bg-[#111418] border border-slate-200 dark:border-[#283039] rounded px-3 py-1.5 text-sm" />
                                 </div>
                                 <div class="space-y-2">
-                                    <label class="text-xs font-medium text-slate-500">Playlist Size</label>
-                                    <input type="number" bind:value={rtspConfig.hls.playlist_size} min="3" max="50" class="w-full bg-white dark:bg-[#111418] border border-slate-200 dark:border-[#283039] rounded px-3 py-1.5 text-sm" />
+                                    <label for="hlsPlaylistSize" class="text-xs font-medium text-slate-500">Playlist Size</label>
+                                    <input id="hlsPlaylistSize" type="number" bind:value={rtspConfig.hls.playlist_size} min="3" max="50" class="w-full bg-white dark:bg-[#111418] border border-slate-200 dark:border-[#283039] rounded px-3 py-1.5 text-sm" />
                                 </div>
                             </div>
                         {/if}

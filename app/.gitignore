@@ -44,3 +44,6 @@ data/
 
 reference/
 references/
+
+# Claude Code
+.claude/

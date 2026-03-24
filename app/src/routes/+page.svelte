@@ -1,51 +1,9 @@
 <script lang="ts">
   import { invoke } from '@tauri-apps/api/core';
   import { PageContent, StatCard, Panel, StatusBadge, ProgressBar } from '$lib/components/ui';
-
-  // Dashboard Overview - Tactical Command Style Redesign
+  import type { SystemMetrics, StreamStats, ThroughputHistory } from '$lib/types';
 
   let currentTime = $state(new Date());
-
-  // System metrics state
-  interface SystemMetrics {
-    cpu: { usagePercent: number; coreCount: number; frequencyMhz: number | null };
-    memory: { totalGb: number; usedGb: number; availableGb: number; usagePercent: number };
-    disk: { totalGb: number; usedGb: number; availableGb: number; usagePercent: number; readSpeedMbps: number | null; writeSpeedMbps: number | null };
-    uptimeSeconds: number;
-  }
-
-  interface StreamStatus {
-    id: string;
-    name: string;
-    status: string;
-    streamType: string;
-    codec: string | null;
-    resolution: string | null;
-    fps: number | null;
-    bitrateKbps: number | null;
-    durationSeconds: number | null;
-    latencyMs: number | null;
-  }
-
-  interface StreamStats {
-    activeCount: number;
-    totalCount: number;
-    avgLatencyMs: number;
-    totalBitrateKbps: number;
-    streams: StreamStatus[];
-  }
-
-  interface ThroughputPoint {
-    timestamp: number;
-    networkMbps: number;
-    fps: number;
-    cpuPercent: number;
-  }
-
-  interface ThroughputHistory {
-    points: ThroughputPoint[];
-    periodSeconds: number;
-  }
 
   let metrics = $state<SystemMetrics | null>(null);
   let streamStats = $state<StreamStats | null>(null);

@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { PageContent, Card } from '$lib/components/ui';
+
   const pages = [
     {
       name: "Dashboard",
@@ -70,41 +72,34 @@
   <title>Launcher | Media Core</title>
 </svelte:head>
 
-<div class="p-8 max-w-[1400px] mx-auto space-y-8">
+<PageContent>
   <div class="flex items-end justify-between gap-6 flex-wrap">
-    <div class="flex flex-col gap-2">
-      <h1 class="text-3xl font-bold text-slate-900 dark:text-white font-display">Launcher</h1>
-      <p class="text-slate-500 dark:text-slate-400">
-        Quick access to every workspace and tool.
-      </p>
+    <div class="flex flex-col gap-1">
+      <h1 class="text-xl font-bold text-slate-900 dark:text-white font-display">Launcher</h1>
+      <p class="text-xs text-slate-500 dark:text-slate-400">Quick access to every workspace and tool.</p>
     </div>
   </div>
 
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
     {#each pages as page}
-      <a
-        href={page.href}
-        class="group rounded-xl border border-slate-200 dark:border-[#283039] bg-white dark:bg-[#182129] p-5 shadow-sm hover:shadow-lg hover:border-[#137fec]/40 transition-all flex flex-col gap-4"
-      >
-        <div class="flex items-center justify-between">
-          <div class={`size-10 rounded-lg ${page.accent} flex items-center justify-center`}>
-            <span class="material-symbols-outlined text-[22px]">{page.icon}</span>
+      <a href={page.href} class="group">
+        <Card>
+          <div class="flex items-center justify-between">
+            <div class={`size-9 rounded-lg ${page.accent} flex items-center justify-center`}>
+              <span class="material-symbols-outlined text-[20px]">{page.icon}</span>
+            </div>
+            <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400 group-hover:text-[#137fec]">Open</span>
           </div>
-          <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300">
-            Open
-          </span>
-        </div>
-        <div class="flex flex-col gap-1">
-          <h3 class="text-lg font-bold font-display text-slate-900 dark:text-white">{page.name}</h3>
-          <p class="text-sm text-slate-500 dark:text-slate-400">{page.description}</p>
-        </div>
-        <div class="flex items-center justify-between text-xs font-mono text-slate-400">
-          <span>{page.href}</span>
-          <span class="material-symbols-outlined text-[18px] text-slate-400 group-hover:text-[#137fec]">
-            arrow_forward
-          </span>
-        </div>
+          <div class="flex flex-col gap-0.5 mt-3">
+            <h3 class="text-sm font-bold font-display text-slate-900 dark:text-white">{page.name}</h3>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">{page.description}</p>
+          </div>
+          <div class="flex items-center justify-between text-[10px] font-mono text-slate-400 mt-2">
+            <span>{page.href}</span>
+            <span class="material-symbols-outlined text-[16px] text-slate-400 group-hover:text-[#137fec]">arrow_forward</span>
+          </div>
+        </Card>
       </a>
     {/each}
   </div>
-</div>
+</PageContent>

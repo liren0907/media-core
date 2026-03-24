@@ -1,83 +1,47 @@
 <script lang="ts">
   import { invoke, convertFileSrc } from "@tauri-apps/api/core";
   import { open } from "@tauri-apps/plugin-dialog";
+  import { PageContent, Panel, StatCard } from '$lib/components/ui';
+  import type { MediaMetadata } from '$lib/types';
 
   let videoSrc = $state("");
   let currentFilePath = $state("");
   let isLoading = $state(false);
   let error = $state("");
 
-  // Metadata from pipeline
-  interface MediaMetadata {
-    filename: string;
-    filePath: string;
-    fileSize: number;
-    mimeType: string | null;
-    duration: number | null;
-    width: number | null;
-    height: number | null;
-    fps: number | null;
-    frameCount: number | null;
-    bitrate: number | null;
-    codec: string | null;
-    audioCodec: string | null;
-    audioSampleRate: number | null;
-    audioChannels: number | null;
-    createdAt: string | null;
-    modifiedAt: string | null;
-    thumbnail: string | null;
-  }
-
   let metadata = $state<MediaMetadata | null>(null);
 
   async function loadVideo() {
     try {
       error = "";
-      const filePath = await open({
-        filters: [{ name: "Video", extensions: ["mp4", "avi", "mkv", "mov", "webm"] }],
-      });
-
+      const filePath = await open({ filters: [{ name: "Video", extensions: ["mp4", "avi", "mkv", "mov", "webm"] }] });
       if (filePath) {
         currentFilePath = filePath as string;
         videoSrc = convertFileSrc(currentFilePath);
-        
-        // Fetch metadata using the pipeline
         isLoading = true;
         try {
-          metadata = await invoke("execute_metadata_pipeline", {
-            filePath: currentFilePath,
-            includeThumbnail: true,
-          });
+          metadata = await invoke("execute_metadata_pipeline", { filePath: currentFilePath, includeThumbnail: true });
         } catch (e) {
-          console.error("Failed to fetch metadata:", e);
           error = `Failed to load metadata: ${e}`;
           metadata = null;
         }
         isLoading = false;
       }
-    } catch (e) {
-      console.error("Error loading video:", e);
-      error = `Error loading video: ${e}`;
-    }
+    } catch (e) { error = `Error loading video: ${e}`; }
   }
 
-  function formatDuration(seconds: number | null): string {
-    if (seconds === null || !Number.isFinite(seconds)) return "N/A";
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = Math.round(seconds % 60);
-    if (hours > 0) {
-      return `${hours}h ${minutes}m ${secs}s`;
-    }
-    return `${minutes}m ${secs}s`;
+  function formatDuration(s: number | null): string {
+    if (s === null || !Number.isFinite(s)) return "N/A";
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = Math.round(s % 60);
+    return h > 0 ? `${h}h ${m}m ${sec}s` : `${m}m ${sec}s`;
   }
 
-  function formatFileSize(bytes: number | null): string {
-    if (bytes === null || !Number.isFinite(bytes)) return "N/A";
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-    return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+  function formatFileSize(b: number | null): string {
+    if (b === null || !Number.isFinite(b)) return "N/A";
+    if (b < 1024) return `${b} B`;
+    if (b < 1048576) return `${(b / 1024).toFixed(1)} KB`;
+    if (b < 1073741824) return `${(b / 1048576).toFixed(1)} MB`;
+    return `${(b / 1073741824).toFixed(2)} GB`;
   }
 
   function formatBitrate(bps: number | null): string {
@@ -86,144 +50,98 @@
     if (bps < 1000000) return `${(bps / 1000).toFixed(0)} Kbps`;
     return `${(bps / 1000000).toFixed(1)} Mbps`;
   }
-
-  let primaryInfo = $derived(metadata ? [
-    { label: "Duration", value: formatDuration(metadata.duration) },
-    { label: "Resolution", value: metadata.width && metadata.height ? `${metadata.width}x${metadata.height}` : "N/A" },
-    { label: "Frame Rate", value: metadata.fps ? `${metadata.fps.toFixed(2)} FPS` : "N/A" },
-    { label: "Total Frames", value: metadata.frameCount?.toLocaleString() ?? "N/A" },
-  ] : []);
-
-  let technicalInfo = $derived(metadata ? [
-    { label: "Video Codec", value: metadata.codec ?? "N/A" },
-    { label: "Audio Codec", value: metadata.audioCodec ?? "N/A" },
-    { label: "Bitrate", value: formatBitrate(metadata.bitrate) },
-    { label: "File Size", value: formatFileSize(metadata.fileSize) },
-    { label: "MIME Type", value: metadata.mimeType ?? "N/A" },
-    { label: "Audio Sample Rate", value: metadata.audioSampleRate ? `${metadata.audioSampleRate} Hz` : "N/A" },
-  ] : []);
 </script>
 
 <svelte:head>
   <title>Video Viewer</title>
 </svelte:head>
 
-<div class="container mx-auto px-4 py-8 max-w-6xl">
-    <div class="text-center mb-8">
-      <h1 class="text-3xl font-bold mb-2">Local Video Player</h1>
-      <p class="text-base-content/70">Analyze and play local video files with full metadata extraction</p>
-    </div>
-
-    <!-- Main Player Card -->
-    <div class="card bg-base-100 shadow-xl overflow-hidden mb-8">
-      <div class="card-body p-0">
-        <!-- Toolbar -->
-        <div class="p-4 bg-base-200 border-b border-base-300 flex justify-between items-center">
-             <div class="flex items-center gap-3">
-                <h2 class="font-bold text-lg">Player</h2>
+<PageContent>
+    <!-- Player -->
+    <Panel title="Player" icon="play_circle">
+        {#snippet actions()}
+            <div class="flex items-center gap-2">
                 {#if metadata}
-                    <span class="badge badge-ghost text-xs">{metadata.filename}</span>
+                    <span class="text-[10px] font-mono text-slate-500 truncate max-w-[200px]">{metadata.filename}</span>
                 {/if}
-             </div>
-             <button onclick={loadVideo} class="btn btn-primary btn-sm" disabled={isLoading}>
-                {#if isLoading}
-                    <span class="loading loading-spinner loading-xs"></span>
-                    Loading...
-                {:else}
+                <button onclick={loadVideo} disabled={isLoading} class="flex items-center gap-1 px-2 py-1 bg-[#137fec] hover:bg-blue-600 text-white rounded text-[10px] font-bold transition-colors disabled:opacity-50">
+                    {#if isLoading}<span class="material-symbols-outlined animate-spin text-[14px]">sync</span>{/if}
                     Open File
-                {/if}
-             </button>
-        </div>
-
-        <!-- Video Area -->
-        <div class="bg-black aspect-video flex items-center justify-center relative">
-             {#if videoSrc}
-                <video src={videoSrc} controls class="w-full h-full object-contain">
-                    <track kind="captions" />
-                </video>
-             {:else}
-                <div class="text-center text-neutral-content/50">
-                    <div class="text-6xl mb-4">▶</div>
-                    <p>No video loaded</p>
-                    <p class="text-sm mt-2">Click "Open File" to select a video</p>
-                </div>
-             {/if}
-        </div>
-      </div>
-    </div>
-
-    <!-- Error Display -->
-    {#if error}
-      <div class="alert alert-error mb-8">
-        <span>{error}</span>
-      </div>
-    {/if}
-
-    <!-- Metadata Display -->
-    {#if metadata}
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Primary Info Card -->
-        <div class="lg:col-span-2 card bg-base-100 shadow-xl">
-          <div class="card-body">
-            <h2 class="card-title text-sm opacity-70 mb-4">Video Information</h2>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {#each primaryInfo as item}
-                    <div class="flex flex-col p-4 bg-base-200 rounded-box text-center">
-                        <span class="text-xs uppercase tracking-wider opacity-60 mb-2">{item.label}</span>
-                        <span class="font-bold text-lg truncate" title={item.value}>{item.value}</span>
-                    </div>
-                {/each}
+                </button>
             </div>
-            
-            <div class="divider my-4"></div>
-            
-            <h3 class="text-sm opacity-70 mb-4">Technical Details</h3>
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {#each technicalInfo as item}
-                    <div class="flex justify-between items-center p-3 bg-base-200 rounded-lg">
-                        <span class="text-xs uppercase tracking-wider opacity-60">{item.label}</span>
-                        <span class="font-mono text-sm">{item.value}</span>
-                    </div>
-                {/each}
-            </div>
-          </div>
-        </div>
-
-        <!-- Thumbnail & File Info Card -->
-        <div class="card bg-base-100 shadow-xl">
-          <div class="card-body">
-            <h2 class="card-title text-sm opacity-70 mb-4">Preview</h2>
-            
-            {#if metadata.thumbnail}
-              <div class="aspect-video bg-base-200 rounded-lg overflow-hidden mb-4">
-                <img src="data:image/jpeg;base64,{metadata.thumbnail}" alt="Video thumbnail" class="w-full h-full object-cover" />
-              </div>
+        {/snippet}
+        <div class="bg-black aspect-video flex items-center justify-center">
+            {#if videoSrc}
+                <video src={videoSrc} controls class="w-full h-full object-contain"><track kind="captions" /></video>
             {:else}
-              <div class="aspect-video bg-base-200 rounded-lg flex items-center justify-center mb-4">
-                <span class="opacity-50">No thumbnail</span>
-              </div>
+                <div class="text-center text-slate-500">
+                    <span class="material-symbols-outlined text-4xl mb-2">play_circle</span>
+                    <p class="text-xs">Click "Open File" to select a video</p>
+                </div>
             {/if}
-
-            <div class="space-y-2 text-sm">
-              <div class="flex justify-between">
-                <span class="opacity-60">Filename</span>
-                <span class="font-mono truncate max-w-[180px]" title={metadata.filename}>{metadata.filename}</span>
-              </div>
-              {#if metadata.createdAt}
-                <div class="flex justify-between">
-                  <span class="opacity-60">Created</span>
-                  <span class="font-mono">{new Date(metadata.createdAt).toLocaleDateString()}</span>
-                </div>
-              {/if}
-              {#if metadata.modifiedAt}
-                <div class="flex justify-between">
-                  <span class="opacity-60">Modified</span>
-                  <span class="font-mono">{new Date(metadata.modifiedAt).toLocaleDateString()}</span>
-                </div>
-              {/if}
-            </div>
-          </div>
         </div>
-      </div>
+    </Panel>
+
+    {#if error}
+        <div class="p-2 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 text-xs">{error}</div>
     {/if}
-</div>
+
+    {#if metadata}
+        <!-- Primary Stats -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <StatCard label="Duration" icon="schedule" iconColor="text-[#137fec]" value={formatDuration(metadata.duration)} />
+            <StatCard label="Resolution" icon="aspect_ratio" iconColor="text-purple-500" value={metadata.width && metadata.height ? `${metadata.width}x${metadata.height}` : 'N/A'} />
+            <StatCard label="Frame Rate" icon="speed" iconColor="text-orange-500" value={metadata.fps ? `${metadata.fps.toFixed(1)} FPS` : 'N/A'} />
+            <StatCard label="Frames" icon="filter_frames" iconColor="text-green-500" value={metadata.frameCount?.toLocaleString() ?? 'N/A'} />
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+            <!-- Technical Details -->
+            <div class="lg:col-span-2">
+                <Panel title="Technical Details" icon="info">
+                    <div class="p-3">
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                            {#each [
+                                { label: "Video Codec", value: metadata.codec ?? "N/A" },
+                                { label: "Audio Codec", value: metadata.audioCodec ?? "N/A" },
+                                { label: "Bitrate", value: formatBitrate(metadata.bitrate) },
+                                { label: "File Size", value: formatFileSize(metadata.fileSize) },
+                                { label: "MIME Type", value: metadata.mimeType ?? "N/A" },
+                                { label: "Sample Rate", value: metadata.audioSampleRate ? `${metadata.audioSampleRate} Hz` : "N/A" },
+                            ] as item}
+                                <div class="flex justify-between items-center p-2 rounded bg-slate-50 dark:bg-[#1f2937]/50 border border-slate-100 dark:border-[#2a3441]">
+                                    <span class="text-[10px] uppercase tracking-wider text-slate-500">{item.label}</span>
+                                    <span class="font-mono text-xs text-slate-900 dark:text-white">{item.value}</span>
+                                </div>
+                            {/each}
+                        </div>
+                    </div>
+                </Panel>
+            </div>
+
+            <!-- Thumbnail & File Info -->
+            <Panel title="Preview" icon="image">
+                <div class="p-3">
+                    {#if metadata.thumbnail}
+                        <div class="aspect-video bg-black rounded overflow-hidden mb-3">
+                            <img src="data:image/jpeg;base64,{metadata.thumbnail}" alt="Thumbnail" class="w-full h-full object-cover" />
+                        </div>
+                    {:else}
+                        <div class="aspect-video bg-slate-100 dark:bg-[#1f2937] rounded flex items-center justify-center mb-3">
+                            <span class="text-xs text-slate-500">No thumbnail</span>
+                        </div>
+                    {/if}
+                    <div class="flex flex-col gap-1.5 text-xs font-mono">
+                        <div class="flex justify-between"><span class="text-slate-500">File</span><span class="truncate max-w-[140px]" title={metadata.filename}>{metadata.filename}</span></div>
+                        {#if metadata.createdAt}
+                            <div class="flex justify-between"><span class="text-slate-500">Created</span><span>{new Date(metadata.createdAt).toLocaleDateString()}</span></div>
+                        {/if}
+                        {#if metadata.modifiedAt}
+                            <div class="flex justify-between"><span class="text-slate-500">Modified</span><span>{new Date(metadata.modifiedAt).toLocaleDateString()}</span></div>
+                        {/if}
+                    </div>
+                </div>
+            </Panel>
+        </div>
+    {/if}
+</PageContent>

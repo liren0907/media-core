@@ -33,7 +33,7 @@ tempfile = "3.13.0"
 tauri-plugin-dialog = "2.2.0"
 chrono = "0.4.38"
 lazy_static = "1.4.0"
-media_core = { path = "crates/media_core" }
+media_core = { path = "crates/media-core" }
 annotation = { path = "crates/annotation" }
 thiserror = "1.0.63"
 log = "0.4.22"

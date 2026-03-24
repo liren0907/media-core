@@ -29,7 +29,7 @@ pnpm-debug.log*
 **/target/
 **/.git
 # Ignore nested git directory to prevent watcher loops
-src-tauri/crates/media_core/.git/
+src-tauri/crates/media-core/.git/
 
 
 # Generated media / temp

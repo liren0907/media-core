@@ -2,10 +2,10 @@
   import { invoke, convertFileSrc } from "@tauri-apps/api/core";
   import { open } from "@tauri-apps/plugin-dialog";
 
-  let videoSrc = "";
-  let currentFilePath = "";
-  let isLoading = false;
-  let error = "";
+  let videoSrc = $state("");
+  let currentFilePath = $state("");
+  let isLoading = $state(false);
+  let error = $state("");
 
   // Metadata from pipeline
   interface MediaMetadata {
@@ -28,7 +28,7 @@
     thumbnail: string | null;
   }
 
-  let metadata: MediaMetadata | null = null;
+  let metadata = $state<MediaMetadata | null>(null);
 
   async function loadVideo() {
     try {
@@ -87,21 +87,21 @@
     return `${(bps / 1000000).toFixed(1)} Mbps`;
   }
 
-  $: primaryInfo = metadata ? [
+  let primaryInfo = $derived(metadata ? [
     { label: "Duration", value: formatDuration(metadata.duration) },
     { label: "Resolution", value: metadata.width && metadata.height ? `${metadata.width}x${metadata.height}` : "N/A" },
     { label: "Frame Rate", value: metadata.fps ? `${metadata.fps.toFixed(2)} FPS` : "N/A" },
     { label: "Total Frames", value: metadata.frameCount?.toLocaleString() ?? "N/A" },
-  ] : [];
+  ] : []);
 
-  $: technicalInfo = metadata ? [
+  let technicalInfo = $derived(metadata ? [
     { label: "Video Codec", value: metadata.codec ?? "N/A" },
     { label: "Audio Codec", value: metadata.audioCodec ?? "N/A" },
     { label: "Bitrate", value: formatBitrate(metadata.bitrate) },
     { label: "File Size", value: formatFileSize(metadata.fileSize) },
     { label: "MIME Type", value: metadata.mimeType ?? "N/A" },
     { label: "Audio Sample Rate", value: metadata.audioSampleRate ? `${metadata.audioSampleRate} Hz` : "N/A" },
-  ] : [];
+  ] : []);
 </script>
 
 <svelte:head>
@@ -125,7 +125,7 @@
                     <span class="badge badge-ghost text-xs">{metadata.filename}</span>
                 {/if}
              </div>
-             <button on:click={loadVideo} class="btn btn-primary btn-sm" disabled={isLoading}>
+             <button onclick={loadVideo} class="btn btn-primary btn-sm" disabled={isLoading}>
                 {#if isLoading}
                     <span class="loading loading-spinner loading-xs"></span>
                     Loading...

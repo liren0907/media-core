@@ -3,18 +3,18 @@
   import { open } from '@tauri-apps/plugin-dialog';
 
   // State
-  let videoSrc = "";
-  let videoPath = "";
-  let annotationPath = "";
-  let outputPath = "";
-  let labels: string[] = [];
-  let selectedLabels: string[] = [];
-  let totalFrames = 0;
-  let totalObjects = 0;
-  let isProcessing = false;
-  let errorMessage = "";
-  let annotationResponse = null;
-  let videoResult = "";
+  let videoSrc = $state("");
+  let videoPath = $state("");
+  let annotationPath = $state("");
+  let outputPath = $state("");
+  let labels: string[] = $state([]);
+  let selectedLabels: string[] = $state([]);
+  let totalFrames = $state(0);
+  let totalObjects = $state(0);
+  let isProcessing = $state(false);
+  let errorMessage = $state("");
+  let annotationResponse: any = $state(null);
+  let videoResult: any = $state("");
 
   function formatVideoInfo(jsonStr: string) {
     try {
@@ -187,7 +187,7 @@
       <div class="card bg-base-100 shadow-xl">
         <div class="card-body">
             <h2 class="card-title text-sm">Input Source</h2>
-            <button class="btn btn-primary w-full" on:click={openVideoFile}>
+            <button class="btn btn-primary w-full" onclick={openVideoFile}>
                 Open Video File
             </button>
             <div class="text-xs truncate opacity-70 mt-2">
@@ -200,7 +200,7 @@
       <div class="card bg-base-100 shadow-xl">
         <div class="card-body">
             <h2 class="card-title text-sm">Annotation Data</h2>
-            <button class="btn btn-secondary w-full" on:click={openAnnotationFile}>
+            <button class="btn btn-secondary w-full" onclick={openAnnotationFile}>
                 Open JSON File
             </button>
              <div class="text-xs truncate opacity-70 mt-2">
@@ -236,8 +236,8 @@
           <div class="flex justify-between items-center mb-4">
             <h2 class="card-title">Select Labels</h2>
             <div class="join">
-              <button class="btn btn-xs btn-outline join-item" on:click={selectAllLabels}>All</button>
-              <button class="btn btn-xs btn-outline join-item" on:click={deselectAllLabels}>None</button>
+              <button class="btn btn-xs btn-outline join-item" onclick={selectAllLabels}>All</button>
+              <button class="btn btn-xs btn-outline join-item" onclick={deselectAllLabels}>None</button>
             </div>
           </div>
           
@@ -245,7 +245,7 @@
             {#each labels as label}
               <button
                 class="btn btn-sm {selectedLabels.includes(label) ? 'btn-primary' : 'btn-outline'}"
-                on:click={() => toggleLabel(label)}
+                onclick={() => toggleLabel(label)}
               >
                 {label}
               </button>
@@ -261,7 +261,7 @@
     <div class="flex justify-center mb-8">
       <button
         class="btn btn-lg btn-primary w-full max-w-md"
-        on:click={startAnnotation}
+        onclick={startAnnotation}
         disabled={isProcessing}
       >
         {#if isProcessing}

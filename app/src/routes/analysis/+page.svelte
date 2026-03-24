@@ -4,27 +4,27 @@
 
   // Analysis mode
   type AnalysisMode = 'motion' | 'similarity' | 'compare';
-  let activeMode: AnalysisMode = 'motion';
+  let activeMode: AnalysisMode = $state('motion');
 
   // Motion detection state
-  let motionVideoPath = "";
-  let motionOutputDir = "";
-  let motionAlgorithm = "frame_diff";
-  let motionThreshold = 25.0;
-  let motionMinArea = 500;
+  let motionVideoPath = $state("");
+  let motionOutputDir = $state("");
+  let motionAlgorithm = $state("frame_diff");
+  let motionThreshold = $state(25.0);
+  let motionMinArea = $state(500);
 
   // Similarity grouping state
-  let similarityInputDir = "";
-  let similarityOutputDir = "";
-  let similarityMethod = "phash";
-  let similarityThreshold = 0.95;
-  let similarityMinGroupSize = 2;
+  let similarityInputDir = $state("");
+  let similarityOutputDir = $state("");
+  let similarityMethod = $state("phash");
+  let similarityThreshold = $state(0.95);
+  let similarityMinGroupSize = $state(2);
 
   // Image comparison state
-  let compareImage1 = "";
-  let compareImage2 = "";
-  let compareMethod = "phash";
-  let compareThreshold = 0.95;
+  let compareImage1 = $state("");
+  let compareImage2 = $state("");
+  let compareMethod = $state("phash");
+  let compareThreshold = $state(0.95);
 
   // Results state
   interface MotionEvent {
@@ -51,9 +51,9 @@
     imageComparison: ImageComparisonResult | null;
   }
 
-  let result: AnalysisResult | null = null;
-  let isProcessing = false;
-  let error = "";
+  let result: AnalysisResult | null = $state(null);
+  let isProcessing = $state(false);
+  let error = $state("");
 
   // File selection handlers
   async function selectVideoFile() {
@@ -194,21 +194,21 @@
     <!-- Mode Tabs -->
     <div class="flex gap-2">
         <button 
-            on:click={() => { activeMode = 'motion'; result = null; error = ''; }}
+            onclick={() => { activeMode = 'motion'; result = null; error = ''; }}
             class="px-4 py-2 rounded-lg font-medium text-sm transition-colors {activeMode === 'motion' ? 'bg-[#137fec] text-white' : 'bg-white dark:bg-[#182129] border border-slate-200 dark:border-[#283039] text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#1f2937]'}"
         >
             <span class="material-symbols-outlined text-sm align-middle mr-1">motion_photos_on</span>
             Motion Detection
         </button>
         <button 
-            on:click={() => { activeMode = 'similarity'; result = null; error = ''; }}
+            onclick={() => { activeMode = 'similarity'; result = null; error = ''; }}
             class="px-4 py-2 rounded-lg font-medium text-sm transition-colors {activeMode === 'similarity' ? 'bg-[#137fec] text-white' : 'bg-white dark:bg-[#182129] border border-slate-200 dark:border-[#283039] text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#1f2937]'}"
         >
             <span class="material-symbols-outlined text-sm align-middle mr-1">group_work</span>
             Similarity Grouping
         </button>
         <button 
-            on:click={() => { activeMode = 'compare'; result = null; error = ''; }}
+            onclick={() => { activeMode = 'compare'; result = null; error = ''; }}
             class="px-4 py-2 rounded-lg font-medium text-sm transition-colors {activeMode === 'compare' ? 'bg-[#137fec] text-white' : 'bg-white dark:bg-[#182129] border border-slate-200 dark:border-[#283039] text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#1f2937]'}"
         >
             <span class="material-symbols-outlined text-sm align-middle mr-1">compare</span>
@@ -232,7 +232,7 @@
                             <input type="text" readonly value={motionVideoPath ? getFileName(motionVideoPath) : ''} 
                                 class="flex-1 bg-white dark:bg-[#111418] border border-slate-200 dark:border-[#283039] rounded-lg px-3 py-2 text-sm" 
                                 placeholder="Select video..." />
-                            <button on:click={selectVideoFile} class="px-3 py-2 bg-slate-100 dark:bg-[#283039] rounded-lg text-sm font-medium">Browse</button>
+                            <button onclick={selectVideoFile} class="px-3 py-2 bg-slate-100 dark:bg-[#283039] rounded-lg text-sm font-medium">Browse</button>
                         </div>
                     </div>
 
@@ -266,7 +266,7 @@
                             <input type="text" readonly value={similarityInputDir ? getFileName(similarityInputDir) : ''} 
                                 class="flex-1 bg-white dark:bg-[#111418] border border-slate-200 dark:border-[#283039] rounded-lg px-3 py-2 text-sm" 
                                 placeholder="Select folder..." />
-                            <button on:click={selectSimilarityInputDir} class="px-3 py-2 bg-slate-100 dark:bg-[#283039] rounded-lg text-sm font-medium">Browse</button>
+                            <button onclick={selectSimilarityInputDir} class="px-3 py-2 bg-slate-100 dark:bg-[#283039] rounded-lg text-sm font-medium">Browse</button>
                         </div>
                     </div>
 
@@ -276,7 +276,7 @@
                             <input type="text" readonly value={similarityOutputDir ? getFileName(similarityOutputDir) : ''} 
                                 class="flex-1 bg-white dark:bg-[#111418] border border-slate-200 dark:border-[#283039] rounded-lg px-3 py-2 text-sm" 
                                 placeholder="Select folder..." />
-                            <button on:click={selectSimilarityOutputDir} class="px-3 py-2 bg-slate-100 dark:bg-[#283039] rounded-lg text-sm font-medium">Browse</button>
+                            <button onclick={selectSimilarityOutputDir} class="px-3 py-2 bg-slate-100 dark:bg-[#283039] rounded-lg text-sm font-medium">Browse</button>
                         </div>
                     </div>
 
@@ -303,7 +303,7 @@
                             <input type="text" readonly value={compareImage1 ? getFileName(compareImage1) : ''} 
                                 class="flex-1 bg-white dark:bg-[#111418] border border-slate-200 dark:border-[#283039] rounded-lg px-3 py-2 text-sm" 
                                 placeholder="Select image..." />
-                            <button on:click={selectCompareImage1} class="px-3 py-2 bg-slate-100 dark:bg-[#283039] rounded-lg text-sm font-medium">Browse</button>
+                            <button onclick={selectCompareImage1} class="px-3 py-2 bg-slate-100 dark:bg-[#283039] rounded-lg text-sm font-medium">Browse</button>
                         </div>
                     </div>
 
@@ -313,7 +313,7 @@
                             <input type="text" readonly value={compareImage2 ? getFileName(compareImage2) : ''} 
                                 class="flex-1 bg-white dark:bg-[#111418] border border-slate-200 dark:border-[#283039] rounded-lg px-3 py-2 text-sm" 
                                 placeholder="Select image..." />
-                            <button on:click={selectCompareImage2} class="px-3 py-2 bg-slate-100 dark:bg-[#283039] rounded-lg text-sm font-medium">Browse</button>
+                            <button onclick={selectCompareImage2} class="px-3 py-2 bg-slate-100 dark:bg-[#283039] rounded-lg text-sm font-medium">Browse</button>
                         </div>
                     </div>
 
@@ -337,7 +337,7 @@
             <!-- Action Button -->
             <div class="p-6 pt-0">
                 <button 
-                    on:click={() => {
+                    onclick={() => {
                         if (activeMode === 'motion') runMotionDetection();
                         else if (activeMode === 'similarity') runSimilarityGrouping();
                         else runImageComparison();

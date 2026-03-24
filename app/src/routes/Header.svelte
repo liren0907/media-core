@@ -1,5 +1,5 @@
 <script>
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 </script>
 
 <header>
@@ -15,25 +15,25 @@
 				<div class="hidden sm:flex sm:items-center sm:space-x-4">
 					<a
 						href="/"
-						class="nav-link {$page.url.pathname === '/' ? 'active' : ''}"
+						class="nav-link {page.url.pathname === '/' ? 'active' : ''}"
 					>
 						Home
 					</a>
 					<a
 						href="/viewVideo"
-						class="nav-link {$page.url.pathname.startsWith('/viewVideo') ? 'active' : ''}"
+						class="nav-link {page.url.pathname.startsWith('/viewVideo') ? 'active' : ''}"
 					>
 						Video Viewer
 					</a>
 					<a
 						href="/stream"
-						class="nav-link {$page.url.pathname.startsWith('/stream') ? 'active' : ''}"
+						class="nav-link {page.url.pathname.startsWith('/stream') ? 'active' : ''}"
 					>
 						Stream
 					</a>
 					<a
 						href="/hlsViewer"
-						class="nav-link {$page.url.pathname.startsWith('/hlsViewer') ? 'active' : ''}"
+						class="nav-link {page.url.pathname.startsWith('/hlsViewer') ? 'active' : ''}"
 					>
 						HLS Viewer
 					</a>
@@ -46,25 +46,25 @@
 			<div class="flex flex-wrap gap-2 justify-center">
 				<a
 					href="/"
-					class="nav-link-mobile {$page.url.pathname === '/' ? 'active' : ''}"
+					class="nav-link-mobile {page.url.pathname === '/' ? 'active' : ''}"
 				>
 					Home
 				</a>
 				<a
 					href="/viewVideo"
-					class="nav-link-mobile {$page.url.pathname.startsWith('/viewVideo') ? 'active' : ''}"
+					class="nav-link-mobile {page.url.pathname.startsWith('/viewVideo') ? 'active' : ''}"
 				>
 					Video Viewer
 				</a>
 				<a
 					href="/stream"
-					class="nav-link-mobile {$page.url.pathname.startsWith('/stream') ? 'active' : ''}"
+					class="nav-link-mobile {page.url.pathname.startsWith('/stream') ? 'active' : ''}"
 				>
 					Stream
 				</a>
 				<a
 					href="/hlsViewer"
-					class="nav-link-mobile {$page.url.pathname.startsWith('/hlsViewer') ? 'active' : ''}"
+					class="nav-link-mobile {page.url.pathname.startsWith('/hlsViewer') ? 'active' : ''}"
 				>
 					HLS Viewer
 				</a>

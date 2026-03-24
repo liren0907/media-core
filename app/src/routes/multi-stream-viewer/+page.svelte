@@ -1,8 +1,7 @@
 <script lang="ts">
-  import { onMount, onDestroy } from "svelte";
   import { invoke, convertFileSrc } from "@tauri-apps/api/core";
   import Hls from "hls.js";
-  import { appConfig, getDefaultRtspUrl } from "$lib/config";
+  import { appConfig, getDefaultRtspUrl } from "$lib/config.svelte";
 
   // Stream stats from backend
   interface StreamStatus {
@@ -26,18 +25,17 @@
     streams: StreamStatus[];
   }
 
-  let streamStats: StreamStats | null = null;
-  let statsInterval: ReturnType<typeof setInterval>;
+  let streamStats: StreamStats | null = $state(null);
 
-  let urlsInput = "";
-  let streams: { url: string; hls: Hls | null; videoElement: HTMLVideoElement; status: string }[] = [];
-  let status = "Enter RTSP URLs and click 'Start Streams' to begin.";
-  let isLoading = false;
+  let urlsInput = $state("");
+  let streams: { url: string; hls: Hls | null; videoElement: HTMLVideoElement; status: string }[] = $state([]);
+  let status = $state("Enter RTSP URLs and click 'Start Streams' to begin.");
+  let isLoading = $state(false);
 
   // Layout options
   type LayoutMode = 'grid' | '1+3' | '2x2' | 'focus';
-  let layoutMode: LayoutMode = 'grid';
-  let focusedStreamIndex = 0;
+  let layoutMode: LayoutMode = $state('grid');
+  let focusedStreamIndex = $state(0);
 
   async function fetchStreamStats() {
     try {
@@ -133,24 +131,23 @@
     }
   }
 
-  onMount(() => {
-    // Initialize with default RTSP URL from config
+  $effect(() => {
     const defaultUrl = getDefaultRtspUrl();
     urlsInput = `${defaultUrl}\n${defaultUrl.replace('/mystream', '/mystream2')}`;
-    
+
     fetchStreamStats();
-    statsInterval = setInterval(fetchStreamStats, 5000);
+    const statsInterval = setInterval(fetchStreamStats, 5000);
+
+    return () => {
+      streams.forEach(s => s.hls?.destroy());
+      clearInterval(statsInterval);
+    };
   });
 
-  onDestroy(() => {
-    streams.forEach(s => s.hls?.destroy());
-    if (statsInterval) clearInterval(statsInterval);
-  });
-
-  $: activeStreams = streams.filter(s => s.status === 'active').length;
-  $: gridCols = streams.length <= 2 ? 'grid-cols-1 sm:grid-cols-2' : 
-                streams.length <= 4 ? 'grid-cols-1 sm:grid-cols-2' : 
-                'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3';
+  let activeStreams = $derived(streams.filter(s => s.status === 'active').length);
+  let gridCols = $derived(streams.length <= 2 ? 'grid-cols-1 sm:grid-cols-2' :
+                streams.length <= 4 ? 'grid-cols-1 sm:grid-cols-2' :
+                'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3');
 </script>
 
 <svelte:head>
@@ -168,21 +165,21 @@
             <!-- Layout Buttons -->
             <div class="flex bg-white dark:bg-[#182129] border border-slate-200 dark:border-[#283039] rounded-lg p-1">
                 <button 
-                    on:click={() => layoutMode = 'grid'}
+                    onclick={() => layoutMode = 'grid'}
                     class="p-2 rounded transition-colors {layoutMode === 'grid' ? 'bg-[#137fec] text-white' : 'text-slate-500 hover:text-slate-700 dark:hover:text-white'}"
                     title="Grid View"
                 >
                     <span class="material-symbols-outlined text-sm">grid_view</span>
                 </button>
                 <button 
-                    on:click={() => layoutMode = '2x2'}
+                    onclick={() => layoutMode = '2x2'}
                     class="p-2 rounded transition-colors {layoutMode === '2x2' ? 'bg-[#137fec] text-white' : 'text-slate-500 hover:text-slate-700 dark:hover:text-white'}"
                     title="2x2 View"
                 >
                     <span class="material-symbols-outlined text-sm">view_module</span>
                 </button>
                 <button 
-                    on:click={() => layoutMode = 'focus'}
+                    onclick={() => layoutMode = 'focus'}
                     class="p-2 rounded transition-colors {layoutMode === 'focus' ? 'bg-[#137fec] text-white' : 'text-slate-500 hover:text-slate-700 dark:hover:text-white'}"
                     title="Focus View"
                 >
@@ -218,7 +215,7 @@
             <h3 class="text-sm font-bold text-slate-900 dark:text-white font-display">Stream Configuration</h3>
             <button 
                 class="flex items-center gap-2 px-4 py-2 bg-[#137fec] hover:bg-blue-600 text-white rounded-lg font-medium text-sm transition-colors disabled:opacity-50" 
-                on:click={startAllStreams} 
+                onclick={startAllStreams} 
                 disabled={isLoading}
             >
                 {#if isLoading}
@@ -279,7 +276,7 @@
                 <div class="col-span-1 flex flex-col gap-2 overflow-y-auto max-h-[600px]">
                     {#each streams as stream, i}
                         <button 
-                            on:click={() => setFocusedStream(i)}
+                            onclick={() => setFocusedStream(i)}
                             class="rounded-lg overflow-hidden border-2 transition-colors {i === focusedStreamIndex ? 'border-[#137fec]' : 'border-transparent hover:border-slate-500'}"
                         >
                             <div class="aspect-video bg-black relative">
@@ -308,8 +305,8 @@
                 {#each streams as stream, i (stream.url)}
                     <div 
                         class="rounded-xl bg-black border border-slate-200 dark:border-[#283039] overflow-hidden shadow-lg group cursor-pointer"
-                        on:click={() => setFocusedStream(i)}
-                        on:keydown={(e) => e.key === 'Enter' && setFocusedStream(i)}
+                        onclick={() => setFocusedStream(i)}
+                        onkeydown={(e) => e.key === 'Enter' && setFocusedStream(i)}
                         role="button"
                         tabindex="0"
                     >

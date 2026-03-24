@@ -1,24 +1,22 @@
 <script lang="ts">
-  import { onMount, onDestroy } from "svelte";
   import { invoke } from "@tauri-apps/api/core";
-  import { appConfig, getPlaylistUrl, getHlsOutputDir } from "$lib/config";
+  import { appConfig, getPlaylistUrl, getHlsOutputDir } from "$lib/config.svelte";
 
   let videoElement: HTMLVideoElement;
-  let hlsStatus = {
+  let hlsStatus = $state({
     status: "inactive",
     playlist_exists: false,
     segment_count: 0,
     playlist_path: "",
-  };
-  let playlistUrl = "";
-  let hlsOutputDir = "";
-  let isLoading = false;
-  let error = "";
-  let refreshInterval: ReturnType<typeof setInterval>;
-  let statsInterval: ReturnType<typeof setInterval>;
+  });
+  let playlistUrl = $state("");
+  let hlsOutputDir = $state("");
+  let isLoading = $state(false);
+  let error = $state("");
 
-  let Hls: any = null;
-  let hls: any = null;
+  let statsInterval: ReturnType<typeof setInterval>;
+  let Hls: any = $state(null);
+  let hls: any = $state(null);
 
   // Stream quality metrics from HLS.js
   interface StreamQuality {
@@ -44,34 +42,34 @@
     maxLatency: number;
   }
 
-  let streamQuality: StreamQuality | null = null;
-  let bufferHealth: BufferHealth | null = null;
-  let latencyMetrics: LatencyMetrics | null = null;
-  let droppedFrames = 0;
-  let totalFrames = 0;
-  let bandwidth = 0;
-  let isPlaying = false;
+  let streamQuality: StreamQuality | null = $state(null);
+  let bufferHealth: BufferHealth | null = $state(null);
+  let latencyMetrics: LatencyMetrics | null = $state(null);
+  let droppedFrames = $state(0);
+  let totalFrames = $state(0);
+  let bandwidth = $state(0);
+  let isPlaying = $state(false);
 
-  onMount(async () => {
-    // Initialize from config
+  $effect(() => {
     playlistUrl = getPlaylistUrl('stream_0');
     hlsOutputDir = getHlsOutputDir();
-    
-    await loadHlsJS();
-    refreshInterval = setInterval(checkHlsStatus, 2000);
-    await checkHlsStatus();
+
+    loadHlsJS();
+    const refreshInterval = setInterval(checkHlsStatus, 2000);
+    checkHlsStatus();
+
+    return () => {
+      clearInterval(refreshInterval);
+      if (statsInterval) clearInterval(statsInterval);
+      if (hls) hls.destroy();
+    };
   });
-  
+
   // Update when config changes
-  $: if ($appConfig) {
+  $effect(() => {
+    const _ = appConfig.current;
     playlistUrl = getPlaylistUrl('stream_0');
     hlsOutputDir = getHlsOutputDir();
-  }
-
-  onDestroy(() => {
-    if (refreshInterval) clearInterval(refreshInterval);
-    if (statsInterval) clearInterval(statsInterval);
-    if (hls) hls.destroy();
   });
 
   async function loadHlsJS() {
@@ -256,7 +254,7 @@
     }
   }
 
-  $: dropRate = totalFrames > 0 ? ((droppedFrames / totalFrames) * 100).toFixed(2) : "0.00";
+  let dropRate = $derived(totalFrames > 0 ? ((droppedFrames / totalFrames) * 100).toFixed(2) : "0.00");
 </script>
 
 <svelte:head>
@@ -367,9 +365,9 @@
               </svg>
             </label>
             <ul tabindex="0" class="dropdown-content z-[1] menu p-1 shadow bg-base-200 rounded-box w-32">
-              <li><button on:click={() => setQualityLevel(-1)} class="text-xs">Auto</button></li>
+              <li><button onclick={() => setQualityLevel(-1)} class="text-xs">Auto</button></li>
               {#each Array(streamQuality.levelCount) as _, i}
-                <li><button on:click={() => setQualityLevel(i)} class="text-xs">Level {i + 1}</button></li>
+                <li><button onclick={() => setQualityLevel(i)} class="text-xs">Level {i + 1}</button></li>
               {/each}
             </ul>
           </div>
@@ -426,7 +424,7 @@
         <div class="flex flex-col gap-2">
             <button
                 class="btn btn-primary w-full"
-                on:click={loadPlaylist}
+                onclick={loadPlaylist}
                 disabled={isLoading || !hlsStatus.playlist_exists}
             >
                 {#if isLoading}
@@ -437,7 +435,7 @@
                 {/if}
             </button>
             
-            <button class="btn btn-outline w-full" on:click={validatePlaylist}>
+            <button class="btn btn-outline w-full" onclick={validatePlaylist}>
                 Validate Config
             </button>
         </div>

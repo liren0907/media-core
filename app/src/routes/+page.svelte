@@ -1,11 +1,10 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
   import { invoke } from '@tauri-apps/api/core';
 
   // Dashboard Overview - Tactical Command Style Redesign
-  
-  let currentTime = new Date();
-  
+
+  let currentTime = $state(new Date());
+
   // System metrics state
   interface SystemMetrics {
     cpu: { usagePercent: number; coreCount: number; frequencyMhz: number | null };
@@ -47,18 +46,14 @@
     periodSeconds: number;
   }
 
-  let metrics: SystemMetrics | null = null;
-  let streamStats: StreamStats | null = null;
-  let throughputHistory: ThroughputHistory | null = null;
-  let cpuHistory: number[] = [40, 60, 45, 30, 70, 45, 55, 35]; // Initial values for chart
-  
-  let metricsInterval: ReturnType<typeof setInterval>;
-  let clockInterval: ReturnType<typeof setInterval>;
+  let metrics = $state<SystemMetrics | null>(null);
+  let streamStats = $state<StreamStats | null>(null);
+  let throughputHistory = $state<ThroughputHistory | null>(null);
+  let cpuHistory: number[] = $state([40, 60, 45, 30, 70, 45, 55, 35]);
 
   async function fetchMetrics() {
     try {
       metrics = await invoke('get_system_metrics');
-      // Update CPU history for mini chart
       if (metrics) {
         cpuHistory = [...cpuHistory.slice(1), metrics.cpu.usagePercent];
       }
@@ -99,34 +94,33 @@
     }
   }
 
-  onMount(() => {
-    clockInterval = setInterval(() => {
+  $effect(() => {
+    const clockInterval = setInterval(() => {
       currentTime = new Date();
     }, 1000);
 
-    // Fetch metrics immediately and then every 2 seconds
     fetchMetrics();
     fetchStreamStats();
     fetchThroughputHistory();
-    
-    metricsInterval = setInterval(() => {
+
+    const metricsInterval = setInterval(() => {
       fetchMetrics();
       fetchStreamStats();
     }, 2000);
-  });
 
-  onDestroy(() => {
-    if (clockInterval) clearInterval(clockInterval);
-    if (metricsInterval) clearInterval(metricsInterval);
+    return () => {
+      clearInterval(clockInterval);
+      clearInterval(metricsInterval);
+    };
   });
 
   // Reactive values with fallbacks
-  $: cpuPercent = metrics?.cpu.usagePercent ?? 0;
-  $: memoryUsedGb = metrics?.memory.usedGb ?? 0;
-  $: memoryPercent = metrics?.memory.usagePercent ?? 0;
-  $: diskPercent = metrics?.disk.usagePercent ?? 0;
-  $: diskTotalGb = metrics?.disk.totalGb ?? 0;
-  $: writeSpeed = metrics?.disk.writeSpeedMbps ?? 0;
+  let cpuPercent = $derived(metrics?.cpu.usagePercent ?? 0);
+  let memoryUsedGb = $derived(metrics?.memory.usedGb ?? 0);
+  let memoryPercent = $derived(metrics?.memory.usagePercent ?? 0);
+  let diskPercent = $derived(metrics?.disk.usagePercent ?? 0);
+  let diskTotalGb = $derived(metrics?.disk.totalGb ?? 0);
+  let writeSpeed = $derived(metrics?.disk.writeSpeedMbps ?? 0);
 </script>
 
 <svelte:head>

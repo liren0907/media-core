@@ -1,14 +1,13 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
   import { save } from "@tauri-apps/plugin-dialog";
-  import { onMount, onDestroy } from "svelte";
 
   // Camera state
-  let availableCameras: string[] = [];
-  let selectedCameraIndex = 0;
-  let isLoading = false;
-  let isCapturing = false;
-  let error = "";
+  let availableCameras: string[] = $state([]);
+  let selectedCameraIndex = $state(0);
+  let isLoading = $state(false);
+  let isCapturing = $state(false);
+  let error = $state("");
 
   // Capture result
   interface CameraCaptureResult {
@@ -18,13 +17,13 @@
     success: boolean;
   }
 
-  let lastCapture: CameraCaptureResult | null = null;
-  let previewImage: string | null = null;
-  let captureHistory: { timestamp: Date; path: string | null; data: string }[] = [];
+  let lastCapture: CameraCaptureResult | null = $state(null);
+  let previewImage: string | null = $state(null);
+  let captureHistory: { timestamp: Date; path: string | null; data: string }[] = $state([]);
 
   // Live preview state
-  let isPreviewActive = false;
-  let previewInterval: ReturnType<typeof setInterval> | null = null;
+  let isPreviewActive = $state(false);
+  let previewInterval: ReturnType<typeof setInterval> | null = $state(null);
 
   async function loadCameras() {
     isLoading = true;
@@ -143,15 +142,12 @@
     captureHistory = [];
   }
 
-  onMount(() => {
+  $effect(() => {
     loadCameras();
+    return () => stopLivePreview();
   });
 
-  onDestroy(() => {
-    stopLivePreview();
-  });
-
-  $: cameraName = availableCameras[selectedCameraIndex] ?? `Camera ${selectedCameraIndex}`;
+  let cameraName = $derived(availableCameras[selectedCameraIndex] ?? `Camera ${selectedCameraIndex}`);
 </script>
 
 <svelte:head>
@@ -167,7 +163,7 @@
         </div>
         <div class="flex gap-3">
             <button 
-                on:click={loadCameras}
+                onclick={loadCameras}
                 disabled={isLoading}
                 class="flex items-center gap-2 h-10 px-4 rounded-lg bg-white dark:bg-[#182129] border border-slate-200 dark:border-[#283039] text-slate-600 dark:text-[#9dabb9] hover:text-slate-900 dark:hover:text-white font-medium transition-all text-sm font-display disabled:opacity-50"
             >
@@ -200,7 +196,7 @@
                 <div class="flex gap-2">
                     {#if !isPreviewActive}
                         <button 
-                            on:click={startLivePreview}
+                            onclick={startLivePreview}
                             disabled={availableCameras.length === 0}
                             class="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium text-xs transition-colors disabled:opacity-50"
                         >
@@ -208,7 +204,7 @@
                         </button>
                     {:else}
                         <button 
-                            on:click={stopLivePreview}
+                            onclick={stopLivePreview}
                             class="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium text-xs transition-colors"
                         >
                             Stop Preview
@@ -239,7 +235,7 @@
             <!-- Capture Controls -->
             <div class="p-4 border-t border-slate-200 dark:border-[#283039] flex justify-center gap-4">
                 <button 
-                    on:click={() => captureSnapshot(false)}
+                    onclick={() => captureSnapshot(false)}
                     disabled={isCapturing || availableCameras.length === 0}
                     class="flex items-center gap-2 px-6 py-3 bg-[#137fec] hover:bg-blue-600 text-white rounded-lg font-bold shadow-lg shadow-[#137fec]/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -247,7 +243,7 @@
                     Capture
                 </button>
                 <button 
-                    on:click={() => captureSnapshot(true)}
+                    onclick={() => captureSnapshot(true)}
                     disabled={isCapturing || availableCameras.length === 0}
                     class="flex items-center gap-2 px-6 py-3 bg-white dark:bg-[#283039] border border-slate-200 dark:border-[#3b4754] text-slate-700 dark:text-white rounded-lg font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-[#3b4754]"
                 >
@@ -267,7 +263,7 @@
                     <div class="space-y-2">
                         {#each availableCameras as camera, index}
                             <button
-                                on:click={() => { selectedCameraIndex = index; stopLivePreview(); }}
+                                onclick={() => { selectedCameraIndex = index; stopLivePreview(); }}
                                 class="w-full flex items-center gap-3 p-3 rounded-lg border transition-all {selectedCameraIndex === index ? 'border-[#137fec] bg-[#137fec]/5' : 'border-slate-200 dark:border-[#283039] hover:border-slate-300 dark:hover:border-[#3b4754]'}"
                             >
                                 <div class="size-10 rounded-lg bg-slate-100 dark:bg-[#283039] flex items-center justify-center">
@@ -296,7 +292,7 @@
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-sm font-bold text-slate-900 dark:text-white font-display uppercase tracking-wider">Recent Captures</h3>
                     {#if captureHistory.length > 0}
-                        <button on:click={clearHistory} class="text-xs text-slate-500 hover:text-red-500 transition-colors">
+                        <button onclick={clearHistory} class="text-xs text-slate-500 hover:text-red-500 transition-colors">
                             Clear
                         </button>
                     {/if}
@@ -306,7 +302,7 @@
                     <div class="grid grid-cols-3 gap-2">
                         {#each captureHistory as item, i}
                             <button
-                                on:click={() => selectHistoryItem(item)}
+                                onclick={() => selectHistoryItem(item)}
                                 class="aspect-square rounded-lg overflow-hidden border-2 border-transparent hover:border-[#137fec] transition-colors relative group"
                             >
                                 <img 

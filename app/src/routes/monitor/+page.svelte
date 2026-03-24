@@ -1,11 +1,9 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-
   // Dashboard Overview - HSR Command Style Redesign
-  
-  let currentTime = new Date();
-  
-  onMount(() => {
+
+  let currentTime = $state(new Date());
+
+  $effect(() => {
     const timer = setInterval(() => {
       currentTime = new Date();
     }, 1000);

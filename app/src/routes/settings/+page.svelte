@@ -1,35 +1,32 @@
 <script lang="ts">
-    import { theme, effectiveTheme } from '$lib/theme';
-    import { appConfig, type StreamConfig, type PathConfig } from '$lib/config';
+    import { theme, effectiveTheme } from '$lib/theme.svelte';
+    import { appConfig, type StreamConfig, type PathConfig } from '$lib/config.svelte';
     import { open } from '@tauri-apps/plugin-dialog';
-    import { onMount } from 'svelte';
 
-    // Options for the dropdown
     const languages = [
         { code: 'en', name: 'English' },
         { code: 'zh-TW', name: '繁體中文' },
         { code: 'ja', name: '日本語' }
     ];
-    
-    let selectedLanguage = 'en'; // Placeholder
-    
+
+    let selectedLanguage = $state('en');
+
     // Stream settings
-    let hlsServerUrl = '';
-    let hlsServerPort = 1521;
-    let defaultRtspUrl = '';
-    let hlsOutputDir = '';
-    
+    let hlsServerUrl = $state('');
+    let hlsServerPort = $state(1521);
+    let defaultRtspUrl = $state('');
+    let hlsOutputDir = $state('');
+
     // Path settings
-    let defaultVideoDir = '';
-    let defaultImageDir = '';
-    let defaultOutputDir = '';
-    let annotationDir = '';
-    
-    let saveStatus = '';
-    
-    onMount(() => {
-        // Load current config
-        const config = $appConfig;
+    let defaultVideoDir = $state('');
+    let defaultImageDir = $state('');
+    let defaultOutputDir = $state('');
+    let annotationDir = $state('');
+
+    let saveStatus = $state('');
+
+    $effect(() => {
+        const config = appConfig.current;
         hlsServerUrl = config.streams.hlsServerUrl;
         hlsServerPort = config.streams.hlsServerPort;
         defaultRtspUrl = config.streams.defaultRtspUrl;
@@ -69,7 +66,7 @@
         if (confirm('Reset all settings to defaults?')) {
             appConfig.reset();
             // Reload values
-            const config = $appConfig;
+            const config = appConfig.current;
             hlsServerUrl = config.streams.hlsServerUrl;
             hlsServerPort = config.streams.hlsServerPort;
             defaultRtspUrl = config.streams.defaultRtspUrl;
@@ -140,8 +137,8 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <!-- Light Mode -->
             <button 
-                on:click={() => theme.set('light')}
-                class="relative flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all {$theme === 'light' ? 'border-[#137fec] bg-blue-50/50 dark:bg-blue-900/20' : 'border-slate-200 dark:border-[#2a3441] hover:border-slate-300 dark:hover:border-slate-600'}"
+                onclick={() => theme.set('light')}
+                class="relative flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all {theme.value === 'light' ? 'border-[#137fec] bg-blue-50/50 dark:bg-blue-900/20' : 'border-slate-200 dark:border-[#2a3441] hover:border-slate-300 dark:hover:border-slate-600'}"
             >
                 <div class="w-full aspect-video bg-[#f6f7f8] rounded-lg border border-slate-200 shadow-sm flex items-center justify-center overflow-hidden">
                     <div class="w-3/4 h-3/4 bg-white rounded shadow-sm flex flex-col gap-2 p-2">
@@ -153,7 +150,7 @@
                     <span class="material-symbols-outlined text-slate-600 dark:text-slate-400">light_mode</span>
                     <span class="font-medium text-slate-900 dark:text-white">Light Mode</span>
                 </div>
-                {#if $theme === 'light'}
+                {#if theme.value === 'light'}
                     <div class="absolute top-3 right-3 text-[#137fec]">
                         <span class="material-symbols-outlined filled">check_circle</span>
                     </div>
@@ -162,8 +159,8 @@
 
             <!-- Dark Mode -->
             <button 
-                on:click={() => theme.set('dark')}
-                class="relative flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all {$theme === 'dark' ? 'border-[#137fec] bg-blue-50/50 dark:bg-blue-900/20' : 'border-slate-200 dark:border-[#2a3441] hover:border-slate-300 dark:hover:border-slate-600'}"
+                onclick={() => theme.set('dark')}
+                class="relative flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all {theme.value === 'dark' ? 'border-[#137fec] bg-blue-50/50 dark:bg-blue-900/20' : 'border-slate-200 dark:border-[#2a3441] hover:border-slate-300 dark:hover:border-slate-600'}"
             >
                 <div class="w-full aspect-video bg-[#101922] rounded-lg border border-slate-700 shadow-sm flex items-center justify-center overflow-hidden">
                     <div class="w-3/4 h-3/4 bg-[#1a222c] rounded shadow-sm flex flex-col gap-2 p-2">
@@ -175,7 +172,7 @@
                     <span class="material-symbols-outlined text-slate-600 dark:text-slate-400">dark_mode</span>
                     <span class="font-medium text-slate-900 dark:text-white">Dark Mode</span>
                 </div>
-                {#if $theme === 'dark'}
+                {#if theme.value === 'dark'}
                     <div class="absolute top-3 right-3 text-[#137fec]">
                         <span class="material-symbols-outlined filled">check_circle</span>
                     </div>
@@ -184,8 +181,8 @@
 
             <!-- Auto Mode -->
             <button 
-                on:click={() => theme.set('auto')}
-                class="relative flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all {$theme === 'auto' ? 'border-[#137fec] bg-blue-50/50 dark:bg-blue-900/20' : 'border-slate-200 dark:border-[#2a3441] hover:border-slate-300 dark:hover:border-slate-600'}"
+                onclick={() => theme.set('auto')}
+                class="relative flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all {theme.value === 'auto' ? 'border-[#137fec] bg-blue-50/50 dark:bg-blue-900/20' : 'border-slate-200 dark:border-[#2a3441] hover:border-slate-300 dark:hover:border-slate-600'}"
             >
                 <div class="w-full aspect-video bg-gradient-to-br from-[#f6f7f8] to-[#101922] rounded-lg border border-slate-200 dark:border-[#2a3441] shadow-sm flex items-center justify-center">
                     <span class="material-symbols-outlined text-4xl text-slate-400">brightness_auto</span>
@@ -194,7 +191,7 @@
                     <span class="material-symbols-outlined text-slate-600 dark:text-slate-400">settings_brightness</span>
                     <span class="font-medium text-slate-900 dark:text-white">Auto System</span>
                 </div>
-                {#if $theme === 'auto'}
+                {#if theme.value === 'auto'}
                     <div class="absolute top-3 right-3 text-[#137fec]">
                         <span class="material-symbols-outlined filled">check_circle</span>
                     </div>
@@ -207,8 +204,8 @@
             <span class="material-symbols-outlined text-[18px]">info</span>
             <p>
                 Current appearance is 
-                <span class="font-bold text-slate-900 dark:text-white uppercase">{$effectiveTheme}</span>
-                {#if $theme === 'auto'}
+                <span class="font-bold text-slate-900 dark:text-white uppercase">{effectiveTheme.value}</span>
+                {#if theme.value === 'auto'}
                     (determined by system settings)
                 {/if}
             </p>
@@ -276,7 +273,7 @@
                         class="flex-1 bg-white dark:bg-[#1a222c] border border-slate-200 dark:border-[#2a3441] text-slate-900 dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#137fec]"
                     />
                     <button 
-                        on:click={() => browseDirectory('hls')}
+                        onclick={() => browseDirectory('hls')}
                         class="px-4 py-2.5 bg-slate-100 dark:bg-[#1a222c] border border-slate-200 dark:border-[#2a3441] text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-[#242d38] transition-colors"
                     >
                         <span class="material-symbols-outlined text-[20px]">folder_open</span>
@@ -286,7 +283,7 @@
         </div>
         
         <button 
-            on:click={saveStreamSettings}
+            onclick={saveStreamSettings}
             class="mt-4 px-4 py-2 bg-[#137fec] text-white rounded-lg hover:bg-[#0f6dd3] transition-colors"
         >
             Save Stream Settings
@@ -318,7 +315,7 @@
                         class="flex-1 bg-white dark:bg-[#1a222c] border border-slate-200 dark:border-[#2a3441] text-slate-900 dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#137fec]"
                     />
                     <button 
-                        on:click={() => browseDirectory('video')}
+                        onclick={() => browseDirectory('video')}
                         class="px-4 py-2.5 bg-slate-100 dark:bg-[#1a222c] border border-slate-200 dark:border-[#2a3441] text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-[#242d38] transition-colors"
                     >
                         <span class="material-symbols-outlined text-[20px]">folder_open</span>
@@ -338,7 +335,7 @@
                         class="flex-1 bg-white dark:bg-[#1a222c] border border-slate-200 dark:border-[#2a3441] text-slate-900 dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#137fec]"
                     />
                     <button 
-                        on:click={() => browseDirectory('image')}
+                        onclick={() => browseDirectory('image')}
                         class="px-4 py-2.5 bg-slate-100 dark:bg-[#1a222c] border border-slate-200 dark:border-[#2a3441] text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-[#242d38] transition-colors"
                     >
                         <span class="material-symbols-outlined text-[20px]">folder_open</span>
@@ -358,7 +355,7 @@
                         class="flex-1 bg-white dark:bg-[#1a222c] border border-slate-200 dark:border-[#2a3441] text-slate-900 dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#137fec]"
                     />
                     <button 
-                        on:click={() => browseDirectory('output')}
+                        onclick={() => browseDirectory('output')}
                         class="px-4 py-2.5 bg-slate-100 dark:bg-[#1a222c] border border-slate-200 dark:border-[#2a3441] text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-[#242d38] transition-colors"
                     >
                         <span class="material-symbols-outlined text-[20px]">folder_open</span>
@@ -378,7 +375,7 @@
                         class="flex-1 bg-white dark:bg-[#1a222c] border border-slate-200 dark:border-[#2a3441] text-slate-900 dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#137fec]"
                     />
                     <button 
-                        on:click={() => browseDirectory('annotation')}
+                        onclick={() => browseDirectory('annotation')}
                         class="px-4 py-2.5 bg-slate-100 dark:bg-[#1a222c] border border-slate-200 dark:border-[#2a3441] text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-[#242d38] transition-colors"
                     >
                         <span class="material-symbols-outlined text-[20px]">folder_open</span>
@@ -388,7 +385,7 @@
         </div>
         
         <button 
-            on:click={savePathSettings}
+            onclick={savePathSettings}
             class="mt-4 px-4 py-2 bg-[#137fec] text-white rounded-lg hover:bg-[#0f6dd3] transition-colors"
         >
             Save Path Settings
@@ -432,7 +429,7 @@
     <!-- Reset & Status -->
     <div class="flex items-center justify-between">
         <button 
-            on:click={resetToDefaults}
+            onclick={resetToDefaults}
             class="px-4 py-2 bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 rounded-lg hover:bg-red-500/20 transition-colors"
         >
             Reset All to Defaults

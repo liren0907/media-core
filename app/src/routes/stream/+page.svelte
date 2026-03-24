@@ -1,9 +1,8 @@
 <script lang="ts">
   import { open } from "@tauri-apps/plugin-dialog";
   import { convertFileSrc, invoke } from "@tauri-apps/api/core";
-  import { onMount, onDestroy } from "svelte";
   import Hls from "hls.js";
-  import { appConfig, getDefaultRtspUrl, getHlsOutputDir } from "$lib/config";
+  import { appConfig, getDefaultRtspUrl, getHlsOutputDir } from "$lib/config.svelte";
 
   // Stream stats from backend
   interface StreamStatus {
@@ -27,11 +26,10 @@
     streams: StreamStatus[];
   }
 
-  let streamStats: StreamStats | null = null;
-  let statsInterval: ReturnType<typeof setInterval>;
+  let streamStats: StreamStats | null = $state(null);
 
   // Initialize with config values
-  let rtspConfig = {
+  let rtspConfig = $state({
     rtsp_url: "",
     rtsp_url_list: [""],
     output_directory: "", // User must select or default to empty
@@ -46,12 +44,12 @@
       segment_duration: 6,
       playlist_size: 10,
     },
-  };
+  });
 
-  let isStreaming = false;
-  let status = "";
-  let urlCount = 1;
-  let hls: Hls | null = null;
+  let isStreaming = $state(false);
+  let status = $state("");
+  let urlCount = $state(1);
+  let hls: Hls | null = $state(null);
   let videoElement: HTMLVideoElement;
 
   async function fetchStreamStats() {
@@ -181,23 +179,22 @@
     return Math.min((streamStats.avgLatencyMs / 200) * 100, 100);
   }
 
-  onMount(() => {
-    // Initialize from config
+  $effect(() => {
     rtspConfig.rtsp_url = getDefaultRtspUrl();
     rtspConfig.hls.output_directory = getHlsOutputDir() || 'hls_output';
-    
+
     fetchStreamStats();
-    statsInterval = setInterval(fetchStreamStats, 3000);
+    const statsInterval = setInterval(fetchStreamStats, 3000);
+
+    return () => {
+      isStreaming = false;
+      clearInterval(statsInterval);
+      if (hls) hls.destroy();
+    };
   });
 
-  onDestroy(() => {
-    isStreaming = false;
-    if (statsInterval) clearInterval(statsInterval);
-    if (hls) hls.destroy();
-  });
-
-  $: healthStatus = getHealthStatus();
-  $: latencyBarWidth = getLatencyBarWidth();
+  let healthStatus = $derived(getHealthStatus());
+  let latencyBarWidth = $derived(getLatencyBarWidth());
 </script>
 
 <div class="p-8 max-w-[1600px] w-full mx-auto space-y-8">
@@ -295,7 +292,7 @@
                     </video>
                 </div>
 
-                <form on:submit|preventDefault={startCapture} class="space-y-6">
+                <form onsubmit={(e) => { e.preventDefault(); startCapture(); }} class="space-y-6">
                     <!-- Main URL Section -->
                     <div class="space-y-2">
                         <label for="mainRtspUrl" class="text-sm font-medium text-slate-700 dark:text-slate-300">Main RTSP URL</label>
@@ -307,8 +304,8 @@
                                 class="flex-1 bg-white dark:bg-[#111418] border border-slate-200 dark:border-[#283039] rounded-lg px-4 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-[#137fec] focus:ring-1 focus:ring-[#137fec]"
                                 placeholder="rtsp://example.com/stream"
                             />
-                            <button type="button" on:click={playInApp} class="px-4 py-2 bg-[#137fec] hover:bg-blue-600 text-white rounded-lg font-medium text-sm transition-colors">Play</button>
-                            <button type="button" on:click={playInNewWindow} class="px-4 py-2 bg-slate-100 dark:bg-[#283039] hover:bg-slate-200 dark:hover:bg-[#3b4754] text-slate-700 dark:text-white rounded-lg font-medium text-sm transition-colors">Pop-out</button>
+                            <button type="button" onclick={playInApp} class="px-4 py-2 bg-[#137fec] hover:bg-blue-600 text-white rounded-lg font-medium text-sm transition-colors">Play</button>
+                            <button type="button" onclick={playInNewWindow} class="px-4 py-2 bg-slate-100 dark:bg-[#283039] hover:bg-slate-200 dark:hover:bg-[#3b4754] text-slate-700 dark:text-white rounded-lg font-medium text-sm transition-colors">Pop-out</button>
                         </div>
                     </div>
 
@@ -325,12 +322,12 @@
                                     placeholder="rtsp://..."
                                     aria-label={`Additional RTSP URL ${i + 1}`}
                                 />
-                                <button type="button" on:click={() => removeUrlField(i)} class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                                <button type="button" onclick={() => removeUrlField(i)} class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
                                     <span class="material-symbols-outlined">delete</span>
                                 </button>
                             </div>
                         {/each}
-                        <button type="button" on:click={addUrlField} class="w-full py-2 border-2 border-dashed border-slate-200 dark:border-[#283039] rounded-lg text-slate-500 hover:text-[#137fec] hover:border-[#137fec] transition-colors text-sm font-medium">
+                        <button type="button" onclick={addUrlField} class="w-full py-2 border-2 border-dashed border-slate-200 dark:border-[#283039] rounded-lg text-slate-500 hover:text-[#137fec] hover:border-[#137fec] transition-colors text-sm font-medium">
                             + Add Another Stream URL
                         </button>
                     </div>
@@ -340,7 +337,7 @@
                             <label for="outputDirectory" class="text-sm font-medium text-slate-700 dark:text-slate-300">Output Directory</label>
                             <div class="flex gap-2">
                                 <input id="outputDirectory" type="text" readonly bind:value={rtspConfig.output_directory} class="flex-1 bg-white dark:bg-[#111418] border border-slate-200 dark:border-[#283039] rounded-lg px-4 py-2 text-sm text-slate-900 dark:text-white" placeholder="Select output directory..." />
-                                <button type="button" on:click={selectOutputDirectory} class="px-4 py-2 bg-slate-100 dark:bg-[#283039] hover:bg-slate-200 dark:hover:bg-[#3b4754] text-slate-700 dark:text-white rounded-lg font-medium text-sm transition-colors">Browse</button>
+                                <button type="button" onclick={selectOutputDirectory} class="px-4 py-2 bg-slate-100 dark:bg-[#283039] hover:bg-slate-200 dark:hover:bg-[#3b4754] text-slate-700 dark:text-white rounded-lg font-medium text-sm transition-colors">Browse</button>
                             </div>
                         </div>
                         <div class="space-y-2">

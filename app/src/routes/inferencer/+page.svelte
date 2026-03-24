@@ -2,15 +2,15 @@
   import { open } from '@tauri-apps/plugin-dialog';
   import { convertFileSrc, invoke } from '@tauri-apps/api/core';
 
-  let videoPath = '';
-  let annotationPath = '';
-  let outputDirectory = '';
+  let videoPath = $state('');
+  let annotationPath = $state('');
+  let outputDirectory = $state('');
   let videoPlayer: HTMLVideoElement;
-  let availableLabels: string[] = [];
-  let selectedLabels: string[] = [];
-  let isProcessing = false;
-  let processedVideoPath = '';
-  let errorMessage = '';
+  let availableLabels: string[] = $state([]);
+  let selectedLabels: string[] = $state([]);
+  let isProcessing = $state(false);
+  let processedVideoPath = $state('');
+  let errorMessage = $state('');
 
   // Detection data from annotation file
   interface AnnotationData {
@@ -22,14 +22,14 @@
     avg_confidence?: number;
   }
 
-  let annotationData: AnnotationData | null = null;
-  let detectionTimeline: number[] = [];
-  let labelCounts: Record<string, number> = {};
-  let totalDetections = 0;
-  let processedFrameCount = 0;
+  let annotationData: AnnotationData | null = $state(null);
+  let detectionTimeline: number[] = $state([]);
+  let labelCounts: Record<string, number> = $state({});
+  let totalDetections = $state(0);
+  let processedFrameCount = $state(0);
 
   // UI State for tabs
-  let activeTab = 'configuration';
+  let activeTab = $state('configuration');
 
   async function openVideoFile() {
     try {
@@ -165,18 +165,15 @@
     }
   }
 
-  // Compute max value for timeline normalization
-  $: maxDetection = detectionTimeline.length > 0 ? Math.max(...detectionTimeline) : 1;
-  
-  // Compute filtered detection count based on selected labels
-  $: filteredDetections = selectedLabels.reduce((sum, label) => {
-    return sum + (labelCounts[label] || 0);
-  }, 0);
+  let maxDetection = $derived(detectionTimeline.length > 0 ? Math.max(...detectionTimeline) : 1);
 
-  // Get top labels by count
-  $: topLabels = Object.entries(labelCounts)
+  let filteredDetections = $derived(selectedLabels.reduce((sum, label) => {
+    return sum + (labelCounts[label] || 0);
+  }, 0));
+
+  let topLabels = $derived(Object.entries(labelCounts)
     .sort(([, a], [, b]) => b - a)
-    .slice(0, 5);
+    .slice(0, 5));
 </script>
 
 <div class="flex h-full w-full bg-[#101922] overflow-hidden">
@@ -191,7 +188,7 @@
                     <label for="sourceVideoPath" class="text-xs font-medium text-slate-500 mb-1 block">Source Video</label>
                     <div class="flex gap-2">
                         <input id="sourceVideoPath" type="text" value={videoPath ? '...'+videoPath.slice(-20) : ''} readonly class="flex-1 bg-[#1e2936] border border-[#2d3b4f] rounded text-xs text-white px-2 py-1.5 focus:outline-none" placeholder="No file selected">
-                        <button on:click={openVideoFile} class="bg-[#137fec] hover:bg-[#0f6bd0] text-white px-3 py-1.5 rounded text-xs font-bold transition-colors">
+                        <button onclick={openVideoFile} class="bg-[#137fec] hover:bg-[#0f6bd0] text-white px-3 py-1.5 rounded text-xs font-bold transition-colors">
                             BROWSE
                         </button>
                     </div>
@@ -201,7 +198,7 @@
                     <label for="annotationDataPath" class="text-xs font-medium text-slate-500 mb-1 block">Annotation Data</label>
                     <div class="flex gap-2">
                         <input id="annotationDataPath" type="text" value={annotationPath ? '...'+annotationPath.slice(-20) : ''} readonly class="flex-1 bg-[#1e2936] border border-[#2d3b4f] rounded text-xs text-white px-2 py-1.5 focus:outline-none" placeholder="No file selected">
-                        <button on:click={openAnnotationFile} class="bg-[#1e2936] hover:bg-[#2d3b4f] border border-[#2d3b4f] text-slate-300 px-3 py-1.5 rounded text-xs font-bold transition-colors">
+                        <button onclick={openAnnotationFile} class="bg-[#1e2936] hover:bg-[#2d3b4f] border border-[#2d3b4f] text-slate-300 px-3 py-1.5 rounded text-xs font-bold transition-colors">
                             LOAD
                         </button>
                     </div>
@@ -214,8 +211,8 @@
             <div class="flex items-center justify-between">
                 <h3 class="text-slate-400 text-xs font-bold uppercase tracking-wider">Object Classes</h3>
                 <div class="flex gap-2">
-                    <button on:click={selectAllLabels} class="text-[10px] text-[#137fec] hover:text-white font-bold uppercase">All</button>
-                    <button on:click={deselectAllLabels} class="text-[10px] text-slate-500 hover:text-white font-bold uppercase">None</button>
+                    <button onclick={selectAllLabels} class="text-[10px] text-[#137fec] hover:text-white font-bold uppercase">All</button>
+                    <button onclick={deselectAllLabels} class="text-[10px] text-slate-500 hover:text-white font-bold uppercase">None</button>
                 </div>
             </div>
 
@@ -226,7 +223,7 @@
                             <input 
                                 type="checkbox" 
                                 checked={selectedLabels.includes(label)} 
-                                on:change={() => toggleLabel(label)}
+                                onchange={() => toggleLabel(label)}
                                 class="rounded bg-[#101922] border-slate-600 text-[#137fec] focus:ring-offset-0 focus:ring-0 w-4 h-4" 
                             />
                             <span class="text-sm text-slate-300 group-hover:text-white font-mono flex-1">{label}</span>
@@ -252,7 +249,7 @@
             {/if}
 
             <button 
-                on:click={processVideo}
+                onclick={processVideo}
                 disabled={isProcessing || !videoPath || !annotationPath}
                 class="w-full py-3 rounded bg-[#137fec] hover:bg-[#0f6bd0] text-white font-bold text-sm shadow-[0_0_20px_rgba(19,127,236,0.2)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
             >

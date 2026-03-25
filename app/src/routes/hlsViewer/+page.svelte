@@ -10,6 +10,10 @@
   let isLoading = $state(false);
   let error = $state("");
 
+  // Bandwidth history for chart
+  let bandwidthHistory: number[] = $state([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  let segmentLoadTimes: number[] = $state([]);
+
   let statsInterval: ReturnType<typeof setInterval>;
   let Hls: any = $state(null);
   let hls: any = $state(null);
@@ -67,7 +71,10 @@
       if (l) streamQuality = { resolution: `${l.width || 0}x${l.height || 0}`, bitrate: l.bitrate || 0, codec: l.codecSet || l.videoCodec || "unknown", fps: l.frameRate || 0, level: hls.currentLevel, levelCount: hls.levels.length };
     }
     if (hls.latency !== undefined) latencyMetrics = { latency: hls.latency, drift: hls.drift || 0, targetLatency: hls.targetLatency || 0, maxLatency: hls.maxLatency || 0 };
-    if (hls.bandwidthEstimate) bandwidth = hls.bandwidthEstimate;
+    if (hls.bandwidthEstimate) {
+      bandwidth = hls.bandwidthEstimate;
+      bandwidthHistory = [...bandwidthHistory.slice(1), bandwidth / 1e6]; // in Mbps
+    }
     if ((videoElement as any).getVideoPlaybackQuality) { const q = (videoElement as any).getVideoPlaybackQuality(); droppedFrames = q.droppedVideoFrames; totalFrames = q.totalVideoFrames; }
     isPlaying = !videoElement.paused && !videoElement.ended;
   }
@@ -84,7 +91,15 @@
         hls.attachMedia(videoElement);
         hls.on(Hls.Events.MANIFEST_PARSED, () => { videoElement.play().catch(console.error); statsInterval = setInterval(updateStreamStats, 500); });
         hls.on(Hls.Events.LEVEL_SWITCHED, () => updateStreamStats());
-        hls.on(Hls.Events.FRAG_LOADED, () => updateStreamStats());
+        hls.on(Hls.Events.FRAG_LOADED, (_: any, data: any) => {
+          if (data.frag && data.frag.stats) {
+            const loadTime = data.frag.stats.loading?.end - data.frag.stats.loading?.start;
+            if (loadTime && Number.isFinite(loadTime)) {
+              segmentLoadTimes = [...segmentLoadTimes.slice(-19), loadTime];
+            }
+          }
+          updateStreamStats();
+        });
         hls.on(Hls.Events.ERROR, (_: any, data: any) => { if (data.fatal) { error = `Fatal: ${data.details}`; hls.destroy(); if (statsInterval) clearInterval(statsInterval); } });
       } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
         videoElement.src = playlistUrl; videoElement.play(); statsInterval = setInterval(updateStreamStats, 500);
@@ -155,6 +170,28 @@
             </StatCard>
             <StatCard label="Dropped" icon="warning" iconColor={Number(dropRate) > 1 ? 'text-orange-500' : 'text-slate-400'} value="{String(droppedFrames)}" sub="{dropRate}%" />
         </div>
+    {/if}
+
+    <!-- Bandwidth History Chart -->
+    {#if isPlaying}
+        <Panel title="Bandwidth History" icon="show_chart">
+            {#snippet actions()}
+                <span class="text-[10px] font-mono text-slate-500">{formatBitrate(bandwidth)} est.</span>
+            {/snippet}
+            <div class="p-3">
+                <div class="h-16 w-full flex items-end gap-0.5">
+                    {#each bandwidthHistory as bw, i}
+                        {@const maxBw = Math.max(...bandwidthHistory, 1)}
+                        <div class="w-full rounded-t-sm transition-all {i === bandwidthHistory.length - 1 ? 'bg-[#137fec]' : 'bg-[#137fec]/20'}" style="height: {(bw / maxBw) * 100}%"></div>
+                    {/each}
+                </div>
+                {#if segmentLoadTimes.length > 0}
+                    <div class="mt-2 text-[10px] text-slate-500 font-mono">
+                        Avg segment load: {(segmentLoadTimes.reduce((a, b) => a + b, 0) / segmentLoadTimes.length).toFixed(0)}ms
+                    </div>
+                {/if}
+            </div>
+        </Panel>
     {/if}
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">

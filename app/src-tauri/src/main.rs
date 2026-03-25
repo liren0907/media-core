@@ -64,6 +64,12 @@ fn main() {
             commands::events::finish_pipeline_tracking,
             commands::events::get_active_pipelines,
             commands::events::emit_progress,
+            // Benchmark commands
+            commands::benchmark::run_benchmark,
+            commands::benchmark::run_benchmark_suite,
+            // Hardware acceleration commands
+            commands::system::get_hardware_accel_config,
+            commands::system::detect_hardware_capabilities,
         ])
         .on_window_event(|_app_handle, event| {
             if let tauri::WindowEvent::Destroyed = event {

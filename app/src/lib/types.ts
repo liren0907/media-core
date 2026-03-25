@@ -115,3 +115,36 @@ export interface AnnotationData {
   total_detections?: number;
   avg_confidence?: number;
 }
+
+// -- Benchmark --
+
+export interface BenchmarkResultItem {
+  name: string;
+  averageMs: number;
+  minMs: number;
+  maxMs: number;
+  stdDevMs: number;
+  runs: number;
+}
+
+export interface BenchmarkResponse {
+  results: BenchmarkResultItem[];
+  fastest: string;
+  slowest: string;
+  totalMs: number;
+}
+
+// -- Hardware Acceleration --
+
+export interface HardwareAccelConfig {
+  enabled: boolean;
+  mode: string;
+  fallbackToCpu: boolean;
+  preferBackends: string[];
+}
+
+export interface HardwareCapabilities {
+  platform: string;
+  isAppleSilicon: boolean;
+  availableModes: string[];
+}

@@ -236,6 +236,70 @@ pub fn reset_metrics() {
 }
 
 // ============================================================================
+// HARDWARE ACCELERATION
+// ============================================================================
+
+/// Hardware acceleration capabilities response
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HardwareCapabilities {
+    pub platform: String,
+    pub is_apple_silicon: bool,
+    pub available_modes: Vec<String>,
+}
+
+/// Get the current hardware acceleration configuration (default)
+#[command]
+pub fn get_hardware_accel_config() -> serde_json::Value {
+    let config = media_core::process::HardwareAccelConfig::default();
+    serde_json::json!({
+        "enabled": config.enabled,
+        "mode": config.mode,
+        "fallbackToCpu": config.fallback_to_cpu,
+        "preferBackends": config.prefer_backends,
+    })
+}
+
+/// Detect hardware acceleration capabilities for this platform
+#[command]
+pub fn detect_hardware_capabilities() -> HardwareCapabilities {
+    let platform = if cfg!(target_os = "macos") {
+        "macOS".to_string()
+    } else if cfg!(target_os = "linux") {
+        "Linux".to_string()
+    } else if cfg!(target_os = "windows") {
+        "Windows".to_string()
+    } else {
+        "Unknown".to_string()
+    };
+
+    let is_apple_silicon = if cfg!(target_os = "macos") {
+        // Check via sysctl
+        std::process::Command::new("sysctl")
+            .args(["-n", "machdep.cpu.brand_string"])
+            .output()
+            .map(|o| String::from_utf8_lossy(&o.stdout).contains("Apple"))
+            .unwrap_or(false)
+    } else {
+        false
+    };
+
+    let mut available_modes = vec!["disabled".to_string(), "auto".to_string()];
+    if cfg!(target_os = "macos") && is_apple_silicon {
+        available_modes.push("apple_silicon".to_string());
+    }
+    if cfg!(target_os = "linux") || cfg!(target_os = "windows") {
+        available_modes.push("cuda".to_string());
+    }
+
+    HardwareCapabilities {
+        platform,
+        is_apple_silicon,
+        available_modes,
+    }
+}
+
+// ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
 

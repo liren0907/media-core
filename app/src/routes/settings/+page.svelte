@@ -1,8 +1,10 @@
 <script lang="ts">
+    import { invoke } from '@tauri-apps/api/core';
     import { theme, effectiveTheme } from '$lib/theme.svelte';
     import { appConfig, type StreamConfig, type PathConfig } from '$lib/config.svelte';
     import { open } from '@tauri-apps/plugin-dialog';
     import { PageContent, Panel, StatusBadge } from '$lib/components/ui';
+    import type { HardwareAccelConfig, HardwareCapabilities } from '$lib/types';
 
     const languages = [
         { code: 'en', name: 'English' },
@@ -100,6 +102,26 @@
             console.error('Failed to open directory picker:', err);
         }
     }
+
+    // Hardware acceleration state
+    let hwConfig = $state<HardwareAccelConfig>({ enabled: false, mode: 'auto', fallbackToCpu: true, preferBackends: [] });
+    let hwCapabilities = $state<HardwareCapabilities | null>(null);
+
+    async function loadHardwareInfo() {
+        try {
+            const [config, caps] = await Promise.all([
+                invoke('get_hardware_accel_config') as Promise<HardwareAccelConfig>,
+                invoke('detect_hardware_capabilities') as Promise<HardwareCapabilities>,
+            ]);
+            hwConfig = config;
+            hwCapabilities = caps;
+        } catch (e) {
+            console.error('Failed to load hardware info:', e);
+        }
+    }
+
+    // Load hardware info on mount (add to existing effect)
+    $effect(() => { loadHardwareInfo(); });
 
     const comingSoonColors: Record<string, string> = {
         'coming soon': 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
@@ -253,6 +275,53 @@
     </Panel>
 
     <!-- Language Settings -->
+    <!-- Hardware Acceleration -->
+    <Panel title="Hardware Acceleration" icon="bolt">
+        <div class="p-4 flex flex-col gap-3">
+            {#if hwCapabilities}
+                <div class="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 dark:bg-[#1a222c] p-2 rounded border border-slate-100 dark:border-[#2a3441]">
+                    <span class="material-symbols-outlined text-[16px]">info</span>
+                    <span>Platform: <span class="font-bold text-slate-900 dark:text-white">{hwCapabilities.platform}</span></span>
+                    {#if hwCapabilities.isAppleSilicon}
+                        <StatusBadge status="Apple Silicon" colorMap={{ 'Apple Silicon': 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20' }} />
+                    {/if}
+                </div>
+            {/if}
+
+            <label class="flex items-center gap-2 cursor-pointer">
+                <div class="relative inline-flex items-center">
+                    <input type="checkbox" bind:checked={hwConfig.enabled} class="sr-only peer">
+                    <div class="w-9 h-5 bg-slate-200 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#137fec]"></div>
+                </div>
+                <span class="text-xs text-slate-700 dark:text-slate-300">Enable Hardware Acceleration</span>
+            </label>
+
+            {#if hwConfig.enabled}
+                <div class="flex flex-col gap-1">
+                    <label for="hwMode" class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Mode</label>
+                    <select id="hwMode" bind:value={hwConfig.mode} class="{inputClass} w-full">
+                        {#if hwCapabilities}
+                            {#each hwCapabilities.availableModes as mode}
+                                <option value={mode}>{mode === 'auto' ? 'Auto Detect' : mode === 'apple_silicon' ? 'Apple Silicon (VideoToolbox)' : mode === 'cuda' ? 'NVIDIA CUDA' : mode === 'disabled' ? 'Disabled (CPU)' : mode}</option>
+                            {/each}
+                        {:else}
+                            <option value="auto">Auto Detect</option>
+                            <option value="disabled">Disabled</option>
+                        {/if}
+                    </select>
+                </div>
+
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <div class="relative inline-flex items-center">
+                        <input type="checkbox" bind:checked={hwConfig.fallbackToCpu} class="sr-only peer">
+                        <div class="w-9 h-5 bg-slate-200 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
+                    </div>
+                    <span class="text-xs text-slate-700 dark:text-slate-300">Fallback to CPU if acceleration fails</span>
+                </label>
+            {/if}
+        </div>
+    </Panel>
+
     <Panel title="Language" icon="translate">
         {#snippet actions()}
             <StatusBadge status="coming soon" colorMap={comingSoonColors} />

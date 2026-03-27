@@ -2,7 +2,7 @@ import { browser } from '$app/environment';
 
 const storedTheme = browser ? localStorage.getItem('theme') : 'auto';
 
-let themeSetting = $state(storedTheme || 'auto');
+let themeSetting = $state(storedTheme || 'light');
 
 let effective = $state('light');
 

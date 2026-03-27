@@ -1,13 +1,21 @@
-<script>
+<script lang="ts">
 	import "../app.css";
     import { page } from '$app/state';
     import { theme, effectiveTheme } from '$lib/theme.svelte';
 
     let { children } = $props();
     let isSidebarOpen = $state(true);
+    let sidebarWidth = $state(256);
+    let isResizing = $state(false);
+    const SIDEBAR_MIN = 180;
+    const SIDEBAR_MAX = 400;
+    const SIDEBAR_COLLAPSED = 80;
 
     function toggleSidebar() {
         isSidebarOpen = !isSidebarOpen;
+        if (isSidebarOpen) {
+            sidebarWidth = 256;
+        }
     }
 
     function toggleTheme() {
@@ -17,18 +25,39 @@
             theme.set(theme.value === 'dark' ? 'light' : 'dark');
         }
     }
+
+    function onResizeStart(e: MouseEvent) {
+        e.preventDefault();
+        isResizing = true;
+
+        const onMouseMove = (e: MouseEvent) => {
+            sidebarWidth = Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, e.clientX));
+        };
+
+        const onMouseUp = () => {
+            isResizing = false;
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+        };
+
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+    }
 </script>
 
-<div class="flex h-screen w-full bg-[#f6f7f8] dark:bg-[#101922] text-slate-900 dark:text-slate-50 overflow-hidden font-body">
+<div class="flex h-screen w-full bg-[#f6f7f8] dark:bg-[#101922] text-slate-900 dark:text-slate-50 overflow-hidden font-body {isResizing ? 'select-none' : ''}">
     <!-- Side Navigation -->
-    <aside class="flex {isSidebarOpen ? 'w-64' : 'w-20'} flex-col border-r border-slate-200 dark:border-[#2a3441] bg-white dark:bg-[#1a222c] transition-all duration-300 ease-in-out">
-        <div class="flex flex-col h-full justify-between p-4">
-            <div class="flex flex-col gap-6">
+    <aside
+        class="flex flex-col border-r border-slate-200 dark:border-[#2a3441] bg-white dark:bg-[#1a222c] transition-all duration-300 ease-in-out relative shrink-0"
+        style="width: {isSidebarOpen ? sidebarWidth : SIDEBAR_COLLAPSED}px"
+    >
+        <div class="flex flex-col h-full justify-between p-3">
+            <div class="flex flex-col gap-2">
                 <!-- Branding -->
                 <div class="flex items-center justify-between px-2">
-                    <div class="flex items-center gap-3">
-                        <div class="flex items-center justify-center size-10 rounded-lg bg-[#137fec] text-white shrink-0">
-                            <span class="material-symbols-outlined text-2xl">hub</span>
+                    <div class="flex items-center gap-2">
+                        <div class="flex items-center justify-center size-8 rounded-lg bg-[#137fec] text-white shrink-0">
+                            <span class="material-symbols-outlined text-xl">hub</span>
                         </div>
                         <div class="flex flex-col overflow-hidden transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">
                             <h1 class="text-base font-bold leading-tight font-display whitespace-nowrap">Media Core</h1>
@@ -47,8 +76,8 @@
                 </button>
 
                 <!-- Navigation Links -->
-                <nav class="flex flex-col gap-2">
-                    <a href="/" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group relative {page.url.pathname === '/' ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
+                <nav class="flex flex-col gap-1">
+                    <a href="/" class="flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors group relative {page.url.pathname === '/' ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
                         <span class="material-symbols-outlined {page.url.pathname === '/' ? 'filled' : ''} shrink-0">dashboard</span>
                         <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Dashboard</span>
                         
@@ -59,7 +88,7 @@
                         {/if}
                     </a>
 
-                    <a href="/launcher" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group relative {page.url.pathname.startsWith('/launcher') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
+                    <a href="/launcher" class="flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors group relative {page.url.pathname.startsWith('/launcher') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
                         <span class="material-symbols-outlined shrink-0">apps</span>
                         <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Launcher</span>
                         
@@ -70,7 +99,7 @@
                         {/if}
                     </a>
 
-                    <a href="/monitor" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group relative {page.url.pathname.startsWith('/monitor') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
+                    <a href="/monitor" class="flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors group relative {page.url.pathname.startsWith('/monitor') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
                         <span class="material-symbols-outlined shrink-0">monitor</span>
                         <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Monitor</span>
                         
@@ -81,7 +110,7 @@
                         {/if}
                     </a>
 
-                    <a href="/stream" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group relative {page.url.pathname.startsWith('/stream') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
+                    <a href="/stream" class="flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors group relative {page.url.pathname.startsWith('/stream') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
                         <span class="material-symbols-outlined shrink-0">videocam</span>
                         <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Streams</span>
                         
@@ -92,7 +121,7 @@
                         {/if}
                     </a>
 
-                    <a href="/inferencer" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group relative {page.url.pathname.startsWith('/inferencer') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
+                    <a href="/inferencer" class="flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors group relative {page.url.pathname.startsWith('/inferencer') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
                         <span class="material-symbols-outlined shrink-0">bar_chart</span>
                         <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Analytics</span>
                         
@@ -103,7 +132,7 @@
                         {/if}
                     </a>
 
-                    <a href="/annotator" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group relative {page.url.pathname.startsWith('/annotator') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
+                    <a href="/annotator" class="flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors group relative {page.url.pathname.startsWith('/annotator') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
                         <span class="material-symbols-outlined shrink-0">edit_square</span>
                         <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Annotator</span>
                         
@@ -114,7 +143,7 @@
                         {/if}
                     </a>
 
-                    <a href="/analysis" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group relative {page.url.pathname.startsWith('/analysis') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
+                    <a href="/analysis" class="flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors group relative {page.url.pathname.startsWith('/analysis') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
                         <span class="material-symbols-outlined shrink-0">query_stats</span>
                         <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Analysis</span>
                         
@@ -125,7 +154,7 @@
                         {/if}
                     </a>
 
-                    <a href="/pipeline" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group relative {page.url.pathname.startsWith('/pipeline') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
+                    <a href="/pipeline" class="flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors group relative {page.url.pathname.startsWith('/pipeline') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
                         <span class="material-symbols-outlined shrink-0">conversion_path</span>
                         <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Pipeline</span>
 
@@ -136,7 +165,7 @@
                         {/if}
                     </a>
 
-                    <a href="/frame-extractor" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group relative {page.url.pathname.startsWith('/frame-extractor') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
+                    <a href="/frame-extractor" class="flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors group relative {page.url.pathname.startsWith('/frame-extractor') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
                         <span class="material-symbols-outlined shrink-0">photo_library</span>
                         <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Extractor</span>
 
@@ -147,7 +176,7 @@
                         {/if}
                     </a>
 
-                    <a href="/benchmark" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group relative {page.url.pathname.startsWith('/benchmark') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
+                    <a href="/benchmark" class="flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors group relative {page.url.pathname.startsWith('/benchmark') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
                         <span class="material-symbols-outlined shrink-0">speed</span>
                         <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Benchmark</span>
 
@@ -158,7 +187,7 @@
                         {/if}
                     </a>
 
-                    <a href="/viewVideo" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group relative {page.url.pathname.startsWith('/viewVideo') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
+                    <a href="/viewVideo" class="flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors group relative {page.url.pathname.startsWith('/viewVideo') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
                         <span class="material-symbols-outlined shrink-0">movie</span>
                         <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Video Player</span>
 
@@ -169,7 +198,7 @@
                         {/if}
                     </a>
 
-                    <a href="/camera" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group relative {page.url.pathname.startsWith('/camera') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
+                    <a href="/camera" class="flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors group relative {page.url.pathname.startsWith('/camera') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
                         <span class="material-symbols-outlined shrink-0">photo_camera</span>
                         <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Camera</span>
                         
@@ -180,7 +209,7 @@
                         {/if}
                     </a>
 
-                    <a href="/hlsViewer" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group relative {page.url.pathname.startsWith('/hlsViewer') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
+                    <a href="/hlsViewer" class="flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors group relative {page.url.pathname.startsWith('/hlsViewer') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
                         <span class="material-symbols-outlined shrink-0">play_circle</span>
                         <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">HLS Player</span>
                         
@@ -191,7 +220,7 @@
                         {/if}
                     </a>
 
-                    <a href="/settings" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group relative {page.url.pathname.startsWith('/settings') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
+                    <a href="/settings" class="flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors group relative {page.url.pathname.startsWith('/settings') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
                         <span class="material-symbols-outlined shrink-0">settings</span>
                         <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Settings</span>
                         
@@ -206,7 +235,7 @@
 
             <!-- Bottom Section: User Profile -->
             <div class="flex flex-col gap-2">
-                <button onclick={toggleTheme} class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group relative text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]">
+                <button onclick={toggleTheme} class="flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors group relative text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]">
                     <span class="material-symbols-outlined shrink-0">{effectiveTheme.value === 'dark' ? 'light_mode' : 'dark_mode'}</span>
                     <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">
                         {effectiveTheme.value === 'dark' ? 'Light Mode' : 'Dark Mode'}
@@ -219,17 +248,17 @@
                     {/if}
                 </button>
 
-                <div class="border-t border-slate-200 dark:border-[#2a3441] pt-4">
-                    <div class="flex items-center gap-3 px-2">
-                        <div class="bg-center bg-no-repeat bg-cover rounded-full size-9 shrink-0 bg-gradient-to-br from-blue-500 to-indigo-600"></div>
-                        <div class="flex flex-col overflow-hidden transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">
-                            <p class="text-sm font-medium text-slate-900 dark:text-white truncate font-display">Admin User</p>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 truncate">admin@mediacore.io</p>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
+        <!-- Drag Handle -->
+        {#if isSidebarOpen}
+            <div
+                onmousedown={onResizeStart}
+                class="absolute top-0 -right-1 w-2 h-full cursor-col-resize z-20 flex justify-center"
+            >
+                <div class="w-[2px] h-full bg-slate-300 dark:bg-slate-600 hover:bg-[#137fec] transition-colors {isResizing ? 'bg-[#137fec]' : ''}"></div>
+            </div>
+        {/if}
     </aside>
 
     <!-- Main Content -->

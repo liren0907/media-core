@@ -2,7 +2,7 @@
   import { invoke, convertFileSrc } from "@tauri-apps/api/core";
   import Hls from "hls.js";
   import { appConfig, getDefaultRtspUrl } from "$lib/config.svelte";
-  import { PageContent, Panel, StatCard, StatusBadge } from '$lib/components/ui';
+  import { PageContent, Panel, StatCard, StatusBadge, EmptyState } from '$lib/components/ui';
   import type { StreamStats } from '$lib/types';
 
   let streamStats = $state<StreamStats | null>(null);
@@ -179,10 +179,7 @@
         {/if}
     {:else}
         <Panel title="Streams" icon="videocam">
-            <div class="p-8 text-center">
-                <span class="material-symbols-outlined text-4xl text-slate-300 dark:text-slate-600 mb-2">videocam_off</span>
-                <p class="text-xs text-slate-500">No streams active. Enter URLs above and click "Start".</p>
-            </div>
+            <EmptyState icon="videocam_off" message="No streams active. Enter URLs and click Start." />
         </Panel>
     {/if}
 </PageContent>

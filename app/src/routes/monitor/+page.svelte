@@ -1,6 +1,9 @@
 <script lang="ts">
   import { invoke } from '@tauri-apps/api/core';
   import { PageContent, StatCard, Panel, StatusBadge, ProgressBar } from '$lib/components/ui';
+  import { SparklineBar } from '$lib/components/data';
+  import { ThroughputChart } from '$lib/components/media';
+  import { formatUptime } from '$lib/utils/format';
   import {
     onSystemMetrics,
     onStreamStatus,
@@ -73,12 +76,6 @@
     eventLog = [{ time, source, message }, ...eventLog.slice(0, 49)];
   }
 
-  function formatUptime(seconds: number): string {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  }
 
   // ── Effect: data fetching + event listeners ──
 
@@ -165,14 +162,7 @@
 
         <StatCard label="CPU" icon="memory" iconColor="text-[#137fec]" value="{cpuPercent.toFixed(0)}%" sub={metrics ? `${metrics.cpu.coreCount}C` : ''}>
             {#snippet extra()}
-                <div class="h-5 w-full flex items-end gap-0.5 mt-2">
-                    {#each cpuHistory as value, i}
-                        <div
-                            class="w-full rounded-sm transition-all {i === cpuHistory.length - 1 ? 'bg-[#137fec]' : 'bg-[#137fec]/20'}"
-                            style="height: {value}%"
-                        ></div>
-                    {/each}
-                </div>
+                <SparklineBar values={cpuHistory} />
             {/snippet}
         </StatCard>
 
@@ -325,39 +315,6 @@
                 {/if}
             </div>
         {/snippet}
-        <div class="p-4 relative w-full h-[160px]">
-            <svg class="w-full h-full" preserveAspectRatio="none" viewBox="0 0 800 160">
-                <defs>
-                    <linearGradient id="monitorChartGradient" x1="0" x2="0" y1="0" y2="1">
-                        <stop offset="0%" stop-color="#137fec" stop-opacity="0.2"></stop>
-                        <stop offset="100%" stop-color="#137fec" stop-opacity="0"></stop>
-                    </linearGradient>
-                </defs>
-                <line stroke="#2a3441" stroke-dasharray="2 4" stroke-width="1" x1="0" x2="800" y1="130" y2="130" opacity="0.5"></line>
-                <line stroke="#2a3441" stroke-dasharray="2 4" stroke-width="1" x1="0" x2="800" y1="85" y2="85" opacity="0.5"></line>
-                <line stroke="#2a3441" stroke-dasharray="2 4" stroke-width="1" x1="0" x2="800" y1="40" y2="40" opacity="0.5"></line>
-                {#if throughputHistory && throughputHistory.points.length > 0}
-                    {@const points = throughputHistory.points}
-                    {@const pathData = points.map((p, i) => {
-                        const x = (i / (points.length - 1)) * 800;
-                        const y = 140 - (p.networkMbps / 30 * 110);
-                        return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
-                    }).join(' ')}
-                    <path d="{pathData} V 160 H 0 Z" fill="url(#monitorChartGradient)"></path>
-                    <path d="{pathData}" fill="none" stroke="#137fec" stroke-width="2"></path>
-                {:else}
-                    <path d="M0 120 C 100 110, 200 135, 300 90 S 500 45, 600 70 S 700 35, 800 45 V 160 H 0 Z" fill="url(#monitorChartGradient)"></path>
-                    <path d="M0 120 C 100 110, 200 135, 300 90 S 500 45, 600 70 S 700 35, 800 45" fill="none" stroke="#137fec" stroke-width="2"></path>
-                {/if}
-                <path d="M0 115 C 120 120, 250 100, 350 105 S 550 90, 650 85 S 750 100, 800 93" fill="none" opacity="0.5" stroke="#94a3b8" stroke-dasharray="5 5" stroke-width="2"></path>
-            </svg>
-            <div class="flex justify-between mt-1 text-[10px] text-slate-500 font-mono">
-                <span>{new Date(Date.now() - 3600000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
-                <span>{new Date(Date.now() - 2700000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
-                <span>{new Date(Date.now() - 1800000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
-                <span>{new Date(Date.now() - 900000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
-                <span>{new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
-            </div>
-        </div>
+        <ThroughputChart {throughputHistory} gradientId="monitorGradient" />
     </Panel>
 </PageContent>

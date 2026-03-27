@@ -2,8 +2,8 @@
     import { invoke } from '@tauri-apps/api/core';
     import { theme, effectiveTheme } from '$lib/theme.svelte';
     import { appConfig, type StreamConfig, type PathConfig } from '$lib/config.svelte';
-    import { open } from '@tauri-apps/plugin-dialog';
-    import { PageContent, Panel, StatusBadge } from '$lib/components/ui';
+    import { PageContent, Panel, StatusBadge, ToggleSwitch, FormField } from '$lib/components/ui';
+    import { DirPicker } from '$lib/components/form';
     import type { HardwareAccelConfig, HardwareCapabilities } from '$lib/types';
 
     const languages = [
@@ -78,28 +78,6 @@
             defaultOutputDir = config.paths.defaultOutputDir;
             annotationDir = config.paths.annotationDir;
             showSaveStatus();
-        }
-    }
-
-    async function browseDirectory(field: 'video' | 'image' | 'output' | 'annotation' | 'hls') {
-        try {
-            const selected = await open({
-                directory: true,
-                multiple: false,
-                title: 'Select Directory'
-            });
-
-            if (selected && typeof selected === 'string') {
-                switch (field) {
-                    case 'video': defaultVideoDir = selected; break;
-                    case 'image': defaultImageDir = selected; break;
-                    case 'output': defaultOutputDir = selected; break;
-                    case 'annotation': annotationDir = selected; break;
-                    case 'hls': hlsOutputDir = selected; break;
-                }
-            }
-        } catch (err) {
-            console.error('Failed to open directory picker:', err);
         }
     }
 
@@ -212,26 +190,19 @@
         {/snippet}
         <div class="p-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div class="flex flex-col gap-1">
-                    <label for="hlsServerUrl" class="text-[10px] font-medium uppercase tracking-wider text-slate-500">HLS Server URL</label>
+                <FormField label="HLS Server URL" id="hlsServerUrl">
                     <input id="hlsServerUrl" type="text" bind:value={hlsServerUrl} placeholder="http://127.0.0.1" class={inputClass} />
-                </div>
-                <div class="flex flex-col gap-1">
-                    <label for="hlsServerPort" class="text-[10px] font-medium uppercase tracking-wider text-slate-500">HLS Server Port</label>
+                </FormField>
+                <FormField label="HLS Server Port" id="hlsServerPort">
                     <input id="hlsServerPort" type="number" bind:value={hlsServerPort} placeholder="1521" class={inputClass} />
+                </FormField>
+                <div class="md:col-span-2">
+                    <FormField label="Default RTSP URL" id="defaultRtspUrl">
+                        <input id="defaultRtspUrl" type="text" bind:value={defaultRtspUrl} placeholder="rtsp://localhost:8554/mystream" class={inputClass} />
+                    </FormField>
                 </div>
-                <div class="flex flex-col gap-1 md:col-span-2">
-                    <label for="defaultRtspUrl" class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Default RTSP URL</label>
-                    <input id="defaultRtspUrl" type="text" bind:value={defaultRtspUrl} placeholder="rtsp://localhost:8554/mystream" class={inputClass} />
-                </div>
-                <div class="flex flex-col gap-1 md:col-span-2">
-                    <label for="hlsOutputDir" class="text-[10px] font-medium uppercase tracking-wider text-slate-500">HLS Output Directory</label>
-                    <div class="flex gap-2">
-                        <input id="hlsOutputDir" type="text" bind:value={hlsOutputDir} placeholder="hls_output" class="{inputClass} flex-1" />
-                        <button onclick={() => browseDirectory('hls')} class={browseClass}>
-                            <span class="material-symbols-outlined text-[18px]">folder_open</span>
-                        </button>
-                    </div>
+                <div class="md:col-span-2">
+                    <DirPicker bind:value={hlsOutputDir} label="HLS Output Directory" placeholder="hls_output" />
                 </div>
             </div>
         </div>
@@ -243,34 +214,10 @@
             <button onclick={savePathSettings} class="text-[10px] font-bold uppercase tracking-wider text-[#137fec] hover:text-blue-400">Save</button>
         {/snippet}
         <div class="p-4 flex flex-col gap-3">
-            <div class="flex flex-col gap-1">
-                <label for="defaultVideoDir" class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Video Directory</label>
-                <div class="flex gap-2">
-                    <input id="defaultVideoDir" type="text" bind:value={defaultVideoDir} placeholder="Select default video directory..." class="{inputClass} flex-1" />
-                    <button onclick={() => browseDirectory('video')} class={browseClass}><span class="material-symbols-outlined text-[18px]">folder_open</span></button>
-                </div>
-            </div>
-            <div class="flex flex-col gap-1">
-                <label for="defaultImageDir" class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Image Directory</label>
-                <div class="flex gap-2">
-                    <input id="defaultImageDir" type="text" bind:value={defaultImageDir} placeholder="Select default image directory..." class="{inputClass} flex-1" />
-                    <button onclick={() => browseDirectory('image')} class={browseClass}><span class="material-symbols-outlined text-[18px]">folder_open</span></button>
-                </div>
-            </div>
-            <div class="flex flex-col gap-1">
-                <label for="defaultOutputDir" class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Output Directory</label>
-                <div class="flex gap-2">
-                    <input id="defaultOutputDir" type="text" bind:value={defaultOutputDir} placeholder="Select default output directory..." class="{inputClass} flex-1" />
-                    <button onclick={() => browseDirectory('output')} class={browseClass}><span class="material-symbols-outlined text-[18px]">folder_open</span></button>
-                </div>
-            </div>
-            <div class="flex flex-col gap-1">
-                <label for="annotationDir" class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Annotation Directory</label>
-                <div class="flex gap-2">
-                    <input id="annotationDir" type="text" bind:value={annotationDir} placeholder="Select annotation directory..." class="{inputClass} flex-1" />
-                    <button onclick={() => browseDirectory('annotation')} class={browseClass}><span class="material-symbols-outlined text-[18px]">folder_open</span></button>
-                </div>
-            </div>
+            <DirPicker bind:value={defaultVideoDir} label="Video Directory" placeholder="Select default video directory..." />
+            <DirPicker bind:value={defaultImageDir} label="Image Directory" placeholder="Select default image directory..." />
+            <DirPicker bind:value={defaultOutputDir} label="Output Directory" placeholder="Select default output directory..." />
+            <DirPicker bind:value={annotationDir} label="Annotation Directory" placeholder="Select default annotation directory..." />
         </div>
     </Panel>
 
@@ -288,17 +235,10 @@
                 </div>
             {/if}
 
-            <label class="flex items-center gap-2 cursor-pointer">
-                <div class="relative inline-flex items-center">
-                    <input type="checkbox" bind:checked={hwConfig.enabled} class="sr-only peer">
-                    <div class="w-9 h-5 bg-slate-200 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#137fec]"></div>
-                </div>
-                <span class="text-xs text-slate-700 dark:text-slate-300">Enable Hardware Acceleration</span>
-            </label>
+            <ToggleSwitch bind:checked={hwConfig.enabled} label="Enable Hardware Acceleration" />
 
             {#if hwConfig.enabled}
-                <div class="flex flex-col gap-1">
-                    <label for="hwMode" class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Mode</label>
+                <FormField label="Mode" id="hwMode">
                     <select id="hwMode" bind:value={hwConfig.mode} class="{inputClass} w-full">
                         {#if hwCapabilities}
                             {#each hwCapabilities.availableModes as mode}
@@ -309,15 +249,9 @@
                             <option value="disabled">Disabled</option>
                         {/if}
                     </select>
-                </div>
+                </FormField>
 
-                <label class="flex items-center gap-2 cursor-pointer">
-                    <div class="relative inline-flex items-center">
-                        <input type="checkbox" bind:checked={hwConfig.fallbackToCpu} class="sr-only peer">
-                        <div class="w-9 h-5 bg-slate-200 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
-                    </div>
-                    <span class="text-xs text-slate-700 dark:text-slate-300">Fallback to CPU if acceleration fails</span>
-                </label>
+                <ToggleSwitch bind:checked={hwConfig.fallbackToCpu} label="Fallback to CPU if acceleration fails" />
             {/if}
         </div>
     </Panel>

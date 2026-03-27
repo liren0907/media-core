@@ -1,8 +1,9 @@
 <script lang="ts">
   import { open } from '@tauri-apps/plugin-dialog';
   import { convertFileSrc, invoke } from '@tauri-apps/api/core';
-  import { PageContent, Panel, StatCard, StatusBadge, ProgressBar } from '$lib/components/ui';
+  import { PageContent, Panel, StatCard, StatusBadge, ProgressBar, ErrorAlert, FormField } from '$lib/components/ui';
   import type { AnnotationData } from '$lib/types';
+  import { inputClass } from '$lib/utils/styles';
 
   let videoPath = $state('');
   let annotationPath = $state('');
@@ -83,7 +84,6 @@
   let topLabels = $derived(Object.entries(labelCounts).sort(([, a], [, b]) => b - a).slice(0, 5));
   let classProgress = $derived(availableLabels.length > 0 ? (selectedLabels.length / availableLabels.length) * 100 : 0);
 
-  const inputClass = 'bg-white dark:bg-[#111418] border border-slate-200 dark:border-[#2a3441] rounded px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#137fec]';
 </script>
 
 <svelte:head>
@@ -97,20 +97,18 @@
             <!-- Input Sources -->
             <Panel title="Input Sources" icon="video_file">
                 <div class="p-3 flex flex-col gap-3">
-                    <div class="flex flex-col gap-1">
-                        <label for="sourceVideoPath" class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Video</label>
+                    <FormField label="Video" id="sourceVideoPath">
                         <div class="flex gap-1.5">
                             <input id="sourceVideoPath" type="text" value={videoPath ? '...' + videoPath.slice(-25) : ''} readonly class="{inputClass} flex-1" placeholder="No file" />
                             <button onclick={openVideoFile} class="px-2 py-2 bg-[#137fec] hover:bg-blue-600 text-white rounded text-[10px] font-bold transition-colors">Browse</button>
                         </div>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label for="annotationDataPath" class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Annotation JSON</label>
+                    </FormField>
+                    <FormField label="Annotation JSON" id="annotationDataPath">
                         <div class="flex gap-1.5">
                             <input id="annotationDataPath" type="text" value={annotationPath ? '...' + annotationPath.slice(-25) : ''} readonly class="{inputClass} flex-1" placeholder="No file" />
                             <button onclick={openAnnotationFile} class="px-2 py-2 bg-slate-100 dark:bg-[#1f2937] border border-slate-200 dark:border-[#2a3441] rounded text-[10px] font-bold transition-colors">Load</button>
                         </div>
-                    </div>
+                    </FormField>
                 </div>
             </Panel>
 
@@ -166,7 +164,7 @@
 
             <!-- Action -->
             {#if errorMessage}
-                <div class="p-2 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 text-xs">{errorMessage}</div>
+                <ErrorAlert message={errorMessage} />
             {/if}
             <button onclick={processVideo} disabled={isProcessing || !videoPath || !annotationPath} class="w-full py-2 bg-[#137fec] hover:bg-blue-600 text-white rounded text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-1.5 transition-colors">
                 {#if isProcessing}<span class="material-symbols-outlined animate-spin text-[16px]">sync</span> Processing...{:else}<span class="material-symbols-outlined text-[16px]">play_arrow</span> Run Inference{/if}

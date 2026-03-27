@@ -1,7 +1,7 @@
 <script lang="ts">
   import { invoke, convertFileSrc } from '@tauri-apps/api/core';
   import { open } from '@tauri-apps/plugin-dialog';
-  import { PageContent, Panel, StatCard } from '$lib/components/ui';
+  import { PageContent, Panel, StatCard, ErrorAlert } from '$lib/components/ui';
 
   let videoSrc = $state("");
   let videoPath = $state("");
@@ -155,9 +155,7 @@
 
     <!-- Alerts -->
     {#if errorMessage}
-        <div class="p-2 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 text-xs flex items-center gap-2">
-            <span class="material-symbols-outlined text-[16px]">error</span> {errorMessage}
-        </div>
+        <ErrorAlert message={errorMessage} />
     {/if}
     {#if annotationResponse}
         <div class="p-2 rounded bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900/30 text-green-600 dark:text-green-400 text-xs flex items-center gap-2">

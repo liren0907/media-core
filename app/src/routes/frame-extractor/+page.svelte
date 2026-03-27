@@ -1,7 +1,9 @@
 <script lang="ts">
   import { invoke } from '@tauri-apps/api/core';
-  import { open } from '@tauri-apps/plugin-dialog';
-  import { PageContent, Panel, StatCard, StatusBadge, ProgressBar } from '$lib/components/ui';
+  import { PageContent, Panel, StatCard, StatusBadge, ProgressBar, ErrorAlert, EmptyState, RunButton, FormField } from '$lib/components/ui';
+  import { FilePicker, DirPicker } from '$lib/components/form';
+  import { getFileName } from '$lib/utils/format';
+  import { inputClass } from '$lib/utils/styles';
 
   // Config state
   let videoPath = $state('');
@@ -22,20 +24,6 @@
   let extractedFrames: { index: number; data: string }[] = $state([]);
   let diskResult = $state<{ outputDir: string; frameCount: number } | null>(null);
   let selectedFrame: string | null = $state(null);
-
-  async function selectVideo() {
-    try {
-      const file = await open({ filters: [{ name: 'Video', extensions: ['mp4', 'avi', 'mkv', 'mov', 'webm'] }] });
-      if (file) { videoPath = file as string; error = ''; }
-    } catch (e) { error = `Failed to select video: ${e}`; }
-  }
-
-  async function selectOutputDir() {
-    try {
-      const dir = await open({ directory: true });
-      if (dir) outputDir = dir as string;
-    } catch (e) { error = `Failed to select directory: ${e}`; }
-  }
 
   async function runExtraction() {
     if (!videoPath) { error = 'Select a video file first'; return; }
@@ -77,10 +65,6 @@
     isProcessing = false;
   }
 
-  function getFileName(path: string): string {
-    return path.split('/').pop() || path;
-  }
-
   const strategyLabels: Record<string, string> = {
     every_nth: 'Every Nth Frame',
     first_n: 'First N Frames',
@@ -88,7 +72,6 @@
     keyframes: 'Keyframes Only',
   };
 
-  const inputClass = 'bg-white dark:bg-[#111418] border border-slate-200 dark:border-[#2a3441] rounded px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#137fec]';
 </script>
 
 <svelte:head>
@@ -110,95 +93,72 @@
         <!-- Config Panel -->
         <Panel title="Configuration" icon="tune">
             {#snippet actions()}
-                <button onclick={runExtraction} disabled={isProcessing || !videoPath} class="flex items-center gap-1 px-2 py-1 bg-[#137fec] hover:bg-blue-600 text-white rounded text-[10px] font-bold disabled:opacity-50 transition-colors">
-                    {#if isProcessing}<span class="material-symbols-outlined animate-spin text-[14px]">sync</span>{:else}<span class="material-symbols-outlined text-[14px]">play_arrow</span>{/if}
-                    Extract
-                </button>
+                <RunButton loading={isProcessing} disabled={!videoPath} label="Extract" onclick={runExtraction} />
             {/snippet}
             <div class="p-3 flex flex-col gap-3">
                 <!-- Video selection -->
-                <div class="flex flex-col gap-1">
-                    <label class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Video File</label>
-                    <div class="flex gap-1.5">
-                        <input type="text" readonly value={videoPath ? getFileName(videoPath) : ''} class="{inputClass} flex-1" placeholder="Select video..." />
-                        <button onclick={selectVideo} class="px-2 py-2 bg-[#137fec] hover:bg-blue-600 text-white rounded text-[10px] font-bold transition-colors">Browse</button>
-                    </div>
-                </div>
+                <FilePicker bind:value={videoPath} label="Video File" filters={[{ name: 'Video', extensions: ['mp4', 'avi', 'mkv', 'mov', 'webm'] }]} />
 
                 <!-- Mode toggle -->
-                <div class="flex flex-col gap-1">
-                    <label class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Mode</label>
+                <FormField label="Mode">
                     <div class="flex gap-1">
                         <button onclick={() => mode = 'preview'} class="flex-1 py-1.5 rounded text-xs font-bold transition-colors {mode === 'preview' ? 'bg-[#137fec] text-white' : 'bg-slate-100 dark:bg-[#1f2937] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-[#2a3441]'}">Preview</button>
                         <button onclick={() => mode = 'disk'} class="flex-1 py-1.5 rounded text-xs font-bold transition-colors {mode === 'disk' ? 'bg-[#137fec] text-white' : 'bg-slate-100 dark:bg-[#1f2937] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-[#2a3441]'}">Export to Disk</button>
                     </div>
-                </div>
+                </FormField>
 
                 <!-- Strategy -->
-                <div class="flex flex-col gap-1">
-                    <label for="strategy" class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Strategy</label>
+                <FormField label="Strategy">
                     <select id="strategy" bind:value={strategy} class="{inputClass} w-full">
                         <option value="every_nth">Every Nth Frame</option>
                         <option value="first_n">First N Frames</option>
                         <option value="range">Frame Range</option>
                         <option value="keyframes">Keyframes Only</option>
                     </select>
-                </div>
+                </FormField>
 
                 <!-- Strategy params (conditional) -->
                 {#if strategy === 'every_nth'}
-                    <div class="flex flex-col gap-1">
-                        <label for="nth" class="text-[10px] font-medium uppercase tracking-wider text-slate-500">N (extract every Nth frame) = {strategyParam}</label>
+                    <FormField label="N (extract every Nth frame) = {strategyParam}">
                         <input id="nth" type="range" bind:value={strategyParam} min="1" max="120" step="1" class="w-full" />
-                    </div>
+                    </FormField>
                 {:else if strategy === 'first_n'}
-                    <div class="flex flex-col gap-1">
-                        <label for="firstn" class="text-[10px] font-medium uppercase tracking-wider text-slate-500">N (first N frames) = {strategyParam}</label>
+                    <FormField label="N (first N frames) = {strategyParam}">
                         <input id="firstn" type="range" bind:value={strategyParam} min="1" max="200" step="1" class="w-full" />
-                    </div>
+                    </FormField>
                 {:else if strategy === 'range'}
                     <div class="grid grid-cols-2 gap-2">
-                        <div class="flex flex-col gap-1">
-                            <label for="rangeStart" class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Start</label>
+                        <FormField label="Start">
                             <input id="rangeStart" type="number" bind:value={rangeStart} min="0" class="{inputClass} w-full" />
-                        </div>
-                        <div class="flex flex-col gap-1">
-                            <label for="rangeEnd" class="text-[10px] font-medium uppercase tracking-wider text-slate-500">End</label>
+                        </FormField>
+                        <FormField label="End">
                             <input id="rangeEnd" type="number" bind:value={rangeEnd} min="1" class="{inputClass} w-full" />
-                        </div>
+                        </FormField>
                     </div>
                 {/if}
 
                 <!-- Scale factor -->
                 {#if mode === 'preview'}
-                    <div class="flex flex-col gap-1">
-                        <label for="scale" class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Scale = {scaleFactor.toFixed(2)}</label>
+                    <FormField label="Scale = {scaleFactor.toFixed(2)}">
                         <input id="scale" type="range" bind:value={scaleFactor} min="0.25" max="1" step="0.05" class="w-full" />
-                    </div>
+                    </FormField>
                 {/if}
 
                 <!-- Disk mode options -->
                 {#if mode === 'disk'}
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Output Directory</label>
-                        <div class="flex gap-1.5">
-                            <input type="text" readonly value={outputDir ? getFileName(outputDir) : ''} class="{inputClass} flex-1" placeholder="Select..." />
-                            <button onclick={selectOutputDir} class="px-2 py-2 bg-slate-100 dark:bg-[#1f2937] border border-slate-200 dark:border-[#2a3441] rounded text-[10px] font-bold transition-colors">Browse</button>
-                        </div>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label for="extractionMode" class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Engine</label>
+                    <DirPicker bind:value={outputDir} label="Output Directory" />
+                    <FormField label="Engine">
                         <select id="extractionMode" bind:value={extractionMode} class="{inputClass} w-full">
                             <option value="opencv_sequential">OpenCV Sequential</option>
                             <option value="opencv_interval">OpenCV Interval</option>
                             <option value="ffmpeg">FFmpeg</option>
                             <option value="parallel">Parallel</option>
                         </select>
-                    </div>
+                    </FormField>
                 {/if}
 
                 {#if error}
-                    <div class="p-2 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 text-[10px]">{error}</div>
+                    <ErrorAlert message={error} />
                 {/if}
             </div>
         </Panel>
@@ -237,10 +197,7 @@
                                 <p class="text-xs">Extracting frames...</p>
                             </div>
                         {:else}
-                            <div class="flex flex-col items-center py-12 text-slate-500">
-                                <span class="material-symbols-outlined text-3xl mb-2">photo_library</span>
-                                <p class="text-xs">Select a video and click "Extract" to preview frames</p>
-                            </div>
+                            <EmptyState icon="photo_library" message="Select a video and click &quot;Extract&quot; to preview frames" />
                         {/if}
                     </div>
                 </Panel>
@@ -262,10 +219,7 @@
                                 <p class="text-xs">Extracting frames to disk...</p>
                             </div>
                         {:else}
-                            <div class="flex flex-col items-center py-12 text-slate-500">
-                                <span class="material-symbols-outlined text-3xl mb-2">save</span>
-                                <p class="text-xs">Configure and click "Extract" to save frames to disk</p>
-                            </div>
+                            <EmptyState icon="save" message="Configure and click &quot;Extract&quot; to save frames to disk" />
                         {/if}
                     </div>
                 </Panel>

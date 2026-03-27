@@ -1,8 +1,10 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
-  import { open } from "@tauri-apps/plugin-dialog";
-  import { PageContent, Panel, StatusBadge } from '$lib/components/ui';
+  import { PageContent, Panel, StatusBadge, ErrorAlert, EmptyState, RunButton, FormField } from '$lib/components/ui';
+  import { FilePicker, DirPicker } from '$lib/components/form';
   import type { AnalysisResult } from '$lib/types';
+  import { getFileName } from '$lib/utils/format';
+  import { inputClass } from '$lib/utils/styles';
 
   type AnalysisMode = 'motion' | 'similarity' | 'compare';
   let activeMode: AnalysisMode = $state('motion');
@@ -28,12 +30,6 @@
   let isProcessing = $state(false);
   let error = $state("");
 
-  async function selectVideoFile() { const p = await open({ filters: [{ name: "Video", extensions: ["mp4", "avi", "mkv", "mov"] }] }); if (p) motionVideoPath = p as string; }
-  async function selectMotionOutputDir() { const p = await open({ directory: true }); if (p) motionOutputDir = p as string; }
-  async function selectSimilarityInputDir() { const p = await open({ directory: true }); if (p) similarityInputDir = p as string; }
-  async function selectSimilarityOutputDir() { const p = await open({ directory: true }); if (p) similarityOutputDir = p as string; }
-  async function selectCompareImage1() { const p = await open({ filters: [{ name: "Image", extensions: ["jpg", "jpeg", "png", "bmp"] }] }); if (p) compareImage1 = p as string; }
-  async function selectCompareImage2() { const p = await open({ filters: [{ name: "Image", extensions: ["jpg", "jpeg", "png", "bmp"] }] }); if (p) compareImage2 = p as string; }
 
   async function runMotionDetection() {
     if (!motionVideoPath) { error = "Please select a video file"; return; }
@@ -59,10 +55,6 @@
     isProcessing = false;
   }
 
-  function getFileName(path: string): string { return path.split('/').pop() || path; }
-
-  const inputClass = 'bg-white dark:bg-[#111418] border border-slate-200 dark:border-[#2a3441] rounded px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#137fec]';
-  const browseClass = 'px-3 py-2 bg-slate-100 dark:bg-[#1f2937] border border-slate-200 dark:border-[#2a3441] rounded text-xs font-bold transition-colors hover:bg-slate-200 dark:hover:bg-[#283039]';
 </script>
 
 <svelte:head>
@@ -90,94 +82,53 @@
         <!-- Configuration Panel -->
         <Panel title="Configuration" icon="tune">
             {#snippet actions()}
-                <button onclick={() => { if (activeMode === 'motion') runMotionDetection(); else if (activeMode === 'similarity') runSimilarityGrouping(); else runImageComparison(); }} disabled={isProcessing}
-                    class="flex items-center gap-1 px-2 py-1 bg-[#137fec] hover:bg-blue-600 text-white rounded text-[10px] font-bold disabled:opacity-50 transition-colors">
-                    {#if isProcessing}<span class="material-symbols-outlined animate-spin text-[14px]">sync</span>{:else}<span class="material-symbols-outlined text-[14px]">play_arrow</span>{/if}
-                    Run
-                </button>
+                <RunButton loading={isProcessing} onclick={() => { if (activeMode === 'motion') runMotionDetection(); else if (activeMode === 'similarity') runSimilarityGrouping(); else runImageComparison(); }} />
             {/snippet}
             <div class="p-3 flex flex-col gap-3">
                 {#if activeMode === 'motion'}
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Video File</label>
-                        <div class="flex gap-1.5">
-                            <input type="text" readonly value={motionVideoPath ? getFileName(motionVideoPath) : ''} class="{inputClass} flex-1" placeholder="Select video..." />
-                            <button onclick={selectVideoFile} class={browseClass}>Browse</button>
-                        </div>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Algorithm</label>
+                    <FilePicker bind:value={motionVideoPath} label="Video File" filters={[{ name: "Video", extensions: ["mp4", "avi", "mkv", "mov"] }]} placeholder="Select video..." />
+                    <FormField label="Algorithm">
                         <select bind:value={motionAlgorithm} class="{inputClass} w-full">
                             <option value="frame_diff">Frame Difference</option>
                             <option value="mog2">MOG2</option>
                             <option value="knn">KNN</option>
                             <option value="optical_flow">Optical Flow</option>
                         </select>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Threshold ({motionThreshold})</label>
+                    </FormField>
+                    <FormField label="Threshold ({motionThreshold})">
                         <input type="range" bind:value={motionThreshold} min="1" max="100" step="1" class="w-full" />
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Min Area ({motionMinArea}px)</label>
+                    </FormField>
+                    <FormField label="Min Area ({motionMinArea}px)">
                         <input type="range" bind:value={motionMinArea} min="100" max="5000" step="100" class="w-full" />
-                    </div>
+                    </FormField>
 
                 {:else if activeMode === 'similarity'}
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Input Directory</label>
-                        <div class="flex gap-1.5">
-                            <input type="text" readonly value={similarityInputDir ? getFileName(similarityInputDir) : ''} class="{inputClass} flex-1" placeholder="Select..." />
-                            <button onclick={selectSimilarityInputDir} class={browseClass}>Browse</button>
-                        </div>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Output Directory</label>
-                        <div class="flex gap-1.5">
-                            <input type="text" readonly value={similarityOutputDir ? getFileName(similarityOutputDir) : ''} class="{inputClass} flex-1" placeholder="Select..." />
-                            <button onclick={selectSimilarityOutputDir} class={browseClass}>Browse</button>
-                        </div>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Method</label>
+                    <DirPicker bind:value={similarityInputDir} label="Input Directory" />
+                    <DirPicker bind:value={similarityOutputDir} label="Output Directory" />
+                    <FormField label="Method">
                         <select bind:value={similarityMethod} class="{inputClass} w-full">
                             <option value="phash">Perceptual Hash</option>
                             <option value="histogram">Histogram</option>
                             <option value="feature">Feature Matching</option>
                         </select>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Threshold ({(similarityThreshold * 100).toFixed(0)}%)</label>
+                    </FormField>
+                    <FormField label="Threshold ({(similarityThreshold * 100).toFixed(0)}%)">
                         <input type="range" bind:value={similarityThreshold} min="0.5" max="1" step="0.01" class="w-full" />
-                    </div>
+                    </FormField>
 
                 {:else if activeMode === 'compare'}
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Image 1</label>
-                        <div class="flex gap-1.5">
-                            <input type="text" readonly value={compareImage1 ? getFileName(compareImage1) : ''} class="{inputClass} flex-1" placeholder="Select..." />
-                            <button onclick={selectCompareImage1} class={browseClass}>Browse</button>
-                        </div>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Image 2</label>
-                        <div class="flex gap-1.5">
-                            <input type="text" readonly value={compareImage2 ? getFileName(compareImage2) : ''} class="{inputClass} flex-1" placeholder="Select..." />
-                            <button onclick={selectCompareImage2} class={browseClass}>Browse</button>
-                        </div>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Method</label>
+                    <FilePicker bind:value={compareImage1} label="Image 1" filters={[{ name: "Image", extensions: ["jpg", "jpeg", "png", "bmp"] }]} />
+                    <FilePicker bind:value={compareImage2} label="Image 2" filters={[{ name: "Image", extensions: ["jpg", "jpeg", "png", "bmp"] }]} />
+                    <FormField label="Method">
                         <select bind:value={compareMethod} class="{inputClass} w-full">
                             <option value="phash">Perceptual Hash</option>
                             <option value="histogram">Histogram</option>
                             <option value="feature">Feature Matching</option>
                         </select>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <label class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Threshold ({(compareThreshold * 100).toFixed(0)}%)</label>
+                    </FormField>
+                    <FormField label="Threshold ({(compareThreshold * 100).toFixed(0)}%)">
                         <input type="range" bind:value={compareThreshold} min="0.5" max="1" step="0.01" class="w-full" />
-                    </div>
+                    </FormField>
                 {/if}
             </div>
         </Panel>
@@ -187,7 +138,7 @@
             <Panel title="Results" icon="analytics">
                 <div class="p-4 min-h-[300px]">
                     {#if error}
-                        <div class="p-2 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 text-xs">{error}</div>
+                        <ErrorAlert message={error} />
                     {:else if isProcessing}
                         <div class="flex flex-col items-center justify-center h-full gap-3 text-slate-500 py-12">
                             <span class="material-symbols-outlined text-3xl animate-spin">progress_activity</span>
@@ -218,7 +169,7 @@
                                 </table>
                             </div>
                         {:else if activeMode === 'motion'}
-                            <div class="flex flex-col items-center py-12 text-slate-500"><span class="material-symbols-outlined text-3xl mb-2">motion_photos_off</span><p class="text-xs">No motion detected</p></div>
+                            <EmptyState icon="motion_photos_off" message="No motion detected" />
                         {/if}
 
                         {#if activeMode === 'similarity' && result.similarityGroups.length > 0}
@@ -245,7 +196,7 @@
                                 </div>
                             </div>
                         {:else if activeMode === 'similarity'}
-                            <div class="flex flex-col items-center py-12 text-slate-500"><span class="material-symbols-outlined text-3xl mb-2">group_off</span><p class="text-xs">No groups found</p></div>
+                            <EmptyState icon="group_off" message="No groups found" />
                         {/if}
 
                         {#if activeMode === 'compare' && result.imageComparison}
@@ -272,10 +223,10 @@
                                 </div>
                             </div>
                         {:else if activeMode === 'compare'}
-                            <div class="flex flex-col items-center py-12 text-slate-500"><span class="material-symbols-outlined text-3xl mb-2">compare</span><p class="text-xs">Select two images and run comparison</p></div>
+                            <EmptyState icon="compare" message="Select two images and run comparison" />
                         {/if}
                     {:else}
-                        <div class="flex flex-col items-center py-12 text-slate-500"><span class="material-symbols-outlined text-3xl mb-2">analytics</span><p class="text-xs">Configure and click "Run"</p></div>
+                        <EmptyState icon="analytics" message="Configure and click &quot;Run&quot;" />
                     {/if}
                 </div>
             </Panel>

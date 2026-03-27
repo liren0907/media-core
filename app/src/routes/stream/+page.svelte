@@ -3,7 +3,7 @@
   import { convertFileSrc, invoke } from "@tauri-apps/api/core";
   import Hls from "hls.js";
   import { appConfig, getDefaultRtspUrl, getHlsOutputDir } from "$lib/config.svelte";
-  import { PageContent, Panel, StatCard, StatusBadge, ProgressBar } from '$lib/components/ui';
+  import { PageContent, Panel, StatCard, StatusBadge, ProgressBar, ToggleSwitch, FormField } from '$lib/components/ui';
   import type { StreamStats } from '$lib/types';
 
   let streamStats = $state<StreamStats | null>(null);
@@ -155,14 +155,13 @@
 
                     <form onsubmit={(e) => { e.preventDefault(); startCapture(); }} class="flex flex-col gap-4">
                         <!-- Main URL -->
-                        <div class="flex flex-col gap-1">
-                            <label for="mainRtspUrl" class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Main RTSP URL</label>
+                        <FormField label="Main RTSP URL" id="mainRtspUrl">
                             <div class="flex gap-2">
                                 <input id="mainRtspUrl" type="text" bind:value={rtspConfig.rtsp_url} class="{inputClass} flex-1" placeholder="rtsp://example.com/stream" />
                                 <button type="button" onclick={playInApp} class="px-3 py-2 bg-[#137fec] hover:bg-blue-600 text-white rounded text-xs font-bold transition-colors">Play</button>
                                 <button type="button" onclick={playInNewWindow} class="px-3 py-2 bg-slate-100 dark:bg-[#1f2937] border border-slate-200 dark:border-[#2a3441] text-slate-700 dark:text-white rounded text-xs font-bold transition-colors">Pop-out</button>
                             </div>
-                        </div>
+                        </FormField>
 
                         <!-- Additional URLs -->
                         <div class="flex flex-col gap-1.5">
@@ -181,35 +180,21 @@
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div class="flex flex-col gap-1">
-                                <label for="outputDirectory" class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Output Directory</label>
+                            <FormField label="Output Directory" id="outputDirectory">
                                 <div class="flex gap-2">
                                     <input id="outputDirectory" type="text" readonly bind:value={rtspConfig.output_directory} class="{inputClass} flex-1" placeholder="Select..." />
                                     <button type="button" onclick={selectOutputDirectory} class="px-3 py-2 bg-slate-100 dark:bg-[#1f2937] border border-slate-200 dark:border-[#2a3441] rounded text-xs transition-colors"><span class="material-symbols-outlined text-[18px]">folder_open</span></button>
                                 </div>
-                            </div>
-                            <div class="flex flex-col gap-1">
-                                <label for="segmentDuration" class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Segment Duration (sec)</label>
+                            </FormField>
+                            <FormField label="Segment Duration (sec)" id="segmentDuration">
                                 <input id="segmentDuration" type="number" bind:value={rtspConfig.saved_time_duration} min="1" class="{inputClass} w-full" />
-                            </div>
+                            </FormField>
                         </div>
 
                         <!-- Toggles -->
                         <div class="flex gap-4">
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <div class="relative inline-flex items-center">
-                                    <input type="checkbox" bind:checked={rtspConfig.show_preview} class="sr-only peer">
-                                    <div class="w-9 h-5 bg-slate-200 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#137fec]"></div>
-                                </div>
-                                <span class="text-xs text-slate-700 dark:text-slate-300">Preview</span>
-                            </label>
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <div class="relative inline-flex items-center">
-                                    <input type="checkbox" bind:checked={rtspConfig.use_fps} class="sr-only peer">
-                                    <div class="w-9 h-5 bg-slate-200 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#137fec]"></div>
-                                </div>
-                                <span class="text-xs text-slate-700 dark:text-slate-300">Custom FPS</span>
-                            </label>
+                            <ToggleSwitch bind:checked={rtspConfig.show_preview} label="Preview" />
+                            <ToggleSwitch bind:checked={rtspConfig.use_fps} label="Custom FPS" />
                         </div>
 
                         <!-- HLS Config -->
@@ -223,14 +208,12 @@
                             </label>
                             {#if rtspConfig.hls.enabled}
                                 <div class="grid grid-cols-2 gap-3">
-                                    <div class="flex flex-col gap-1">
-                                        <label for="hlsOutputDir" class="text-[10px] font-medium uppercase tracking-wider text-slate-500">HLS Output Dir</label>
+                                    <FormField label="HLS Output Dir" id="hlsOutputDir">
                                         <input id="hlsOutputDir" type="text" bind:value={rtspConfig.hls.output_directory} class="{inputClass} w-full" />
-                                    </div>
-                                    <div class="flex flex-col gap-1">
-                                        <label for="hlsPlaylistSize" class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Playlist Size</label>
+                                    </FormField>
+                                    <FormField label="Playlist Size" id="hlsPlaylistSize">
                                         <input id="hlsPlaylistSize" type="number" bind:value={rtspConfig.hls.playlist_size} min="3" max="50" class="{inputClass} w-full" />
-                                    </div>
+                                    </FormField>
                                 </div>
                             {/if}
                         </div>

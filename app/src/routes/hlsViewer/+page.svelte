@@ -1,7 +1,9 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
   import { appConfig, getPlaylistUrl, getHlsOutputDir } from "$lib/config.svelte";
-  import { PageContent, Panel, StatCard, StatusBadge, ProgressBar } from '$lib/components/ui';
+  import { PageContent, Panel, StatCard, StatusBadge, ProgressBar, FormField, ErrorAlert } from '$lib/components/ui';
+  import { SparklineBar } from '$lib/components/data';
+  import { formatBitrate, formatLatency } from '$lib/utils/format';
 
   let videoElement: HTMLVideoElement;
   let hlsStatus = $state({ status: "inactive", playlist_exists: false, segment_count: 0, playlist_path: "" });
@@ -113,8 +115,6 @@
     catch (err) { error = `Validation failed: ${err}`; }
   }
 
-  function formatBitrate(bps: number): string { return bps >= 1e6 ? `${(bps / 1e6).toFixed(1)} Mbps` : bps >= 1e3 ? `${(bps / 1e3).toFixed(0)} Kbps` : `${bps} bps`; }
-  function formatLatency(ms: number): string { return ms < 1000 ? `${ms.toFixed(0)}ms` : `${(ms / 1000).toFixed(1)}s`; }
   function setQualityLevel(level: number) { if (hls) hls.currentLevel = level; }
 
   let dropRate = $derived(totalFrames > 0 ? ((droppedFrames / totalFrames) * 100).toFixed(2) : "0.00");
@@ -179,12 +179,7 @@
                 <span class="text-[10px] font-mono text-slate-500">{formatBitrate(bandwidth)} est.</span>
             {/snippet}
             <div class="p-3">
-                <div class="h-16 w-full flex items-end gap-0.5">
-                    {#each bandwidthHistory as bw, i}
-                        {@const maxBw = Math.max(...bandwidthHistory, 1)}
-                        <div class="w-full rounded-t-sm transition-all {i === bandwidthHistory.length - 1 ? 'bg-[#137fec]' : 'bg-[#137fec]/20'}" style="height: {(bw / maxBw) * 100}%"></div>
-                    {/each}
-                </div>
+                <SparklineBar values={bandwidthHistory.map(bw => (bw / Math.max(...bandwidthHistory, 1)) * 100)} height="h-16" />
                 {#if segmentLoadTimes.length > 0}
                     <div class="mt-2 text-[10px] text-slate-500 font-mono">
                         Avg segment load: {(segmentLoadTimes.reduce((a, b) => a + b, 0) / segmentLoadTimes.length).toFixed(0)}ms
@@ -212,10 +207,9 @@
         <!-- Controls -->
         <Panel title="Controls" icon="tune">
             <div class="p-3 flex flex-col gap-3">
-                <div class="flex flex-col gap-1">
-                    <label for="playlistUrl" class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Playlist URL</label>
+                <FormField label="Playlist URL" id="playlistUrl">
                     <input id="playlistUrl" type="text" bind:value={playlistUrl} class="bg-white dark:bg-[#111418] border border-slate-200 dark:border-[#2a3441] rounded px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#137fec]" />
-                </div>
+                </FormField>
 
                 <button onclick={loadPlaylist} disabled={isLoading || !hlsStatus.playlist_exists} class="w-full py-2 bg-[#137fec] hover:bg-blue-600 text-white rounded text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-1.5 transition-colors">
                     {#if isLoading}<span class="material-symbols-outlined animate-spin text-[16px]">sync</span>{:else}<span class="material-symbols-outlined text-[16px]">play_arrow</span>{/if}
@@ -227,9 +221,7 @@
                 </button>
 
                 {#if error}
-                    <div class="p-2 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 text-xs flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-[14px]">error</span> {error}
-                    </div>
+                    <ErrorAlert message={error} />
                 {/if}
 
                 <div class="p-2 rounded bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-900/30 text-blue-600 dark:text-blue-400 text-[10px]">

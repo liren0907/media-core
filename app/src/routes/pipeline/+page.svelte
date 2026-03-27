@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { invoke } from '@tauri-apps/api/core';
-  import { open } from '@tauri-apps/plugin-dialog';
-  import { PageContent, Panel, StatCard, StatusBadge, ProgressBar } from '$lib/components/ui';
+  import { PageContent, Panel, StatCard, StatusBadge, ProgressBar, ErrorAlert, EmptyState, ToggleSwitch, RunButton, FormField } from '$lib/components/ui';
+  import { FileMultiPicker } from '$lib/components/form';
+  import { getFileName } from '$lib/utils/format';
   import {
     executeBatchPipeline,
     getActivePipelines,
@@ -30,31 +30,6 @@
   // Results state
   let batchResult = $state<BatchProcessResult | null>(null);
   let completionEvent = $state<PipelineCompleteEvent | null>(null);
-
-  async function selectFiles() {
-    try {
-      const files = await open({
-        multiple: true,
-        filters: [
-          { name: 'Media', extensions: ['mp4', 'avi', 'mkv', 'mov', 'webm', 'jpg', 'jpeg', 'png', 'bmp'] },
-        ],
-      });
-      if (files) {
-        selectedFiles = Array.isArray(files) ? files as string[] : [files as string];
-        error = '';
-      }
-    } catch (e) {
-      error = `File selection failed: ${e}`;
-    }
-  }
-
-  function removeFile(index: number) {
-    selectedFiles = selectedFiles.filter((_, i) => i !== index);
-  }
-
-  function clearFiles() {
-    selectedFiles = [];
-  }
 
   async function runBatch() {
     if (selectedFiles.length === 0) {
@@ -88,10 +63,6 @@
     } catch (e) {
       console.error('Failed to cancel pipeline:', e);
     }
-  }
-
-  function getFileName(path: string): string {
-    return path.split('/').pop() || path;
   }
 
   // Event listeners
@@ -155,55 +126,27 @@
         <!-- Config Panel -->
         <Panel title="Batch Configuration" icon="settings">
             {#snippet actions()}
-                <button onclick={runBatch} disabled={isRunning || selectedFiles.length === 0} class="flex items-center gap-1 px-2 py-1 bg-[#137fec] hover:bg-blue-600 text-white rounded text-[10px] font-bold disabled:opacity-50 transition-colors">
-                    {#if isRunning}<span class="material-symbols-outlined animate-spin text-[14px]">sync</span>{:else}<span class="material-symbols-outlined text-[14px]">play_arrow</span>{/if}
-                    Run
-                </button>
+                <RunButton loading={isRunning} disabled={selectedFiles.length === 0} onclick={runBatch} />
             {/snippet}
             <div class="p-3 flex flex-col gap-3">
                 <!-- File selection -->
-                <div class="flex flex-col gap-1">
-                    <label class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Files</label>
-                    <button onclick={selectFiles} class="w-full py-2 border-2 border-dashed border-slate-200 dark:border-[#2a3441] rounded text-xs text-slate-500 hover:text-[#137fec] hover:border-[#137fec] transition-colors">
-                        + Select Files
-                    </button>
-                    {#if selectedFiles.length > 0}
-                        <div class="flex flex-col gap-1 max-h-[200px] overflow-y-auto mt-1">
-                            {#each selectedFiles as file, i}
-                                <div class="flex items-center justify-between px-2 py-1 rounded bg-slate-50 dark:bg-[#1f2937]/50 border border-slate-100 dark:border-[#2a3441] text-[10px] font-mono">
-                                    <span class="truncate max-w-[180px]" title={file}>{getFileName(file)}</span>
-                                    <button onclick={() => removeFile(i)} class="text-slate-400 hover:text-red-500 transition-colors">
-                                        <span class="material-symbols-outlined text-[14px]">close</span>
-                                    </button>
-                                </div>
-                            {/each}
-                        </div>
-                        <button onclick={clearFiles} class="text-[10px] text-slate-400 hover:text-red-500 self-end">Clear all</button>
-                    {/if}
-                </div>
+                <FileMultiPicker bind:files={selectedFiles} label="Files" filters={[{ name: 'Media', extensions: ['mp4', 'avi', 'mkv', 'mov', 'webm', 'jpg', 'jpeg', 'png', 'bmp'] }]} />
 
                 <!-- Operation -->
-                <div class="flex flex-col gap-1">
-                    <label for="operation" class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Operation</label>
+                <FormField label="Operation" id="operation">
                     <select id="operation" bind:value={operation} class="bg-white dark:bg-[#111418] border border-slate-200 dark:border-[#2a3441] rounded px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#137fec]">
                         <option value="metadata">Metadata Extraction</option>
                         <option value="motion">Motion Detection</option>
                         <option value="hls">HLS Conversion</option>
                         <option value="extract">Frame Extraction</option>
                     </select>
-                </div>
+                </FormField>
 
                 <!-- Parallel toggle -->
-                <label class="flex items-center gap-2 cursor-pointer">
-                    <div class="relative inline-flex items-center">
-                        <input type="checkbox" bind:checked={parallel} class="sr-only peer">
-                        <div class="w-9 h-5 bg-slate-200 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#137fec]"></div>
-                    </div>
-                    <span class="text-xs text-slate-700 dark:text-slate-300">Parallel Processing</span>
-                </label>
+                <ToggleSwitch bind:checked={parallel} label="Parallel Processing" />
 
                 {#if error}
-                    <div class="p-2 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 text-[10px]">{error}</div>
+                    <ErrorAlert message={error} />
                 {/if}
             </div>
         </Panel>

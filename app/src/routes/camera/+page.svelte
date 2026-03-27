@@ -1,7 +1,7 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
   import { save } from "@tauri-apps/plugin-dialog";
-  import { PageContent, Panel, StatusBadge } from '$lib/components/ui';
+  import { PageContent, Panel, StatusBadge, ErrorAlert } from '$lib/components/ui';
   import type { CameraCaptureResult } from '$lib/types';
 
   let availableCameras: string[] = $state([]);
@@ -115,9 +115,7 @@
 
 <PageContent>
     {#if error}
-        <div class="p-2 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 text-xs">
-            {error}
-        </div>
+        <ErrorAlert message={error} />
     {/if}
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">

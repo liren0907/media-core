@@ -1,8 +1,9 @@
 <script lang="ts">
   import { invoke } from '@tauri-apps/api/core';
-  import { open } from '@tauri-apps/plugin-dialog';
-  import { PageContent, Panel, StatCard, StatusBadge, ProgressBar } from '$lib/components/ui';
+  import { PageContent, Panel, StatCard, StatusBadge, ProgressBar, ErrorAlert, EmptyState, RunButton, FormField } from '$lib/components/ui';
+  import { FilePicker } from '$lib/components/form';
   import type { BenchmarkResponse, BenchmarkResultItem } from '$lib/types';
+  import { getFileName } from '$lib/utils/format';
 
   let videoPath = $state('');
   let runs = $state(3);
@@ -10,13 +11,6 @@
   let isRunning = $state(false);
   let error = $state('');
   let result = $state<BenchmarkResponse | null>(null);
-
-  async function selectVideo() {
-    try {
-      const file = await open({ filters: [{ name: 'Video', extensions: ['mp4', 'avi', 'mkv', 'mov'] }] });
-      if (file) { videoPath = file as string; error = ''; }
-    } catch (e) { error = `Failed: ${e}`; }
-  }
 
   async function runBenchmark() {
     if (!videoPath) { error = 'Select a video file first'; return; }
@@ -38,11 +32,7 @@
     isRunning = false;
   }
 
-  function getFileName(path: string): string { return path.split('/').pop() || path; }
-
   let maxAvg = $derived(result ? Math.max(...result.results.map(r => r.averageMs)) : 1);
-
-  const inputClass = 'bg-white dark:bg-[#111418] border border-slate-200 dark:border-[#2a3441] rounded px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#137fec]';
 </script>
 
 <svelte:head>
@@ -62,27 +52,16 @@
         <!-- Config -->
         <Panel title="Configuration" icon="tune">
             {#snippet actions()}
-                <button onclick={runBenchmark} disabled={isRunning || !videoPath} class="flex items-center gap-1 px-2 py-1 bg-[#137fec] hover:bg-blue-600 text-white rounded text-[10px] font-bold disabled:opacity-50 transition-colors">
-                    {#if isRunning}<span class="material-symbols-outlined animate-spin text-[14px]">sync</span>{:else}<span class="material-symbols-outlined text-[14px]">play_arrow</span>{/if}
-                    Run
-                </button>
+                <RunButton loading={isRunning} disabled={!videoPath} onclick={runBenchmark} />
             {/snippet}
             <div class="p-3 flex flex-col gap-3">
-                <div class="flex flex-col gap-1">
-                    <label class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Video File</label>
-                    <div class="flex gap-1.5">
-                        <input type="text" readonly value={videoPath ? getFileName(videoPath) : ''} class="{inputClass} flex-1" placeholder="Select video..." />
-                        <button onclick={selectVideo} class="px-2 py-2 bg-[#137fec] hover:bg-blue-600 text-white rounded text-[10px] font-bold transition-colors">Browse</button>
-                    </div>
-                </div>
+                <FilePicker bind:value={videoPath} label="Video File" filters={[{ name: 'Video', extensions: ['mp4', 'avi', 'mkv', 'mov'] }]} />
 
-                <div class="flex flex-col gap-1">
-                    <label class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Runs per operation = {runs}</label>
+                <FormField label="Runs per operation = {runs}">
                     <input type="range" bind:value={runs} min="1" max="20" step="1" class="w-full" />
-                </div>
+                </FormField>
 
-                <div class="flex flex-col gap-1.5">
-                    <label class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Operations</label>
+                <FormField label="Operations">
                     {#each [
                         { key: 'context_init', label: 'Context Init', desc: 'Source access time' },
                         { key: 'metadata', label: 'Metadata Extraction', desc: 'Video metadata parsing' },
@@ -96,10 +75,10 @@
                             </div>
                         </label>
                     {/each}
-                </div>
+                </FormField>
 
                 {#if error}
-                    <div class="p-2 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 text-[10px]">{error}</div>
+                    <ErrorAlert message={error} />
                 {/if}
             </div>
         </Panel>
@@ -152,15 +131,9 @@
                             </tbody>
                         </table>
                     {:else if isRunning}
-                        <div class="flex flex-col items-center py-12 text-slate-500">
-                            <span class="material-symbols-outlined text-3xl animate-spin mb-2">sync</span>
-                            <p class="text-xs">Running benchmarks...</p>
-                        </div>
+                        <EmptyState icon="sync" message="Running benchmarks..." />
                     {:else}
-                        <div class="flex flex-col items-center py-12 text-slate-500">
-                            <span class="material-symbols-outlined text-3xl mb-2">speed</span>
-                            <p class="text-xs">Select a video and click "Run" to benchmark</p>
-                        </div>
+                        <EmptyState icon="speed" message='Select a video and click "Run" to benchmark' />
                     {/if}
                 </div>
             </Panel>

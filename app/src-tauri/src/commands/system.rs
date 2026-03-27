@@ -489,7 +489,7 @@ fn get_active_streams() -> Vec<StreamStatus> {
     for hls_dir in possible_dirs.iter() {
         if hls_dir.exists() {
             if let Ok(entries) = fs::read_dir(hls_dir) {
-                for (index, entry) in entries.filter_map(|e| e.ok()).enumerate() {
+                for entry in entries.filter_map(|e| e.ok()) {
                     let path = entry.path();
                     if path.is_dir() {
                         let playlist_path = path.join("playlist.m3u8");

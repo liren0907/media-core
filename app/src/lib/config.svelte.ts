@@ -103,9 +103,9 @@ export const appConfig = {
 // DERIVED VALUES
 // ============================================================================
 
-export const hlsBaseUrl = $derived(
-  `${config.streams.hlsServerUrl}:${config.streams.hlsServerPort}`
-);
+export function getHlsBaseUrl(): string {
+  return `${config.streams.hlsServerUrl}:${config.streams.hlsServerPort}`;
+}
 
 /**
  * Build a playlist URL for a specific stream

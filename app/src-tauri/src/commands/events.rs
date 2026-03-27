@@ -28,16 +28,6 @@ pub struct PipelineProgressEvent {
     pub error_message: Option<String>,
 }
 
-/// Stream status event payload
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct StreamStatusEvent {
-    pub stream_id: String,
-    pub status: String, // "starting", "active", "paused", "error", "stopped"
-    pub message: Option<String>,
-    pub timestamp: u64,
-}
-
 /// System metrics event payload
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -54,8 +44,6 @@ pub struct SystemMetricsEvent {
 // ============================================================================
 
 pub const EVENT_PIPELINE_PROGRESS: &str = "pipeline:progress";
-pub const EVENT_PIPELINE_COMPLETE: &str = "pipeline:complete";
-pub const EVENT_STREAM_STATUS: &str = "stream:status";
 pub const EVENT_SYSTEM_METRICS: &str = "system:metrics";
 
 // ============================================================================
@@ -65,11 +53,6 @@ pub const EVENT_SYSTEM_METRICS: &str = "system:metrics";
 /// Emit a pipeline progress event
 pub fn emit_pipeline_progress(app: &AppHandle, event: PipelineProgressEvent) {
     let _ = app.emit(EVENT_PIPELINE_PROGRESS, &event);
-}
-
-/// Emit a stream status event
-pub fn emit_stream_status(app: &AppHandle, event: StreamStatusEvent) {
-    let _ = app.emit(EVENT_STREAM_STATUS, &event);
 }
 
 /// Emit a system metrics event
@@ -175,8 +158,6 @@ fn get_cpu_usage() -> f64 {
 fn get_memory_usage() -> f64 {
     if let Ok(output) = std::process::Command::new("vm_stat").output() {
         let output_str = String::from_utf8_lossy(&output.stdout);
-        let page_size = 16384u64;
-        
         let mut free_pages = 0u64;
         let mut inactive_pages = 0u64;
         let mut active_pages = 0u64;
@@ -277,14 +258,12 @@ fn count_active_streams() -> usize {
 /// Pipeline execution handle for progress tracking and cancellation
 #[derive(Clone)]
 pub struct PipelineHandle {
-    pub id: String,
     pub cancelled: Arc<AtomicBool>,
 }
 
 impl PipelineHandle {
-    pub fn new(id: String) -> Self {
+    pub fn new(_id: String) -> Self {
         Self {
-            id,
             cancelled: Arc::new(AtomicBool::new(false)),
         }
     }

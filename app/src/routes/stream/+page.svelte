@@ -3,7 +3,8 @@
   import { convertFileSrc, invoke } from "@tauri-apps/api/core";
   import Hls from "hls.js";
   import { appConfig, getDefaultRtspUrl, getHlsOutputDir } from "$lib/config.svelte";
-  import { PageContent, Panel, StatCard, StatusBadge, ProgressBar, ToggleSwitch, FormField } from '$lib/components/ui';
+  import { PageContent, Panel, ToggleSwitch, FormField } from '$lib/components/ui';
+  import { StreamStatsStrip, ActiveStreamsList } from '$lib/components/features/stream';
   import type { StreamStats } from '$lib/types';
 
   let streamStats = $state<StreamStats | null>(null);
@@ -113,29 +114,7 @@
 
 <PageContent>
     <!-- Stats Strip -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <StatCard label="Active Streams" icon="cast_connected" iconColor="text-[#137fec]" value="{streamStats?.activeCount ?? 0} / {streamStats?.totalCount ?? 0}">
-            {#snippet extra()}
-                <div class="mt-1.5 text-[10px] font-mono {streamStats && streamStats.activeCount > 0 ? 'text-green-500' : 'text-slate-500'}">
-                    {streamStats && streamStats.activeCount > 0 ? `${streamStats.activeCount} active` : 'No active streams'}
-                </div>
-            {/snippet}
-        </StatCard>
-
-        <StatCard label="Avg Latency" icon="speed" iconColor="text-orange-500" value="{streamStats?.avgLatencyMs?.toFixed(0) ?? '--'}ms">
-            {#snippet extra()}
-                <ProgressBar percent={latencyPercent} color={latencyPercent > 50 ? 'bg-orange-500' : 'bg-[#137fec]'} />
-            {/snippet}
-        </StatCard>
-
-        <StatCard label="HLS Status" icon="playlist_play" iconColor="text-green-500" value={healthStatus.text}>
-            {#snippet extra()}
-                <div class="mt-1.5 text-[10px] text-slate-500 font-mono">
-                    {streamStats && streamStats.totalBitrateKbps > 0 ? `${(streamStats.totalBitrateKbps / 1000).toFixed(1)} Mbps` : 'Ready'}
-                </div>
-            {/snippet}
-        </StatCard>
-    </div>
+    <StreamStatsStrip {streamStats} {latencyPercent} healthStatus={healthStatus.text} />
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <!-- Configuration Form -->
@@ -236,26 +215,7 @@
                 </div>
             </Panel>
 
-            {#if streamStats && streamStats.streams.length > 0}
-                <Panel title="Active Streams" icon="sensors">
-                    <div class="p-3 flex flex-col gap-1.5">
-                        {#each streamStats.streams as stream}
-                            <div class="flex items-center justify-between p-2 rounded bg-slate-50 dark:bg-[#1f2937]/50 border border-slate-100 dark:border-[#2a3441]">
-                                <div class="flex items-center gap-2 min-w-0">
-                                    <StatusBadge status={stream.status} />
-                                    <div class="min-w-0">
-                                        <p class="text-xs font-medium text-slate-900 dark:text-white truncate">{stream.name}</p>
-                                        <p class="text-[10px] text-slate-500 font-mono">{stream.codec ?? '?'} · {stream.resolution ?? 'N/A'}</p>
-                                    </div>
-                                </div>
-                                {#if stream.latencyMs}
-                                    <span class="text-[10px] font-mono text-slate-500 shrink-0">{stream.latencyMs}ms</span>
-                                {/if}
-                            </div>
-                        {/each}
-                    </div>
-                </Panel>
-            {/if}
+            <ActiveStreamsList {streamStats} />
 
             <Panel title="Help" icon="help">
                 <div class="p-3 text-[10px] text-slate-500 flex flex-col gap-2">

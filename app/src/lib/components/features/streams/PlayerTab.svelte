@@ -1,7 +1,7 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
   import { appConfig, getPlaylistUrl, getHlsOutputDir } from "$lib/config.svelte";
-  import { PageContent, Panel, StatCard, StatusBadge, ProgressBar, FormField, ErrorAlert } from '$lib/components/ui';
+  import { Panel, StatCard, StatusBadge, ProgressBar, FormField, ErrorAlert } from '$lib/components/ui';
   import { SparklineBar } from '$lib/components/data';
   import { formatBitrate, formatLatency } from '$lib/utils/format';
 
@@ -126,11 +126,6 @@
   };
 </script>
 
-<svelte:head>
-  <title>HLS Viewer</title>
-</svelte:head>
-
-<PageContent>
     <!-- Status Stats -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard label="Stream" icon="cell_tower" iconColor="text-[#137fec]" value={hlsStatus.status.toUpperCase()}>
@@ -225,9 +220,8 @@
                 {/if}
 
                 <div class="p-2 rounded bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-900/30 text-blue-600 dark:text-blue-400 text-[10px]">
-                    <span class="font-bold">Note:</span> Start HLS capture in Stream page first.
+                    <span class="font-bold">Note:</span> Start HLS capture in Capture tab first.
                 </div>
             </div>
         </Panel>
     </div>
-</PageContent>

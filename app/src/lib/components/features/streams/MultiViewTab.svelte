@@ -2,10 +2,15 @@
   import { invoke, convertFileSrc } from "@tauri-apps/api/core";
   import Hls from "hls.js";
   import { appConfig, getDefaultRtspUrl } from "$lib/config.svelte";
-  import { PageContent, Panel, StatCard, StatusBadge, EmptyState } from '$lib/components/ui';
+  import { Panel, StatCard, StatusBadge, EmptyState } from '$lib/components/ui';
   import type { StreamStats } from '$lib/types';
 
-  let streamStats = $state<StreamStats | null>(null);
+  interface Props {
+    streamStats: StreamStats | null;
+  }
+
+  let { streamStats }: Props = $props();
+
   let urlsInput = $state("");
   let streams: { url: string; hls: Hls | null; videoElement: HTMLVideoElement; status: string }[] = $state([]);
   let status = $state("Enter RTSP URLs and click 'Start Streams' to begin.");
@@ -14,10 +19,6 @@
   type LayoutMode = 'grid' | '1+3' | '2x2' | 'focus';
   let layoutMode: LayoutMode = $state('grid');
   let focusedStreamIndex = $state(0);
-
-  async function fetchStreamStats() {
-    try { streamStats = await invoke('get_stream_stats'); } catch (e) { console.error('Failed to fetch stream stats:', e); }
-  }
 
   async function startAllStreams() {
     const urls = urlsInput.split("\n").map(u => u.trim()).filter(u => u);
@@ -45,7 +46,6 @@
         }
       });
       status = "All streams active.";
-      await fetchStreamStats();
     } catch (e) {
       status = `Error starting streams: ${e}`;
       streams = streams.map(s => ({ ...s, status: 'error' }));
@@ -67,20 +67,13 @@
   $effect(() => {
     const defaultUrl = getDefaultRtspUrl();
     urlsInput = `${defaultUrl}\n${defaultUrl.replace('/mystream', '/mystream2')}`;
-    fetchStreamStats();
-    const statsInterval = setInterval(fetchStreamStats, 5000);
-    return () => { streams.forEach(s => s.hls?.destroy()); clearInterval(statsInterval); };
+    return () => { streams.forEach(s => s.hls?.destroy()); };
   });
 
   let activeStreams = $derived(streams.filter(s => s.status === 'active').length);
   let gridCols = $derived(streams.length <= 4 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3');
 </script>
 
-<svelte:head>
-  <title>Multi-Stream Viewer</title>
-</svelte:head>
-
-<PageContent>
     <!-- Stats Strip -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard label="Active" icon="cell_tower" iconColor="text-[#137fec]" value="{activeStreams} / {streams.length}" />
@@ -182,4 +175,3 @@
             <EmptyState icon="videocam_off" message="No streams active. Enter URLs and click Start." />
         </Panel>
     {/if}
-</PageContent>

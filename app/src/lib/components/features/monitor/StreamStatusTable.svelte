@@ -17,7 +17,7 @@
             {#if streamStats}
                 <span class="text-[10px] px-1.5 py-0.5 rounded bg-[#137fec]/10 text-[#137fec] font-bold">{activeCount} active</span>
             {/if}
-            <a href="/stream" class="text-[10px] font-bold uppercase tracking-wider text-[#137fec] hover:text-blue-400">Manage</a>
+            <a href="/streams" class="text-[10px] font-bold uppercase tracking-wider text-[#137fec] hover:text-blue-400">Manage</a>
         </div>
     {/snippet}
     <div class="overflow-x-auto">
@@ -51,7 +51,7 @@
                 {:else}
                     <tr>
                         <td colspan="8" class="px-3 py-4 text-center text-slate-500">
-                            No active streams. <a href="/stream" class="text-[#137fec] hover:underline">Start a stream</a> to monitor.
+                            No active streams. <a href="/streams" class="text-[#137fec] hover:underline">Start a stream</a> to monitor.
                         </td>
                     </tr>
                 {/if}

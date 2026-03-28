@@ -1,6 +1,6 @@
 <script lang="ts">
   import { invoke } from '@tauri-apps/api/core';
-  import { PageContent, Panel, StatCard, StatusBadge, ProgressBar, ErrorAlert, EmptyState, RunButton, FormField } from '$lib/components/ui';
+  import { Panel, StatCard, StatusBadge, ProgressBar, ErrorAlert, EmptyState, RunButton, FormField } from '$lib/components/ui';
   import { FilePicker, DirPicker } from '$lib/components/form';
   import { getFileName } from '$lib/utils/format';
   import { inputClass } from '$lib/utils/styles';
@@ -74,11 +74,6 @@
 
 </script>
 
-<svelte:head>
-  <title>Frame Extractor</title>
-</svelte:head>
-
-<PageContent>
     <!-- Stats Strip -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard label="Video" icon="movie" iconColor="text-[#137fec]" value={videoPath ? getFileName(videoPath) : 'None'} />
@@ -226,4 +221,3 @@
             {/if}
         </div>
     </div>
-</PageContent>

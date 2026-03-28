@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { PageContent, Panel, StatCard, StatusBadge, ProgressBar, ErrorAlert, EmptyState, ToggleSwitch, RunButton, FormField } from '$lib/components/ui';
+  import { Panel, StatCard, StatusBadge, ProgressBar, ErrorAlert, EmptyState, ToggleSwitch, RunButton, FormField } from '$lib/components/ui';
   import { FileMultiPicker } from '$lib/components/form';
   import { getFileName } from '$lib/utils/format';
   import {
@@ -105,11 +105,6 @@
   };
 </script>
 
-<svelte:head>
-  <title>Pipeline Manager</title>
-</svelte:head>
-
-<PageContent>
     <!-- Stats Strip -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard label="Files" icon="folder_open" iconColor="text-[#137fec]" value="{String(selectedFiles.length)}" sub="selected" />
@@ -250,4 +245,3 @@
             </Panel>
         </div>
     </div>
-</PageContent>

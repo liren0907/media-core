@@ -77,159 +77,26 @@
 
                 <!-- Navigation Links -->
                 <nav class="flex flex-col gap-1">
-                    <a href="/" class="flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors group relative {page.url.pathname === '/' ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
-                        <span class="material-symbols-outlined {page.url.pathname === '/' ? 'filled' : ''} shrink-0">dashboard</span>
-                        <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Dashboard</span>
-                        
-                        {#if !isSidebarOpen}
-                            <div class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-                                Dashboard
-                            </div>
-                        {/if}
-                    </a>
-
-                    <a href="/launcher" class="flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors group relative {page.url.pathname.startsWith('/launcher') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
-                        <span class="material-symbols-outlined shrink-0">apps</span>
-                        <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Launcher</span>
-                        
-                        {#if !isSidebarOpen}
-                            <div class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-                                Launcher
-                            </div>
-                        {/if}
-                    </a>
-
-                    <a href="/monitor" class="flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors group relative {page.url.pathname.startsWith('/monitor') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
-                        <span class="material-symbols-outlined shrink-0">monitor</span>
-                        <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Monitor</span>
-                        
-                        {#if !isSidebarOpen}
-                            <div class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-                                Monitor
-                            </div>
-                        {/if}
-                    </a>
-
-                    <a href="/stream" class="flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors group relative {page.url.pathname.startsWith('/stream') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
-                        <span class="material-symbols-outlined shrink-0">videocam</span>
-                        <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Streams</span>
-                        
-                        {#if !isSidebarOpen}
-                            <div class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-                                Streams
-                            </div>
-                        {/if}
-                    </a>
-
-                    <a href="/inferencer" class="flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors group relative {page.url.pathname.startsWith('/inferencer') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
-                        <span class="material-symbols-outlined shrink-0">bar_chart</span>
-                        <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Analytics</span>
-                        
-                        {#if !isSidebarOpen}
-                            <div class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-                                Analytics
-                            </div>
-                        {/if}
-                    </a>
-
-                    <a href="/annotator" class="flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors group relative {page.url.pathname.startsWith('/annotator') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
-                        <span class="material-symbols-outlined shrink-0">edit_square</span>
-                        <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Annotator</span>
-                        
-                        {#if !isSidebarOpen}
-                            <div class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-                                Annotator
-                            </div>
-                        {/if}
-                    </a>
-
-                    <a href="/analysis" class="flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors group relative {page.url.pathname.startsWith('/analysis') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
-                        <span class="material-symbols-outlined shrink-0">query_stats</span>
-                        <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Analysis</span>
-                        
-                        {#if !isSidebarOpen}
-                            <div class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-                                Analysis
-                            </div>
-                        {/if}
-                    </a>
-
-                    <a href="/pipeline" class="flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors group relative {page.url.pathname.startsWith('/pipeline') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
-                        <span class="material-symbols-outlined shrink-0">conversion_path</span>
-                        <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Pipeline</span>
-
-                        {#if !isSidebarOpen}
-                            <div class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-                                Pipeline
-                            </div>
-                        {/if}
-                    </a>
-
-                    <a href="/frame-extractor" class="flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors group relative {page.url.pathname.startsWith('/frame-extractor') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
-                        <span class="material-symbols-outlined shrink-0">photo_library</span>
-                        <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Extractor</span>
-
-                        {#if !isSidebarOpen}
-                            <div class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-                                Extractor
-                            </div>
-                        {/if}
-                    </a>
-
-                    <a href="/benchmark" class="flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors group relative {page.url.pathname.startsWith('/benchmark') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
-                        <span class="material-symbols-outlined shrink-0">speed</span>
-                        <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Benchmark</span>
-
-                        {#if !isSidebarOpen}
-                            <div class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-                                Benchmark
-                            </div>
-                        {/if}
-                    </a>
-
-                    <a href="/viewVideo" class="flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors group relative {page.url.pathname.startsWith('/viewVideo') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
-                        <span class="material-symbols-outlined shrink-0">movie</span>
-                        <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Video Player</span>
-
-                        {#if !isSidebarOpen}
-                            <div class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-                                Video Player
-                            </div>
-                        {/if}
-                    </a>
-
-                    <a href="/camera" class="flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors group relative {page.url.pathname.startsWith('/camera') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
-                        <span class="material-symbols-outlined shrink-0">photo_camera</span>
-                        <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Camera</span>
-                        
-                        {#if !isSidebarOpen}
-                            <div class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-                                Camera
-                            </div>
-                        {/if}
-                    </a>
-
-                    <a href="/hlsViewer" class="flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors group relative {page.url.pathname.startsWith('/hlsViewer') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
-                        <span class="material-symbols-outlined shrink-0">play_circle</span>
-                        <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">HLS Player</span>
-                        
-                        {#if !isSidebarOpen}
-                            <div class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-                                HLS Player
-                            </div>
-                        {/if}
-                    </a>
-
-                    <a href="/settings" class="flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors group relative {page.url.pathname.startsWith('/settings') ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
-                        <span class="material-symbols-outlined shrink-0">settings</span>
-                        <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">Settings</span>
-                        
-                        {#if !isSidebarOpen}
-                            <div class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
-                                Settings
-                            </div>
-                        {/if}
-                    </a>
+                    {#each [
+                        { href: '/', icon: 'dashboard', label: 'Dashboard', match: (p: string) => p === '/' },
+                        { href: '/streams', icon: 'videocam', label: 'Streams', match: (p: string) => p.startsWith('/streams') },
+                        { href: '/analysis', icon: 'query_stats', label: 'Analysis', match: (p: string) => p.startsWith('/analysis') },
+                        { href: '/processing', icon: 'conversion_path', label: 'Processing', match: (p: string) => p.startsWith('/processing') },
+                        { href: '/camera', icon: 'photo_camera', label: 'Camera', match: (p: string) => p.startsWith('/camera') },
+                        { href: '/benchmark', icon: 'speed', label: 'Benchmark', match: (p: string) => p.startsWith('/benchmark') },
+                        { href: '/settings', icon: 'settings', label: 'Settings', match: (p: string) => p.startsWith('/settings') },
+                    ] as item}
+                        {@const active = item.match(page.url.pathname)}
+                        <a href={item.href} class="flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors group relative {active ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
+                            <span class="material-symbols-outlined {active ? 'filled' : ''} shrink-0">{item.icon}</span>
+                            <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">{item.label}</span>
+                            {#if !isSidebarOpen}
+                                <div class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
+                                    {item.label}
+                                </div>
+                            {/if}
+                        </a>
+                    {/each}
                 </nav>
             </div>
 
@@ -268,35 +135,21 @@
             <div class="flex items-center gap-4">
                 <h2 class="text-xl font-bold font-display tracking-tight text-slate-900 dark:text-white">
                     {#if page.url.pathname === '/'}
-                        Dashboard Overview
-                    {:else if page.url.pathname.startsWith('/launcher')}
-                        Launcher
-                    {:else if page.url.pathname.startsWith('/monitor')}
-                        Command Monitor
-                    {:else if page.url.pathname.startsWith('/stream')}
-                        Stream Management
-                    {:else if page.url.pathname.startsWith('/inferencer')}
-                        Video Analytics Console
-                    {:else if page.url.pathname.startsWith('/annotator')}
-                        Video Annotator
+                        Dashboard
+                    {:else if page.url.pathname.startsWith('/streams')}
+                        Streams
                     {:else if page.url.pathname.startsWith('/analysis')}
                         Media Analysis
-                    {:else if page.url.pathname.startsWith('/pipeline')}
-                        Pipeline Manager
-                    {:else if page.url.pathname.startsWith('/frame-extractor')}
-                        Frame Extractor
-                    {:else if page.url.pathname.startsWith('/benchmark')}
-                        Benchmark
-                    {:else if page.url.pathname.startsWith('/viewVideo')}
-                        Video Player
+                    {:else if page.url.pathname.startsWith('/processing')}
+                        Processing
                     {:else if page.url.pathname.startsWith('/camera')}
                         Camera Capture
-                    {:else if page.url.pathname.startsWith('/hlsViewer')}
-                        HLS Stream Player
+                    {:else if page.url.pathname.startsWith('/benchmark')}
+                        Benchmark
                     {:else if page.url.pathname.startsWith('/settings')}
-                        Global Settings
+                        Settings
                     {:else}
-                         Media Core
+                        Media Core
                     {/if}
                 </h2>
                 <span class="px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 dark:text-green-400 text-xs font-bold border border-green-500/20">System Healthy</span>

@@ -9,3 +9,4 @@ export { default as EmptyState } from './EmptyState.svelte';
 export { default as ToggleSwitch } from './ToggleSwitch.svelte';
 export { default as RunButton } from './RunButton.svelte';
 export { default as FormField } from './FormField.svelte';
+export { default as TabBar } from './TabBar.svelte';

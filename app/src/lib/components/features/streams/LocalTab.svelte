@@ -1,7 +1,7 @@
 <script lang="ts">
   import { invoke, convertFileSrc } from "@tauri-apps/api/core";
   import { open } from "@tauri-apps/plugin-dialog";
-  import { PageContent, Panel, StatCard } from '$lib/components/ui';
+  import { Panel, StatCard } from '$lib/components/ui';
   import { VideoPlayer } from '$lib/components/media';
   import type { MediaMetadata } from '$lib/types';
   import { formatDuration, formatFileSize, formatBitrate } from '$lib/utils/format';
@@ -34,11 +34,6 @@
 
 </script>
 
-<svelte:head>
-  <title>Video Viewer</title>
-</svelte:head>
-
-<PageContent>
     <!-- Player -->
     <Panel title="Player" icon="play_circle">
         {#snippet actions()}
@@ -117,4 +112,3 @@
             </Panel>
         </div>
     {/if}
-</PageContent>

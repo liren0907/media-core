@@ -1,7 +1,7 @@
 <script lang="ts">
   import { open } from '@tauri-apps/plugin-dialog';
   import { convertFileSrc, invoke } from '@tauri-apps/api/core';
-  import { PageContent, Panel, StatusBadge } from '$lib/components/ui';
+  import { Panel, StatusBadge } from '$lib/components/ui';
   import { InferenceConfig, DetectionTimeline } from '$lib/components/features/inferencer';
   import type { AnnotationData } from '$lib/types';
 
@@ -83,68 +83,61 @@
   let filteredDetections = $derived(selectedLabels.reduce((sum, l) => sum + (labelCounts[l] || 0), 0));
   let topLabels = $derived(Object.entries(labelCounts).sort(([, a], [, b]) => b - a).slice(0, 5));
   let classProgress = $derived(availableLabels.length > 0 ? (selectedLabels.length / availableLabels.length) * 100 : 0);
-
 </script>
 
-<svelte:head>
-  <title>Inferencer</title>
-</svelte:head>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+    <!-- Sidebar: Config -->
+    <InferenceConfig
+        {videoPath}
+        {annotationPath}
+        {availableLabels}
+        {selectedLabels}
+        {labelCounts}
+        {totalDetections}
+        {filteredDetections}
+        {topLabels}
+        {classProgress}
+        {isProcessing}
+        {processedVideoPath}
+        {errorMessage}
+        onopenVideo={openVideoFile}
+        onopenAnnotation={openAnnotationFile}
+        onprocess={processVideo}
+        onselectAll={selectAllLabels}
+        ondeselectAll={deselectAllLabels}
+        ontoggleLabel={toggleLabel}
+    />
 
-<PageContent>
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <!-- Sidebar: Config -->
-        <InferenceConfig
-            {videoPath}
-            {annotationPath}
-            {availableLabels}
+    <!-- Main: Video + Timeline -->
+    <div class="lg:col-span-2 flex flex-col gap-3">
+        <!-- Video -->
+        <Panel title="Preview" icon="movie">
+            {#snippet actions()}
+                {#if processedVideoPath}
+                    <StatusBadge status="active" />
+                {:else}
+                    <StatusBadge status="idle" />
+                {/if}
+            {/snippet}
+            <div class="bg-black aspect-video flex items-center justify-center relative">
+                {#if processedVideoPath}
+                    <video src={convertFileSrc(processedVideoPath)} controls class="w-full h-full object-contain"><track kind="captions" /></video>
+                {:else if videoPath}
+                    <video bind:this={videoPlayer} controls class="w-full h-full object-contain"><track kind="captions" /></video>
+                {:else}
+                    <div class="flex flex-col items-center gap-2 text-slate-500">
+                        <span class="material-symbols-outlined text-4xl">perm_media</span>
+                        <p class="text-xs">Select video source</p>
+                    </div>
+                {/if}
+            </div>
+        </Panel>
+
+        <!-- Detection Timeline -->
+        <DetectionTimeline
+            {detectionTimeline}
+            {maxDetection}
             {selectedLabels}
-            {labelCounts}
-            {totalDetections}
-            {filteredDetections}
-            {topLabels}
-            {classProgress}
-            {isProcessing}
-            {processedVideoPath}
-            {errorMessage}
-            onopenVideo={openVideoFile}
-            onopenAnnotation={openAnnotationFile}
-            onprocess={processVideo}
-            onselectAll={selectAllLabels}
-            ondeselectAll={deselectAllLabels}
-            ontoggleLabel={toggleLabel}
         />
-
-        <!-- Main: Video + Timeline -->
-        <div class="lg:col-span-2 flex flex-col gap-3">
-            <!-- Video -->
-            <Panel title="Preview" icon="movie">
-                {#snippet actions()}
-                    {#if processedVideoPath}
-                        <StatusBadge status="active" />
-                    {:else}
-                        <StatusBadge status="idle" />
-                    {/if}
-                {/snippet}
-                <div class="bg-black aspect-video flex items-center justify-center relative">
-                    {#if processedVideoPath}
-                        <video src={convertFileSrc(processedVideoPath)} controls class="w-full h-full object-contain"><track kind="captions" /></video>
-                    {:else if videoPath}
-                        <video bind:this={videoPlayer} controls class="w-full h-full object-contain"><track kind="captions" /></video>
-                    {:else}
-                        <div class="flex flex-col items-center gap-2 text-slate-500">
-                            <span class="material-symbols-outlined text-4xl">perm_media</span>
-                            <p class="text-xs">Select video source</p>
-                        </div>
-                    {/if}
-                </div>
-            </Panel>
-
-            <!-- Detection Timeline -->
-            <DetectionTimeline
-                {detectionTimeline}
-                {maxDetection}
-                {selectedLabels}
-            />
-        </div>
     </div>
-</PageContent>
+</div>

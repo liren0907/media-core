@@ -3,11 +3,15 @@
   import { convertFileSrc, invoke } from "@tauri-apps/api/core";
   import Hls from "hls.js";
   import { appConfig, getDefaultRtspUrl, getHlsOutputDir } from "$lib/config.svelte";
-  import { PageContent, Panel, ToggleSwitch, FormField } from '$lib/components/ui';
+  import { Panel, ToggleSwitch, FormField } from '$lib/components/ui';
   import { StreamStatsStrip, ActiveStreamsList } from '$lib/components/features/stream';
   import type { StreamStats } from '$lib/types';
 
-  let streamStats = $state<StreamStats | null>(null);
+  interface Props {
+    streamStats: StreamStats | null;
+  }
+
+  let { streamStats }: Props = $props();
 
   let rtspConfig = $state({
     rtsp_url: "",
@@ -27,10 +31,6 @@
   let hls: Hls | null = $state(null);
   let videoElement: HTMLVideoElement;
 
-  async function fetchStreamStats() {
-    try { streamStats = await invoke('get_stream_stats'); } catch (e) { console.error('Failed to fetch stream stats:', e); }
-  }
-
   function addUrlField() { rtspConfig.rtsp_url_list = [...rtspConfig.rtsp_url_list, ""]; urlCount++; }
   function removeUrlField(index: number) { rtspConfig.rtsp_url_list = rtspConfig.rtsp_url_list.filter((_, i) => i !== index); urlCount--; }
 
@@ -46,7 +46,6 @@
       rtspConfig.rtsp_url_list = rtspConfig.rtsp_url_list.filter((url) => url.trim() !== "");
       const result = await invoke("start_rtsp_capture", { payload: rtspConfig });
       status = result as string;
-      await fetchStreamStats();
     } catch (error) {
       status = `Error: ${error}`;
       isStreaming = false;
@@ -68,7 +67,6 @@
         });
         videoElement.style.display = "block";
         status = "HLS stream is loading...";
-        await fetchStreamStats();
       } else if (videoElement.canPlayType("application/vnd.apple.mpegurl")) {
         videoElement.src = playlistUrl as string;
         videoElement.style.display = "block";
@@ -97,9 +95,7 @@
   $effect(() => {
     rtspConfig.rtsp_url = getDefaultRtspUrl();
     rtspConfig.hls.output_directory = getHlsOutputDir() || 'hls_output';
-    fetchStreamStats();
-    const statsInterval = setInterval(fetchStreamStats, 3000);
-    return () => { isStreaming = false; clearInterval(statsInterval); if (hls) hls.destroy(); };
+    return () => { isStreaming = false; if (hls) hls.destroy(); };
   });
 
   let healthStatus = $derived(getHealthStatus());
@@ -108,11 +104,6 @@
   const inputClass = 'bg-white dark:bg-[#111418] border border-slate-200 dark:border-[#2a3441] rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-[#137fec] focus:ring-1 focus:ring-[#137fec]';
 </script>
 
-<svelte:head>
-  <title>Stream Ingestion</title>
-</svelte:head>
-
-<PageContent>
     <!-- Stats Strip -->
     <StreamStatsStrip {streamStats} {latencyPercent} healthStatus={healthStatus.text} />
 
@@ -230,4 +221,3 @@
             </Panel>
         </div>
     </div>
-</PageContent>

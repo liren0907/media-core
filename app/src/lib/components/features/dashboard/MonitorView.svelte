@@ -1,6 +1,6 @@
 <script lang="ts">
   import { invoke } from '@tauri-apps/api/core';
-  import { PageContent, Panel } from '$lib/components/ui';
+  import { Panel } from '$lib/components/ui';
   import { ThroughputChart } from '$lib/components/media';
   import { formatUptime } from '$lib/utils/format';
   import { MonitorStats, StreamStatusTable, EventLog, PipelineList } from '$lib/components/features/monitor';
@@ -132,11 +132,6 @@
   };
 </script>
 
-<svelte:head>
-  <title>Monitor</title>
-</svelte:head>
-
-<PageContent>
     <MonitorStats {metrics} {streamStats} {cpuHistory} />
     <StreamStatusTable {streamStats} />
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
@@ -163,4 +158,3 @@
         {/snippet}
         <ThroughputChart {throughputHistory} gradientId="monitorGradient" />
     </Panel>
-</PageContent>

@@ -25,17 +25,48 @@ fn start_http_server_if_needed(hls_root_path: PathBuf) -> Result<String, String>
         let hls_path = Arc::new(hls_root_path);
 
         thread::spawn(move || {
+            // Canonicalize the HLS root once for path traversal checks
+            let root_canonical = match hls_path.canonicalize() {
+                Ok(p) => p,
+                Err(e) => {
+                    eprintln!("Failed to canonicalize HLS root path: {}", e);
+                    return;
+                }
+            };
+
             for request in server_arc.incoming_requests() {
+                let cors_header = tiny_http::Header::from_bytes(
+                    &b"Access-Control-Allow-Origin"[..],
+                    &b"http://localhost:1420"[..],
+                ).unwrap();
+
                 let url = request.url();
                 let file_path = hls_path.join(url.trim_start_matches('/'));
 
-                let cors_header = tiny_http::Header::from_bytes(&b"Access-Control-Allow-Origin"[..], &b"*"[..]).unwrap();
+                // Path traversal protection: ensure resolved path is within HLS root
+                let canonical = match file_path.canonicalize() {
+                    Ok(p) => p,
+                    Err(_) => {
+                        let response = Response::from_string("404 Not Found")
+                            .with_status_code(404)
+                            .with_header(cors_header);
+                        let _ = request.respond(response);
+                        continue;
+                    }
+                };
+                if !canonical.starts_with(&root_canonical) {
+                    let response = Response::from_string("403 Forbidden")
+                        .with_status_code(403)
+                        .with_header(cors_header);
+                    let _ = request.respond(response);
+                    continue;
+                }
 
-                if let Ok(file) = fs::File::open(&file_path) {
+                if let Ok(file) = fs::File::open(&canonical) {
                     let response = Response::from_file(file).with_header(cors_header);
                     let _ = request.respond(response);
                 } else {
-                    let response = Response::from_string(format!("404 Not Found: {}", url))
+                    let response = Response::from_string("404 Not Found")
                         .with_status_code(404)
                         .with_header(cors_header);
                     let _ = request.respond(response);

@@ -148,3 +148,81 @@ export interface HardwareCapabilities {
   isAppleSilicon: boolean;
   availableModes: string[];
 }
+
+// -- Dedup --
+
+export interface DedupSource {
+  id: string | null;
+  path: string;
+  label: string;
+  fileCount: number;
+  status: string;
+  createdAt: string | null;
+  lastScannedAt: string | null;
+}
+
+export interface DedupScanResult {
+  added: number;
+  removed: number;
+  updated: number;
+  unchanged: number;
+}
+
+export interface DedupTreeNode {
+  name: string;
+  path: string;
+  isDir: boolean;
+  children: DedupTreeNode[];
+  fileSize: number | null;
+}
+
+export interface DedupMediaFile {
+  id: string | null;
+  filePath: string;
+  fileName: string;
+  fileSize: number;
+  fileType: string;
+  parentDir: string;
+  contentHash: string | null;
+  phash: string | null;
+  dhash: string | null;
+}
+
+export interface DedupGroupExpanded {
+  id: string;
+  matchType: string;
+  similarityScore: number;
+  algorithm: string;
+  members: DedupMediaFile[];
+  createdAt: string | null;
+}
+
+export interface DedupStats {
+  totalSources: number;
+  totalFiles: number;
+  totalHashed: number;
+  totalDuplicateGroups: number;
+  totalDuplicates: number;
+}
+
+export interface DedupScanProgressEvent {
+  sourceId: string;
+  filesFound: number;
+  currentPath: string;
+  phase: string;
+}
+
+export interface DedupHashProgressEvent {
+  sourceId: string;
+  current: number;
+  total: number;
+  currentFile: string;
+  algorithm: string;
+}
+
+export interface DedupCompareProgressEvent {
+  sourceId: string;
+  current: number;
+  total: number;
+  matchesFound: number;
+}

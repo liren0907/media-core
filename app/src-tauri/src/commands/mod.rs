@@ -11,3 +11,4 @@ pub mod pipeline;
 pub mod system;
 pub mod events;
 pub mod benchmark;
+pub mod dedup;

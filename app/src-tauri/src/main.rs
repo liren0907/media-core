@@ -2,7 +2,12 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod commands;
+mod db;
 mod handlers;
+mod hasher;
+mod matcher;
+mod scanner;
+
 
 use annotation::VideoAnnotation;
 
@@ -70,6 +75,18 @@ fn main() {
             // Hardware acceleration commands
             commands::system::get_hardware_accel_config,
             commands::system::detect_hardware_capabilities,
+            // Dedup commands
+            commands::dedup::add_scan_source,
+            commands::dedup::get_scan_sources,
+            commands::dedup::delete_scan_source,
+            commands::dedup::get_source_tree,
+            commands::dedup::start_scan,
+            commands::dedup::start_fingerprinting,
+            commands::dedup::compare_source,
+            commands::dedup::get_duplicate_groups,
+            commands::dedup::get_files_by_source,
+            commands::dedup::get_dedup_stats,
+            commands::dedup::cancel_dedup,
         ])
         .on_window_event(|_app_handle, event| {
             if let tauri::WindowEvent::Destroyed = event {

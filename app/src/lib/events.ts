@@ -259,3 +259,37 @@ export function createPipelineTracker(pipelineId: string) {
     },
   };
 }
+
+// ============================================================================
+// DEDUP EVENTS
+// ============================================================================
+
+import type {
+  DedupScanProgressEvent,
+  DedupHashProgressEvent,
+  DedupCompareProgressEvent,
+} from '$lib/types';
+
+export async function onDedupScanProgress(
+  callback: (event: DedupScanProgressEvent) => void
+): Promise<UnlistenFn> {
+  return listen<DedupScanProgressEvent>('dedup:scan-progress', (event) => {
+    callback(event.payload);
+  });
+}
+
+export async function onDedupHashProgress(
+  callback: (event: DedupHashProgressEvent) => void
+): Promise<UnlistenFn> {
+  return listen<DedupHashProgressEvent>('dedup:hash-progress', (event) => {
+    callback(event.payload);
+  });
+}
+
+export async function onDedupCompareProgress(
+  callback: (event: DedupCompareProgressEvent) => void
+): Promise<UnlistenFn> {
+  return listen<DedupCompareProgressEvent>('dedup:compare-progress', (event) => {
+    callback(event.payload);
+  });
+}

@@ -84,6 +84,7 @@
                         { href: '/processing', icon: 'conversion_path', label: 'Processing', match: (p: string) => p.startsWith('/processing') },
                         { href: '/camera', icon: 'photo_camera', label: 'Camera', match: (p: string) => p.startsWith('/camera') },
                         { href: '/benchmark', icon: 'speed', label: 'Benchmark', match: (p: string) => p.startsWith('/benchmark') },
+                        { href: '/dedup', icon: 'fingerprint', label: 'Dedup', match: (p: string) => p.startsWith('/dedup') },
                         { href: '/settings', icon: 'settings', label: 'Settings', match: (p: string) => p.startsWith('/settings') },
                     ] as item}
                         {@const active = item.match(page.url.pathname)}
@@ -146,6 +147,8 @@
                         Camera Capture
                     {:else if page.url.pathname.startsWith('/benchmark')}
                         Benchmark
+                    {:else if page.url.pathname.startsWith('/dedup')}
+                        Deduplication
                     {:else if page.url.pathname.startsWith('/settings')}
                         Settings
                     {:else}

@@ -41,6 +41,11 @@ simple_logger = "5.0.0"
 tauri-plugin-fs = "2.2.0"
 tiny_http = "0.12.0"
 uuid = { version = "1.8", features = ["v4"] }
+surrealdb = { version = "3", features = ["kv-surrealkv"] }
+blake3 = "1"
+img_hash = "3.2"
+walkdir = "2"
+rayon = "1.10"
 
 [features]
 # by default Tauri runs in production mode

@@ -10,6 +10,7 @@ mod scanner;
 
 
 use annotation::VideoAnnotation;
+use tauri::Manager;
 
 fn main() {
     tauri::Builder::default()
@@ -88,10 +89,14 @@ fn main() {
             commands::dedup::get_dedup_stats,
             commands::dedup::cancel_dedup,
         ])
-        .on_window_event(|_app_handle, event| {
+        .on_window_event(|app_handle, event| {
             if let tauri::WindowEvent::Destroyed = event {
                 if let Err(e) = VideoAnnotation::cleanup_tmp_files() {
                     eprintln!("Failed to cleanup temporary files: {}", e);
+                }
+                // Release SurrealDB LOCK file
+                if let Ok(dir) = app_handle.path().app_data_dir() {
+                    db::cleanup_lock(&dir);
                 }
             }
         })

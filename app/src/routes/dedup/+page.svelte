@@ -339,11 +339,12 @@
           onCompareDone={handleCompareDone}
         />
 
-        <!-- Comparison Results -->
-        {#if groups.length > 0}
-          <ComparisonResults {groups} />
-        {/if}
       {/if}
     </div>
   </div>
+
+  <!-- Comparison Results: full width, outside the grid -->
+  {#if groups.length > 0}
+    <ComparisonResults {groups} />
+  {/if}
 </PageContent>

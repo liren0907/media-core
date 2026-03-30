@@ -157,6 +157,7 @@ export interface DedupSource {
   label: string;
   fileCount: number;
   status: string;
+  role: 'source' | 'target';
   createdAt: string | null;
   lastScannedAt: string | null;
 }
@@ -194,6 +195,8 @@ export interface DedupGroupExpanded {
   similarityScore: number;
   algorithm: string;
   members: DedupMediaFile[];
+  sourceMember: DedupMediaFile | null;
+  targetMember: DedupMediaFile | null;
   createdAt: string | null;
 }
 
@@ -203,6 +206,12 @@ export interface DedupStats {
   totalHashed: number;
   totalDuplicateGroups: number;
   totalDuplicates: number;
+}
+
+export interface TrashResult {
+  trashed: number;
+  failed: number;
+  errors: string[];
 }
 
 export interface DedupScanProgressEvent {

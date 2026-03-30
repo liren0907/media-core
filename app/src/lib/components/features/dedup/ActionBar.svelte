@@ -9,11 +9,12 @@
 
   interface Props {
     sourceId: string;
+    hasSourceRole?: boolean;
     onFingerprintDone?: () => void;
     onCompareDone?: (groups: DedupGroupExpanded[]) => void;
   }
 
-  let { sourceId, onFingerprintDone, onCompareDone }: Props = $props();
+  let { sourceId, hasSourceRole = false, onFingerprintDone, onCompareDone }: Props = $props();
 
   // Algorithm config
   let useBlake3 = $state(true);
@@ -21,7 +22,6 @@
   let useDHash = $state(false);
 
   // Compare config
-  let includeSelf = $state(true);
   let threshold = $state(10);
 
   // Processing state
@@ -65,7 +65,7 @@
   }
 
   async function runCompare() {
-    if (!sourceId) return;
+    if (!hasSourceRole) return;
 
     try {
       isCompareRunning = true;
@@ -75,8 +75,8 @@
       if (usePHash) algorithms.push('pHash');
       if (useDHash) algorithms.push('dHash');
 
-      const result: DedupGroupExpanded[] = await invoke('compare_source', {
-        sourceId, includeSelf, threshold, algorithms
+      const result: DedupGroupExpanded[] = await invoke('compare_targets', {
+        threshold, algorithms
       });
       onCompareDone?.(result);
     } catch (e) {
@@ -141,7 +141,6 @@
 
       <!-- Compare config -->
       <div class="flex items-center gap-2 border-r border-slate-200 dark:border-[#2a3441] pr-3">
-        <ToggleSwitch bind:checked={includeSelf} label="Within source" />
         <div class="flex items-center gap-1">
           <label class="text-[10px] text-slate-500 whitespace-nowrap">Threshold</label>
           <input type="range" min="0" max="64" bind:value={threshold} class="w-14 h-1 accent-[#137fec]" />
@@ -159,7 +158,7 @@
         />
         <RunButton
           loading={isCompareRunning}
-          disabled={isProcessing || !sourceId}
+          disabled={isProcessing || !hasSourceRole}
           label="Compare"
           onclick={runCompare}
         />

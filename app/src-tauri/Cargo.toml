@@ -46,6 +46,7 @@ blake3 = "1"
 img_hash = "3.2"
 walkdir = "2"
 rayon = "1.10"
+trash = "5"
 
 [features]
 # by default Tauri runs in production mode

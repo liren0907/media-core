@@ -9,6 +9,7 @@ pub async fn init_schema(db: &Surreal<Db>) -> Result<(), String> {
         DEFINE FIELD IF NOT EXISTS label        ON scan_source TYPE string;
         DEFINE FIELD IF NOT EXISTS file_count   ON scan_source TYPE int DEFAULT 0;
         DEFINE FIELD IF NOT EXISTS status       ON scan_source TYPE string DEFAULT 'pending';
+        DEFINE FIELD IF NOT EXISTS role         ON scan_source TYPE string DEFAULT 'target';
         DEFINE FIELD IF NOT EXISTS created_at      ON scan_source TYPE datetime DEFAULT time::now();
         DEFINE FIELD IF NOT EXISTS last_scanned_at ON scan_source TYPE option<datetime>;
         DEFINE INDEX IF NOT EXISTS idx_scan_source_path ON scan_source COLUMNS path UNIQUE;
@@ -36,11 +37,18 @@ pub async fn init_schema(db: &Surreal<Db>) -> Result<(), String> {
         DEFINE FIELD IF NOT EXISTS similarity_score   ON duplicate_group TYPE float;
         DEFINE FIELD IF NOT EXISTS algorithm          ON duplicate_group TYPE string;
         DEFINE FIELD IF NOT EXISTS members            ON duplicate_group TYPE array;
+        DEFINE FIELD IF NOT EXISTS source_file       ON duplicate_group TYPE option<string>;
+        DEFINE FIELD IF NOT EXISTS target_file       ON duplicate_group TYPE option<string>;
         DEFINE FIELD IF NOT EXISTS source             ON duplicate_group TYPE record<scan_source>;
         DEFINE FIELD IF NOT EXISTS created_at         ON duplicate_group TYPE datetime DEFAULT time::now();
     ")
     .await
     .map_err(|e| format!("Schema init failed: {}", e))?;
+
+    // Backfill existing records that lack the new role field
+    db.query("UPDATE scan_source SET role = 'target' WHERE role = NONE;")
+        .await
+        .map_err(|e| format!("Migration failed: {}", e))?;
 
     Ok(())
 }

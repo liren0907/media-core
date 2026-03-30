@@ -24,6 +24,7 @@ struct DbScanSource {
     label: String,
     file_count: i64,
     status: String,
+    role: String,
     created_at: Option<Datetime>,
     last_scanned_at: Option<Datetime>,
 }
@@ -36,6 +37,7 @@ impl DbScanSource {
             label: self.label,
             file_count: self.file_count,
             status: self.status,
+            role: self.role,
             created_at: self.created_at.map(|d| d.to_string()),
             last_scanned_at: self.last_scanned_at.map(|d| d.to_string()),
         }
@@ -82,6 +84,8 @@ struct DbDuplicateGroup {
     similarity_score: f64,
     algorithm: String,
     members: Vec<String>,
+    source_file: Option<String>,
+    target_file: Option<String>,
     source: Option<RecordId>,
     created_at: Option<Datetime>,
 }
@@ -94,6 +98,8 @@ impl DbDuplicateGroup {
             similarity_score: self.similarity_score,
             algorithm: self.algorithm,
             members: self.members,
+            source_file: self.source_file,
+            target_file: self.target_file,
             source: self.source.as_ref().map(record_id_to_string),
             created_at: self.created_at.map(|d| d.to_string()),
         }
@@ -117,6 +123,7 @@ pub struct ScanSource {
     pub label: String,
     pub file_count: i64,
     pub status: String,
+    pub role: String,
     pub created_at: Option<String>,
     pub last_scanned_at: Option<String>,
 }
@@ -145,6 +152,8 @@ pub struct DuplicateGroup {
     pub similarity_score: f64,
     pub algorithm: String,
     pub members: Vec<String>,
+    pub source_file: Option<String>,
+    pub target_file: Option<String>,
     pub source: Option<String>,
     pub created_at: Option<String>,
 }
@@ -157,6 +166,8 @@ pub struct DuplicateGroupExpanded {
     pub similarity_score: f64,
     pub algorithm: String,
     pub members: Vec<MediaFile>,
+    pub source_member: Option<MediaFile>,
+    pub target_member: Option<MediaFile>,
     pub created_at: Option<String>,
 }
 
@@ -168,6 +179,14 @@ pub struct DedupStats {
     pub total_hashed: i64,
     pub total_duplicate_groups: i64,
     pub total_duplicates: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TrashResult {
+    pub trashed: usize,
+    pub failed: usize,
+    pub errors: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -193,11 +212,12 @@ pub struct DirectoryNode {
 // Scan Source Queries
 // ──────────────────────────────────────────────
 
-pub async fn insert_scan_source(db: &Surreal<Db>, path: &str, label: &str) -> Result<ScanSource, String> {
+pub async fn insert_scan_source(db: &Surreal<Db>, path: &str, label: &str, role: &str) -> Result<ScanSource, String> {
     let mut result = db
-        .query("CREATE scan_source SET path = $path, label = $label")
+        .query("CREATE scan_source SET path = $path, label = $label, role = $role")
         .bind(("path", path.to_string()))
         .bind(("label", label.to_string()))
+        .bind(("role", role.to_string()))
         .await
         .map_err(|e| format!("Failed to insert scan source: {}", e))?;
 
@@ -233,6 +253,67 @@ pub async fn update_source_status(db: &Surreal<Db>, id: &str, status: &str, file
         .bind(("file_count", file_count))
         .await
         .map_err(|e| format!("Failed to update source: {}", e))?;
+    Ok(())
+}
+
+pub async fn update_source_role(db: &Surreal<Db>, id: &str, role: &str) -> Result<ScanSource, String> {
+    if role == "source" {
+        // Demote any existing source to target first (singleton constraint)
+        db.query("UPDATE scan_source SET role = 'target' WHERE role = 'source'")
+            .await
+            .map_err(|e| format!("Failed to demote existing source: {}", e))?;
+    }
+    let mut result = db
+        .query("UPDATE type::record($id) SET role = $role")
+        .bind(("id", id.to_string()))
+        .bind(("role", role.to_string()))
+        .await
+        .map_err(|e| format!("Failed to update role: {}", e))?;
+
+    let source: Option<DbScanSource> = result.take(0).map_err(|e| format!("Failed to parse source: {}", e))?;
+    source.map(|s| s.into_api()).ok_or_else(|| format!("Source not found: {}", id))
+}
+
+pub async fn get_source_role_source(db: &Surreal<Db>) -> Result<Option<ScanSource>, String> {
+    let mut result = db
+        .query("SELECT * FROM scan_source WHERE role = 'source' LIMIT 1")
+        .await
+        .map_err(|e| format!("Failed to query source role: {}", e))?;
+
+    let source: Option<DbScanSource> = result.take(0).map_err(|e| format!("Failed to parse source: {}", e))?;
+    Ok(source.map(|s| s.into_api()))
+}
+
+pub async fn get_scan_sources_by_role(db: &Surreal<Db>, role: &str) -> Result<Vec<ScanSource>, String> {
+    let mut result = db
+        .query("SELECT * FROM scan_source WHERE role = $role ORDER BY created_at DESC")
+        .bind(("role", role.to_string()))
+        .await
+        .map_err(|e| format!("Failed to query sources by role: {}", e))?;
+
+    let sources: Vec<DbScanSource> = result.take(0).map_err(|e| format!("Failed to parse sources: {}", e))?;
+    Ok(sources.into_iter().map(|s| s.into_api()).collect())
+}
+
+pub async fn get_hashed_files_by_source_ids(db: &Surreal<Db>, source_ids: &[String]) -> Result<Vec<MediaFile>, String> {
+    let mut all_files = Vec::new();
+    for sid in source_ids {
+        let mut result = db
+            .query("SELECT * FROM media_file WHERE source = type::record($sid) AND (content_hash IS NOT NONE OR phash IS NOT NONE OR dhash IS NOT NONE)")
+            .bind(("sid", sid.to_string()))
+            .await
+            .map_err(|e| format!("Failed to query hashed files: {}", e))?;
+
+        let files: Vec<DbMediaFile> = result.take(0).map_err(|e| format!("Failed to parse files: {}", e))?;
+        all_files.extend(files.into_iter().map(|f| f.into_api()));
+    }
+    Ok(all_files)
+}
+
+pub async fn clear_all_duplicate_groups(db: &Surreal<Db>) -> Result<(), String> {
+    db.query("DELETE duplicate_group")
+        .await
+        .map_err(|e| format!("Failed to clear all groups: {}", e))?;
     Ok(())
 }
 
@@ -395,18 +476,24 @@ pub async fn insert_duplicate_group(
     algorithm: &str,
     member_ids: &[String],
     source_id: &str,
+    source_file: Option<&str>,
+    target_file: Option<&str>,
 ) -> Result<(), String> {
     db.query("CREATE duplicate_group SET
         match_type = $match_type,
         similarity_score = $similarity_score,
         algorithm = $algorithm,
         members = $members,
+        source_file = $source_file,
+        target_file = $target_file,
         source = type::record($source_id)
     ")
     .bind(("match_type", match_type.to_string()))
     .bind(("similarity_score", similarity_score))
     .bind(("algorithm", algorithm.to_string()))
     .bind(("members", member_ids.to_vec()))
+    .bind(("source_file", source_file.map(|s| s.to_string())))
+    .bind(("target_file", target_file.map(|s| s.to_string())))
     .bind(("source_id", source_id.to_string()))
     .await
     .map_err(|e| format!("Failed to insert duplicate group: {}", e))?;

@@ -84,9 +84,13 @@ fn main() {
             commands::dedup::start_scan,
             commands::dedup::start_fingerprinting,
             commands::dedup::compare_source,
+            commands::dedup::compare_targets,
+            commands::dedup::set_source_role,
             commands::dedup::get_duplicate_groups,
             commands::dedup::get_files_by_source,
             commands::dedup::get_dedup_stats,
+            commands::dedup::trash_files,
+            commands::dedup::add_files_as_target,
             commands::dedup::cancel_dedup,
         ])
         .on_window_event(|app_handle, event| {

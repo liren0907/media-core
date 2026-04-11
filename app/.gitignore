@@ -35,12 +35,11 @@ src-tauri/crates/media-core/.git/
 # Generated media / temp
 hls_media_dev/
 tmp/
-data/
+/data/
 
 # Deprecated/legacy dirs
 deprecated/
 src-tauri/deprecated/
-data/
 
 reference/
 references/

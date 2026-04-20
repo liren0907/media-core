@@ -39,7 +39,6 @@ tmp/
 
 # Deprecated/legacy dirs
 deprecated/
-src-tauri/deprecated/
 
 reference/
 references/

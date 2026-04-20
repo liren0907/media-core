@@ -85,6 +85,7 @@
                         { href: '/camera', icon: 'photo_camera', label: 'Camera', match: (p: string) => p.startsWith('/camera') },
                         { href: '/benchmark', icon: 'speed', label: 'Benchmark', match: (p: string) => p.startsWith('/benchmark') },
                         { href: '/dedup', icon: 'fingerprint', label: 'Dedup', match: (p: string) => p.startsWith('/dedup') },
+                        { href: '/demo-360', icon: 'panorama_photosphere', label: '360° Demo', match: (p: string) => p.startsWith('/demo-360') },
                         { href: '/settings', icon: 'settings', label: 'Settings', match: (p: string) => p.startsWith('/settings') },
                     ] as item}
                         {@const active = item.match(page.url.pathname)}
@@ -149,6 +150,8 @@
                         Benchmark
                     {:else if page.url.pathname.startsWith('/dedup')}
                         Deduplication
+                    {:else if page.url.pathname.startsWith('/demo-360')}
+                        360° Demo
                     {:else if page.url.pathname.startsWith('/settings')}
                         Settings
                     {:else}

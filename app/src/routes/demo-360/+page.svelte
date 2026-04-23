@@ -18,11 +18,11 @@
 <PageContent>
   <div class="flex items-center justify-between gap-3 flex-wrap">
     <div class="flex items-center gap-3">
-      <h1 class="text-lg font-bold font-display text-slate-900 dark:text-white flex items-center gap-2">
-        <span class="material-symbols-outlined text-[#137fec]">panorama_photosphere</span>
+      <h1 class="text-page-title text-lg flex items-center gap-2">
+        <span class="material-symbols-outlined text-status-info">panorama_photosphere</span>
         360° Media Demo
       </h1>
-      <span class="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold border border-amber-500/20 uppercase tracking-wider">Experimental</span>
+      <span class="px-2 py-0.5 rounded-full bg-amber-500/10 text-badge text-status-warning border border-amber-500/20 uppercase tracking-wider">Experimental</span>
     </div>
     <TabBar {tabs} {activeTab} onchange={(id) => (activeTab = id)} />
   </div>

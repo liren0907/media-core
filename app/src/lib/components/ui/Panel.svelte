@@ -17,7 +17,7 @@
       {#if icon}
         <span class="material-symbols-outlined text-slate-500 text-[16px]">{icon}</span>
       {/if}
-      <h3 class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">{title}</h3>
+      <h3 class="text-section-title">{title}</h3>
     </div>
     {#if actions}
       {@render actions()}

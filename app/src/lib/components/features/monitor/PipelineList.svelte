@@ -23,7 +23,7 @@
                 {/each}
             </div>
         {:else}
-            <div class="text-center text-xs text-slate-500 py-4">No active pipelines</div>
+            <div class="text-center text-caption py-4">No active pipelines</div>
         {/if}
     </div>
 </Panel>

@@ -13,9 +13,9 @@
 
   let { status, colorMap }: Props = $props();
 
-  let colors = $derived((colorMap ?? defaultColors)[status.toLowerCase()] ?? 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20');
+  let colors = $derived((colorMap ?? defaultColors)[status.toLowerCase()] ?? 'bg-slate-500/10 text-muted border-slate-500/20');
 </script>
 
-<span class="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded text-[10px] font-bold border uppercase tracking-wide {colors}">
+<span class="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded text-badge border uppercase tracking-wide {colors}">
   {status}
 </span>

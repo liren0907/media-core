@@ -62,7 +62,7 @@
                     {#if result.similarityGroups.length > 0}
                         <div class="flex flex-col gap-3">
                             <div class="flex items-center justify-between">
-                                <h4 class="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">Groups Found</h4>
+                                <h4 class="text-section-title text-slate-900 dark:text-white">Groups Found</h4>
                                 <span class="text-[10px] px-1.5 py-0.5 rounded bg-[#137fec]/10 text-[#137fec] font-bold">{result.similarityGroups.length}</span>
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-2">

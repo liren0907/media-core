@@ -79,7 +79,7 @@
                         <label class="flex items-center gap-2 p-1.5 rounded bg-slate-50 dark:bg-[#1f2937]/50 border border-slate-100 dark:border-[#2a3441] hover:border-[#137fec]/50 cursor-pointer transition-colors text-xs">
                             <input type="checkbox" checked={selectedLabels.includes(label)} onchange={() => ontoggleLabel(label)} class="rounded border-slate-300 dark:border-slate-600 text-[#137fec] w-3.5 h-3.5" />
                             <span class="flex-1 font-mono text-slate-700 dark:text-slate-300 truncate">{label}</span>
-                            {#if labelCounts[label]}<span class="text-[10px] text-slate-500 font-mono">{labelCounts[label]}</span>{/if}
+                            {#if labelCounts[label]}<span class="text-meta">{labelCounts[label]}</span>{/if}
                         </label>
                     {/each}
                 </div>
@@ -103,7 +103,7 @@
                 <div class="border-t border-slate-100 dark:border-[#2a3441] pt-2 mt-1">
                     <span class="text-[10px] text-slate-500 uppercase tracking-wider">Top Classes</span>
                     {#each topLabels.slice(0, 3) as [label, count]}
-                        <div class="flex justify-between mt-1"><span class="text-slate-600 dark:text-slate-400 truncate max-w-[100px]" title={label}>{label}</span><span class="text-slate-500">{count}</span></div>
+                        <div class="flex justify-between mt-1"><span class="text-muted truncate max-w-[100px]" title={label}>{label}</span><span class="text-slate-500">{count}</span></div>
                     {/each}
                 </div>
             {/if}

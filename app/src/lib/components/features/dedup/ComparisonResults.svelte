@@ -124,7 +124,7 @@
       </div>
       <div class="flex-1 min-w-0">
         <div class="text-[11px] font-bold text-slate-900 dark:text-white truncate">{file.fileName}</div>
-        <div class="text-[10px] text-slate-400 font-mono truncate">{file.filePath}</div>
+        <div class="text-meta truncate">{file.filePath}</div>
         <div class="text-[10px] text-slate-400 mt-0.5">{formatFileSize(file.fileSize)}</div>
       </div>
       <span class="material-symbols-outlined text-[14px] text-slate-400 shrink-0">
@@ -168,7 +168,7 @@
         </div>
         <div class="flex-1 min-w-0">
           <div class="text-[11px] font-bold text-slate-900 dark:text-white truncate">{file.fileName}</div>
-          <div class="text-[10px] text-slate-400 font-mono truncate">{file.filePath}</div>
+          <div class="text-meta truncate">{file.filePath}</div>
           <div class="text-[10px] text-slate-400 mt-0.5">{formatFileSize(file.fileSize)}</div>
         </div>
         <span class="material-symbols-outlined text-[14px] text-slate-400 shrink-0">
@@ -223,7 +223,7 @@
       <div class="grid grid-cols-2 gap-3 px-3 py-2 border-b border-slate-200 dark:border-[#2a3441]">
         <div class="flex items-center gap-1.5">
           <span class="material-symbols-outlined text-[14px] text-[#137fec]">star</span>
-          <span class="text-[10px] font-bold uppercase tracking-wider text-[#137fec]">Source</span>
+          <span class="text-stat-label text-status-info">Source</span>
           <span class="text-[10px] text-slate-400">(keep)</span>
         </div>
         <div class="flex items-center gap-1.5">
@@ -235,7 +235,7 @@
             title="Select all targets"
           />
           <span class="material-symbols-outlined text-[14px] text-amber-500">filter_center_focus</span>
-          <span class="text-[10px] font-bold uppercase tracking-wider text-amber-500">Target</span>
+          <span class="text-stat-label text-amber-500">Target</span>
           <span class="text-[10px] text-slate-400">(duplicate)</span>
         </div>
       </div>

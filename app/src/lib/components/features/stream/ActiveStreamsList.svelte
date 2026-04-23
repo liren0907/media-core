@@ -18,11 +18,11 @@
                         <StatusBadge status={stream.status} />
                         <div class="min-w-0">
                             <p class="text-xs font-medium text-slate-900 dark:text-white truncate">{stream.name}</p>
-                            <p class="text-[10px] text-slate-500 font-mono">{stream.codec ?? '?'} · {stream.resolution ?? 'N/A'}</p>
+                            <p class="text-meta">{stream.codec ?? '?'} · {stream.resolution ?? 'N/A'}</p>
                         </div>
                     </div>
                     {#if stream.latencyMs}
-                        <span class="text-[10px] font-mono text-slate-500 shrink-0">{stream.latencyMs}ms</span>
+                        <span class="text-meta shrink-0">{stream.latencyMs}ms</span>
                     {/if}
                 </div>
             {/each}

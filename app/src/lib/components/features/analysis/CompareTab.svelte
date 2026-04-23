@@ -64,7 +64,7 @@
                                 <div class="text-4xl font-bold font-display {result.imageComparison.isDuplicate ? 'text-green-500' : 'text-orange-500'}">
                                     {(result.imageComparison.similarityScore * 100).toFixed(1)}%
                                 </div>
-                                <div class="mt-1 text-xs text-slate-500">Similarity Score</div>
+                                <div class="mt-1 text-caption">Similarity Score</div>
                                 <div class="mt-3">
                                     <StatusBadge status={result.imageComparison.isDuplicate ? 'duplicate' : 'different'} colorMap={{
                                         duplicate: 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20',

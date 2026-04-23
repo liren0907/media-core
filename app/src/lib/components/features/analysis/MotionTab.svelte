@@ -64,7 +64,7 @@
                     {#if result.motionEvents.length > 0}
                         <div class="flex flex-col gap-3">
                             <div class="flex items-center justify-between">
-                                <h4 class="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">Motion Events</h4>
+                                <h4 class="text-section-title text-slate-900 dark:text-white">Motion Events</h4>
                                 <span class="text-[10px] px-1.5 py-0.5 rounded bg-[#137fec]/10 text-[#137fec] font-bold">{result.motionEvents.length}</span>
                             </div>
                             <table class="w-full text-xs font-mono">

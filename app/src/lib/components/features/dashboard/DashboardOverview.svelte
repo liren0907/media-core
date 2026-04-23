@@ -82,7 +82,7 @@
         <StatCard label="Memory" icon="developer_board" iconColor="text-orange-500" value="{memoryPercent.toFixed(0)}%">
             {#snippet extra()}
                 <ProgressBar percent={memoryPercent} color="bg-orange-500" />
-                <div class="mt-1.5 text-[10px] text-slate-500 font-mono">
+                <div class="mt-1.5 text-meta">
                     {memoryUsedGb.toFixed(1)} / {metrics?.memory.totalGb?.toFixed(1) ?? '0'} GB
                 </div>
             {/snippet}
@@ -91,7 +91,7 @@
         <StatCard label="Disk" icon="hard_drive" iconColor="text-purple-500" value="{diskPercent.toFixed(0)}%" sub="{diskTotalGb.toFixed(0)} GB">
             {#snippet extra()}
                 <ProgressBar percent={diskPercent} color="bg-purple-500" />
-                <div class="mt-1.5 text-[10px] text-slate-500 font-mono">
+                <div class="mt-1.5 text-meta">
                     {writeSpeed > 0 ? `${writeSpeed.toFixed(0)} MB/s write` : 'Idle'}
                 </div>
             {/snippet}
@@ -99,7 +99,7 @@
 
         <StatCard label="System" icon="schedule" iconColor="text-green-500" value={currentTime.toLocaleTimeString('en-GB', { hour12: false })}>
             {#snippet extra()}
-                <div class="mt-1.5 text-[10px] text-slate-500 font-mono">
+                <div class="mt-1.5 text-meta">
                     {#if metrics}
                         Uptime {formatUptime(metrics.uptimeSeconds)}
                     {:else}
@@ -138,7 +138,7 @@
                 {#if streamStats}
                     <span class="text-[10px] px-1.5 py-0.5 rounded bg-[#137fec]/10 text-[#137fec] font-bold">{streamStats.activeCount} / {streamStats.totalCount}</span>
                 {/if}
-                <a href="/multi-stream-viewer" class="text-[10px] font-bold uppercase tracking-wider text-[#137fec] hover:text-blue-400">View All</a>
+                <a href="/multi-stream-viewer" class="text-stat-label text-status-info hover:text-blue-400">View All</a>
             </div>
         {/snippet}
         <div class="overflow-x-auto">
@@ -158,12 +158,12 @@
                         {#each streamStats.streams as stream}
                             <tr class="hover:bg-slate-50 dark:hover:bg-[#1f2937]/50 transition-colors">
                                 <td class="px-3 py-1.5 text-slate-900 dark:text-white font-bold">{stream.id}</td>
-                                <td class="px-3 py-1.5 text-slate-600 dark:text-slate-400 capitalize">{stream.streamType}</td>
+                                <td class="px-3 py-1.5 text-muted capitalize">{stream.streamType}</td>
                                 <td class="px-3 py-1.5">
                                     <StatusBadge status={stream.status} />
                                 </td>
-                                <td class="px-3 py-1.5 text-slate-600 dark:text-slate-400">{stream.codec ?? 'N/A'}</td>
-                                <td class="px-3 py-1.5 text-slate-600 dark:text-slate-400">{stream.latencyMs ? `${stream.latencyMs}ms` : '--'}</td>
+                                <td class="px-3 py-1.5 text-muted">{stream.codec ?? 'N/A'}</td>
+                                <td class="px-3 py-1.5 text-muted">{stream.latencyMs ? `${stream.latencyMs}ms` : '--'}</td>
                                 <td class="px-3 py-1.5 text-right">
                                     <button class="text-slate-400 hover:text-[#137fec] transition-colors">
                                         <span class="material-symbols-outlined text-[16px]">more_vert</span>

@@ -121,7 +121,7 @@
   <!-- Sources List -->
   <Panel title="Sources" icon="folder">
     {#snippet actions()}
-      <button onclick={addSource} class="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[#137fec] hover:text-blue-400">
+      <button onclick={addSource} class="flex items-center gap-1 text-stat-label text-status-info hover:text-blue-400">
         <span class="material-symbols-outlined text-[14px]">add</span> Add Directory
       </button>
     {/snippet}
@@ -138,8 +138,8 @@
             class="flex items-center justify-between px-3 py-2 text-left hover:bg-slate-50 dark:hover:bg-[#1f2937]/50 transition-colors cursor-pointer {selectedSourceId === id ? 'bg-[#137fec]/5 border-l-2 border-[#137fec]' : ''}"
           >
             <div class="flex-1 min-w-0">
-              <div class="text-xs font-bold text-slate-900 dark:text-white truncate">{source.label}</div>
-              <div class="text-[10px] text-slate-500 font-mono truncate">{source.path}</div>
+              <div class="text-card-title truncate">{source.label}</div>
+              <div class="text-meta truncate">{source.path}</div>
               <div class="flex items-center gap-2 mt-1">
                 <span class="text-[10px] px-1.5 py-0.5 rounded {source.status === 'hashed' ? 'bg-green-500/10 text-green-600' : source.status === 'scanned' ? 'bg-blue-500/10 text-blue-600' : 'bg-slate-100 dark:bg-[#283039] text-slate-500'} font-bold">
                   {source.status}
@@ -180,7 +180,7 @@
     {#if lastScanResult}
       <div class="mb-3 flex items-center gap-3 px-3 py-2 rounded-lg border border-slate-200 dark:border-[#2a3441] bg-white dark:bg-[#111418]">
         <span class="material-symbols-outlined text-[16px] text-green-500">check_circle</span>
-        <span class="text-xs text-slate-700 dark:text-slate-300">Scan complete:</span>
+        <span class="text-body">Scan complete:</span>
         <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-green-500/10 text-green-600">+{lastScanResult.added} added</span>
         <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-red-500/10 text-red-600">-{lastScanResult.removed} removed</span>
         <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600">{lastScanResult.updated} changed</span>

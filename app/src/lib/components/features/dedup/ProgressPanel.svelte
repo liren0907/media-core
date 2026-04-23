@@ -15,11 +15,11 @@
   <div class="flex flex-col gap-2">
     <ProgressBar {percent} color="bg-[#137fec]" />
     <div class="flex items-center justify-between text-[10px]">
-      <span class="text-slate-600 dark:text-slate-400">{message}</span>
+      <span class="text-muted">{message}</span>
       <span class="text-slate-500 font-mono">{percent.toFixed(0)}%</span>
     </div>
     {#if detail}
-      <div class="text-[10px] text-slate-500 font-mono truncate">{detail}</div>
+      <div class="text-meta truncate">{detail}</div>
     {/if}
   </div>
 </Panel>

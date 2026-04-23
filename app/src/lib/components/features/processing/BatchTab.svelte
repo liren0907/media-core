@@ -157,7 +157,7 @@
                             <StatusBadge status={currentProgress.hasError ? 'error' : 'active'} />
                         </div>
                         <ProgressBar percent={currentProgress.progressPercent} />
-                        <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+                        <div class="flex justify-between text-meta">
                             <span>{currentProgress.stepName}</span>
                             <span>{currentProgress.stepIndex + 1} / {currentProgress.totalSteps}</span>
                         </div>
@@ -187,7 +187,7 @@
                             {/each}
                         </div>
                     {:else}
-                        <div class="text-center text-xs text-slate-500 py-4">No active pipelines</div>
+                        <div class="text-center text-caption py-4">No active pipelines</div>
                     {/if}
                 </div>
             </Panel>
@@ -239,7 +239,7 @@
                             <div class="text-[10px] text-slate-500 mt-1">{completionEvent.succeeded}/{completionEvent.total} succeeded</div>
                         </div>
                     {:else}
-                        <div class="text-center text-xs text-slate-500 py-6">Run a batch to see results here</div>
+                        <div class="text-center text-caption py-6">Run a batch to see results here</div>
                     {/if}
                 </div>
             </Panel>

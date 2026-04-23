@@ -127,17 +127,17 @@
           <input type="file" accept="video/*" class="hidden" onchange={onFileChange} />
         </label>
         {#if fileName}
-          <div class="flex items-center justify-between gap-2 text-xs text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-[#1f2937] px-2 py-1.5 rounded">
+          <div class="flex items-center justify-between gap-2 text-body bg-slate-50 dark:bg-[#1f2937] px-2 py-1.5 rounded">
             <span class="truncate" title={fileName}>{fileName}</span>
-            <button onclick={clearVideo} class="text-slate-400 hover:text-red-500 shrink-0" aria-label="Clear">
+            <button onclick={clearVideo} class="text-muted hover:text-red-500 shrink-0" aria-label="Clear">
               <span class="material-symbols-outlined text-[14px]">close</span>
             </button>
           </div>
         {/if}
         {#if loadError}
-          <div class="text-xs text-red-500">{loadError}</div>
+          <div class="text-body text-status-error">{loadError}</div>
         {/if}
-        <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+        <p class="text-caption leading-relaxed">
           Use an <span class="font-semibold">equirectangular</span> 2:1 MP4 (H.264) 360° video. Autoplay starts muted — unmute via the volume slider.
         </p>
       </div>
@@ -154,7 +154,7 @@
             >
               <span class="material-symbols-outlined text-[18px]">{isPlaying ? 'pause' : 'play_arrow'}</span>
             </button>
-            <span class="text-xs tabular-nums text-slate-500 dark:text-slate-400">{fmtTime(currentTime)} / {fmtTime(duration)}</span>
+            <span class="text-caption tabular-nums">{fmtTime(currentTime)} / {fmtTime(duration)}</span>
           </div>
 
           <input
@@ -170,7 +170,7 @@
           />
 
           <div class="flex items-center gap-2">
-            <button onclick={toggleMute} class="text-slate-500 hover:text-slate-700 dark:hover:text-slate-200" aria-label={muted ? 'Unmute' : 'Mute'}>
+            <button onclick={toggleMute} class="text-muted hover:text-slate-700 dark:hover:text-slate-200" aria-label={muted ? 'Unmute' : 'Mute'}>
               <span class="material-symbols-outlined text-[18px]">{muted || volume === 0 ? 'volume_off' : 'volume_up'}</span>
             </button>
             <input

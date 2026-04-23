@@ -61,7 +61,7 @@
       </button>
     </div>
 
-    <div class="mt-3 flex items-center gap-2 text-xs text-slate-500 bg-slate-50 dark:bg-[#1a222c] p-2 rounded-lg border border-slate-100 dark:border-[#2a3441]">
+    <div class="mt-3 flex items-center gap-2 text-caption bg-slate-50 dark:bg-[#1a222c] p-2 rounded-lg border border-slate-100 dark:border-[#2a3441]">
       <span class="material-symbols-outlined text-[16px]">info</span>
       <p>
         Current: <span class="font-bold text-slate-900 dark:text-white uppercase">{effectiveTheme.value}</span>

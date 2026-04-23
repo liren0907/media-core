@@ -126,7 +126,7 @@
   // ── Constants ──
 
   const eventSourceColors: Record<string, string> = {
-    system: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
+    system: 'bg-slate-500/10 text-muted border-slate-500/20',
     stream: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
     pipeline: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20',
   };

@@ -18,7 +18,7 @@
 
 <Panel title="Event Log" icon="list_alt">
     {#snippet actions()}
-        <button onclick={onclear} class="text-[10px] font-bold uppercase tracking-wider text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">Clear</button>
+        <button onclick={onclear} class="text-stat-label hover:text-slate-600 dark:hover:text-slate-200">Clear</button>
     {/snippet}
     <div class="overflow-x-auto max-h-[280px] overflow-y-auto">
         <table class="w-full text-left text-xs font-mono">

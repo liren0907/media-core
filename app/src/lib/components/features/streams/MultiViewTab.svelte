@@ -104,7 +104,7 @@
             </div>
         {/snippet}
         <div class="p-3">
-            <label for="rtspUrlsInput" class="text-[10px] font-medium uppercase tracking-wider text-slate-500 mb-1.5 block">RTSP/HLS URLs (one per line)</label>
+            <label for="rtspUrlsInput" class="text-stat-label mb-1.5 block">RTSP/HLS URLs (one per line)</label>
             <textarea id="rtspUrlsInput" bind:value={urlsInput} class="w-full h-20 bg-white dark:bg-[#111418] border border-slate-200 dark:border-[#2a3441] rounded px-3 py-2 font-mono text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#137fec]" placeholder="rtsp://192.168.1.100/stream1&#10;rtsp://192.168.1.101/stream2"></textarea>
             {#if status && status !== "Enter RTSP URLs and click 'Start Streams' to begin."}
                 <div class="mt-2 p-2 rounded text-xs {status.includes('Error') ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/30' : 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900/30'}">
@@ -127,7 +127,7 @@
                         </div>
                     </div>
                     <div class="p-2 bg-slate-900 border-t border-slate-800">
-                        <p class="text-[10px] text-slate-400 truncate font-mono">{streams[focusedStreamIndex].url}</p>
+                        <p class="text-meta truncate">{streams[focusedStreamIndex].url}</p>
                     </div>
                 </div>
                 <div class="col-span-1 flex flex-col gap-1.5 overflow-y-auto max-h-[500px]">
@@ -163,7 +163,7 @@
                             </div>
                         </div>
                         <div class="p-2 bg-slate-900/50 border-t border-slate-800/50 flex items-center justify-between">
-                            <p class="text-[10px] text-slate-400 truncate font-mono max-w-[70%]" title={stream.url}>{stream.url}</p>
+                            <p class="text-meta truncate max-w-[70%]" title={stream.url}>{stream.url}</p>
                             <StatusBadge status={stream.status} />
                         </div>
                     </div>

@@ -28,7 +28,7 @@
 </script>
 
 <FormField {label}>
-  <button onclick={browse} class="w-full py-2 border-2 border-dashed border-slate-200 dark:border-[#2a3441] rounded text-xs text-slate-500 hover:text-[#137fec] hover:border-[#137fec] transition-colors">
+  <button onclick={browse} class="w-full py-2 border-2 border-dashed border-slate-200 dark:border-[#2a3441] rounded text-caption hover:text-[#137fec] hover:border-[#137fec] transition-colors">
     + Select Files
   </button>
   {#if files.length > 0}

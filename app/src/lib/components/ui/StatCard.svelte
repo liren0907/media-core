@@ -15,13 +15,13 @@
 
 <div class="bg-white dark:bg-[#161e27] rounded-lg border border-slate-200 dark:border-[#2a3441] p-3">
   <div class="flex items-center justify-between mb-2">
-    <h3 class="text-[10px] font-bold uppercase tracking-widest text-slate-500">{label}</h3>
+    <h3 class="text-stat-label">{label}</h3>
     <span class="material-symbols-outlined text-[16px] {iconColor}">{icon}</span>
   </div>
   <div class="flex items-baseline gap-2">
-    <span class="text-xl font-bold font-display text-slate-900 dark:text-white">{value}</span>
+    <span class="text-stat-value">{value}</span>
     {#if sub}
-      <span class="text-[10px] font-mono text-slate-500">{sub}</span>
+      <span class="text-meta">{sub}</span>
     {/if}
   </div>
   {#if extra}

@@ -27,7 +27,7 @@
 <Panel title="Hardware Acceleration" icon="bolt">
   <div class="p-4 flex flex-col gap-3">
     {#if hwCapabilities}
-      <div class="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 dark:bg-[#1a222c] p-2 rounded border border-slate-100 dark:border-[#2a3441]">
+      <div class="flex items-center gap-2 text-caption bg-slate-50 dark:bg-[#1a222c] p-2 rounded border border-slate-100 dark:border-[#2a3441]">
         <span class="material-symbols-outlined text-[16px]">info</span>
         <span>Platform: <span class="font-bold text-slate-900 dark:text-white">{hwCapabilities.platform}</span></span>
         {#if hwCapabilities.isAppleSilicon}

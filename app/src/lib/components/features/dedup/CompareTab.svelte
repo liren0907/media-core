@@ -123,7 +123,7 @@
       <div class="flex items-center gap-1.5">
         <label class="text-[10px] text-slate-500 whitespace-nowrap">Threshold</label>
         <input type="range" min="0" max="64" bind:value={threshold} class="w-16 h-1 accent-[#137fec]" />
-        <span class="text-[10px] font-mono text-slate-500 w-8 text-right">{threshold}</span>
+        <span class="text-meta w-8 text-right">{threshold}</span>
       </div>
 
       <RunButton

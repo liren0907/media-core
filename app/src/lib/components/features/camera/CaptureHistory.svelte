@@ -19,7 +19,7 @@
 <Panel title="Recent Captures" icon="photo_library">
     {#snippet actions()}
         {#if captureHistory.length > 0 && onclear}
-            <button onclick={onclear} class="text-[10px] font-bold uppercase tracking-wider text-slate-400 hover:text-red-500">Clear</button>
+            <button onclick={onclear} class="text-stat-label hover:text-red-500">Clear</button>
         {/if}
     {/snippet}
     <div class="p-3">

@@ -96,7 +96,7 @@
     <div class="flex flex-col gap-4 p-1">
       <!-- Source selection -->
       <div class="flex flex-col gap-1">
-        <label class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Source</label>
+        <label class="text-stat-label">Source</label>
         <select bind:value={selectedSourceId} class="bg-white dark:bg-[#111418] border border-slate-200 dark:border-[#2a3441] rounded px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#137fec]">
           {#each sources as source}
             <option value={sourceIdStr(source)}>{source.label} ({source.fileCount} files)</option>
@@ -106,7 +106,7 @@
 
       <!-- Algorithm toggles -->
       <div class="flex flex-col gap-2">
-        <label class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Algorithms</label>
+        <label class="text-stat-label">Algorithms</label>
         <ToggleSwitch bind:checked={useBlake3} label="BLAKE3 (exact match)" />
         <ToggleSwitch bind:checked={usePHash} label="pHash (perceptual)" />
         <ToggleSwitch bind:checked={useDHash} label="dHash (difference)" />
@@ -138,7 +138,7 @@
         <div class="p-4 text-center">
           <span class="material-symbols-outlined text-[48px] text-green-500">check_circle</span>
           <p class="text-sm font-bold mt-2 text-slate-900 dark:text-white">Fingerprinting Complete</p>
-          <p class="text-xs text-slate-500 mt-1">{lastResult} files processed</p>
+          <p class="text-caption mt-1">{lastResult} files processed</p>
         </div>
       </Panel>
     {:else}

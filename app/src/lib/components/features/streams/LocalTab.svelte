@@ -39,7 +39,7 @@
         {#snippet actions()}
             <div class="flex items-center gap-2">
                 {#if metadata}
-                    <span class="text-[10px] font-mono text-slate-500 truncate max-w-[200px]">{metadata.filename}</span>
+                    <span class="text-meta truncate max-w-[200px]">{metadata.filename}</span>
                 {/if}
                 <button onclick={loadVideo} disabled={isLoading} class="flex items-center gap-1 px-2 py-1 bg-[#137fec] hover:bg-blue-600 text-white rounded text-[10px] font-bold transition-colors disabled:opacity-50">
                     {#if isLoading}<span class="material-symbols-outlined animate-spin text-[14px]">sync</span>{/if}
@@ -96,7 +96,7 @@
                         </div>
                     {:else}
                         <div class="aspect-video bg-slate-100 dark:bg-[#1f2937] rounded flex items-center justify-center mb-3">
-                            <span class="text-xs text-slate-500">No thumbnail</span>
+                            <span class="text-caption">No thumbnail</span>
                         </div>
                     {/if}
                     <div class="flex flex-col gap-1.5 text-xs font-mono">

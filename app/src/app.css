@@ -16,8 +16,89 @@ body {
     font-family: var(--font-body);
 }
 
-.font-display {
-    font-family: var(--font-display);
+/* =============================================================================
+   Typography tokens — semantic roles + color tokens.
+   See docs/TYPOGRAPHY.md for usage.
+   Tailwind utilities ship in a later cascade layer, so any raw
+   `text-*` / `font-*` / `dark:text-*` utility placed after a token on the
+   same element will override the token's defaults — this is intentional.
+   ========================================================================= */
+@layer components {
+  /* --- Role tokens --------------------------------------------------------- */
+
+  .text-page-title {
+    @apply text-xl font-bold font-display tracking-tight text-slate-900 dark:text-white;
+  }
+
+  .text-section-title {
+    @apply text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300;
+  }
+
+  .text-card-title {
+    @apply text-xs font-bold text-slate-900 dark:text-white;
+  }
+
+  .text-stat-label {
+    @apply text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400;
+  }
+
+  .text-stat-value {
+    @apply text-xl font-bold font-display text-slate-900 dark:text-white;
+  }
+
+  .text-body {
+    @apply text-xs text-slate-700 dark:text-slate-300;
+  }
+
+  .text-caption {
+    @apply text-xs text-slate-500 dark:text-slate-400;
+  }
+
+  .text-meta {
+    @apply text-[10px] font-mono text-slate-500 dark:text-slate-400;
+  }
+
+  .text-code {
+    @apply text-xs font-mono;
+  }
+
+  .text-button {
+    @apply text-[10px] font-bold;
+  }
+
+  .text-nav {
+    @apply text-sm font-medium font-display;
+  }
+
+  .text-badge {
+    @apply text-[10px] font-bold;
+  }
+
+  /* --- Color-only tokens (declared after roles so they override role colors
+          when composed together, e.g. `class="text-body text-muted"`) ------ */
+
+  .text-muted {
+    @apply text-slate-500 dark:text-slate-400;
+  }
+
+  .text-status-error {
+    @apply text-red-600 dark:text-red-400;
+  }
+
+  .text-status-success {
+    @apply text-green-600 dark:text-green-400;
+  }
+
+  .text-status-warning {
+    @apply text-amber-600 dark:text-amber-400;
+  }
+
+  .text-status-info {
+    color: #137fec;
+  }
+  .dark .text-status-info {
+    color: #137fec;
+  }
 }
 
 /* Material Symbols classes */

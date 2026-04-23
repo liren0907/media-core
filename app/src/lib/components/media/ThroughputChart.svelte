@@ -43,7 +43,7 @@
     {/if}
     <path d="M0 130 C 120 135, 250 115, 350 120 S 550 105, 650 100 S 750 115, 800 108" fill="none" opacity="0.5" stroke="#94a3b8" stroke-dasharray="5 5" stroke-width="2"></path>
   </svg>
-  <div class="flex justify-between mt-1 text-[10px] text-slate-500 font-mono">
+  <div class="flex justify-between mt-1 text-meta">
     <span>{new Date(Date.now() - 3600000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
     <span>{new Date(Date.now() - 2700000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
     <span>{new Date(Date.now() - 1800000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>

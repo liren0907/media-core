@@ -38,8 +38,8 @@
           {/if}
         </div>
         <div class="flex-1 min-w-0">
-          <div class="text-xs font-bold text-slate-900 dark:text-white truncate">{file.fileName}</div>
-          <div class="text-[10px] text-slate-500 font-mono truncate" title={file.filePath}>{file.filePath}</div>
+          <div class="text-card-title truncate">{file.fileName}</div>
+          <div class="text-meta truncate" title={file.filePath}>{file.filePath}</div>
           <div class="flex items-center gap-2 mt-1">
             <span class="text-[10px] text-slate-400">{formatFileSize(file.fileSize)}</span>
             <span class="text-[10px] text-slate-400 capitalize">{file.fileType}</span>
@@ -50,6 +50,6 @@
   </div>
 
   {#if group.members.length === 0}
-    <p class="text-xs text-slate-500 text-center py-2">No member details available</p>
+    <p class="text-caption text-center py-2">No member details available</p>
   {/if}
 </Panel>

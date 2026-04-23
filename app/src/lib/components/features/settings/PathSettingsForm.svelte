@@ -30,7 +30,7 @@
 
 <Panel title="Default Paths" icon="folder">
   {#snippet actions()}
-    <button onclick={save} class="text-[10px] font-bold uppercase tracking-wider text-[#137fec] hover:text-blue-400">Save</button>
+    <button onclick={save} class="text-stat-label text-status-info hover:text-blue-400">Save</button>
   {/snippet}
   <div class="p-4 flex flex-col gap-3">
     <DirPicker bind:value={defaultVideoDir} label="Video Directory" placeholder="Select default video directory..." />

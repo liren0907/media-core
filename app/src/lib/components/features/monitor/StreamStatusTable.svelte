@@ -17,7 +17,7 @@
             {#if streamStats}
                 <span class="text-[10px] px-1.5 py-0.5 rounded bg-[#137fec]/10 text-[#137fec] font-bold">{activeCount} active</span>
             {/if}
-            <a href="/streams" class="text-[10px] font-bold uppercase tracking-wider text-[#137fec] hover:text-blue-400">Manage</a>
+            <a href="/streams" class="text-stat-label text-status-info hover:text-blue-400">Manage</a>
         </div>
     {/snippet}
     <div class="overflow-x-auto">
@@ -39,13 +39,13 @@
                     {#each streamStats.streams as stream}
                         <tr class="hover:bg-slate-50 dark:hover:bg-[#1f2937]/50 transition-colors">
                             <td class="px-3 py-1.5 text-slate-900 dark:text-white font-bold">{stream.id}</td>
-                            <td class="px-3 py-1.5 text-slate-600 dark:text-slate-400">{stream.name}</td>
+                            <td class="px-3 py-1.5 text-muted">{stream.name}</td>
                             <td class="px-3 py-1.5"><StatusBadge status={stream.status} /></td>
-                            <td class="px-3 py-1.5 text-slate-600 dark:text-slate-400 capitalize">{stream.streamType}</td>
-                            <td class="px-3 py-1.5 text-slate-600 dark:text-slate-400">{stream.codec ?? '--'}</td>
-                            <td class="px-3 py-1.5 text-slate-600 dark:text-slate-400">{stream.resolution ?? '--'}</td>
-                            <td class="px-3 py-1.5 text-slate-600 dark:text-slate-400">{stream.latencyMs ? `${stream.latencyMs}ms` : '--'}</td>
-                            <td class="px-3 py-1.5 text-right text-slate-600 dark:text-slate-400">{stream.bitrateKbps ? `${stream.bitrateKbps} kbps` : '--'}</td>
+                            <td class="px-3 py-1.5 text-muted capitalize">{stream.streamType}</td>
+                            <td class="px-3 py-1.5 text-muted">{stream.codec ?? '--'}</td>
+                            <td class="px-3 py-1.5 text-muted">{stream.resolution ?? '--'}</td>
+                            <td class="px-3 py-1.5 text-muted">{stream.latencyMs ? `${stream.latencyMs}ms` : '--'}</td>
+                            <td class="px-3 py-1.5 text-right text-muted">{stream.bitrateKbps ? `${stream.bitrateKbps} kbps` : '--'}</td>
                         </tr>
                     {/each}
                 {:else}

@@ -70,13 +70,13 @@
           {#each sources as source}
             <tr class="hover:bg-slate-50 dark:hover:bg-[#1f2937]/50 transition-colors">
               <td class="px-3 py-1.5 text-slate-900 dark:text-white font-bold">{source.label}</td>
-              <td class="px-3 py-1.5 text-slate-600 dark:text-slate-400 truncate max-w-xs">{source.path}</td>
+              <td class="px-3 py-1.5 text-muted truncate max-w-xs">{source.path}</td>
               <td class="px-3 py-1.5">
                 <span class="text-[10px] px-1.5 py-0.5 rounded font-bold {source.status === 'hashed' ? 'bg-green-500/10 text-green-600' : source.status === 'scanned' ? 'bg-blue-500/10 text-blue-600' : 'bg-slate-100 dark:bg-[#283039] text-slate-500'}">
                   {source.status}
                 </span>
               </td>
-              <td class="px-3 py-1.5 text-right text-slate-600 dark:text-slate-400">{source.fileCount}</td>
+              <td class="px-3 py-1.5 text-right text-muted">{source.fileCount}</td>
             </tr>
           {/each}
         </tbody>

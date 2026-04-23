@@ -45,7 +45,7 @@
     }
 </script>
 
-<div class="flex h-screen w-full bg-[#f6f7f8] dark:bg-[#101922] text-slate-900 dark:text-slate-50 overflow-hidden font-body {isResizing ? 'select-none' : ''}">
+<div class="flex h-screen w-full bg-[#f6f7f8] dark:bg-[#101922] text-slate-900 dark:text-slate-50 overflow-hidden {isResizing ? 'select-none' : ''}">
     <!-- Side Navigation -->
     <aside
         class="flex flex-col border-r border-slate-200 dark:border-[#2a3441] bg-white dark:bg-[#1a222c] transition-all duration-300 ease-in-out relative shrink-0"
@@ -91,7 +91,7 @@
                         {@const active = item.match(page.url.pathname)}
                         <a href={item.href} class="flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors group relative {active ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
                             <span class="material-symbols-outlined {active ? 'filled' : ''} shrink-0">{item.icon}</span>
-                            <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">{item.label}</span>
+                            <span class="text-nav leading-normal whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">{item.label}</span>
                             {#if !isSidebarOpen}
                                 <div class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
                                     {item.label}
@@ -106,7 +106,7 @@
             <div class="flex flex-col gap-2">
                 <button onclick={toggleTheme} class="flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors group relative text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]">
                     <span class="material-symbols-outlined shrink-0">{effectiveTheme.value === 'dark' ? 'light_mode' : 'dark_mode'}</span>
-                    <span class="text-sm font-medium leading-normal font-display whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">
+                    <span class="text-nav leading-normal whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">
                         {effectiveTheme.value === 'dark' ? 'Light Mode' : 'Dark Mode'}
                     </span>
                     
@@ -135,7 +135,7 @@
         <!-- Header -->
         <header class="flex items-center justify-between border-b border-slate-200 dark:border-[#2a3441] bg-white dark:bg-[#1a222c] px-8 py-4 shrink-0 z-10">
             <div class="flex items-center gap-4">
-                <h2 class="text-xl font-bold font-display tracking-tight text-slate-900 dark:text-white">
+                <h2 class="text-page-title">
                     {#if page.url.pathname === '/'}
                         Dashboard
                     {:else if page.url.pathname.startsWith('/streams')}

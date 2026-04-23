@@ -135,7 +135,7 @@
 
                         <!-- Additional URLs -->
                         <div class="flex flex-col gap-1.5">
-                            <span class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Additional URLs ({rtspConfig.rtsp_url_list.length})</span>
+                            <span class="text-stat-label">Additional URLs ({rtspConfig.rtsp_url_list.length})</span>
                             {#each rtspConfig.rtsp_url_list as url, i}
                                 <div class="flex gap-2">
                                     <input id={`additionalRtspUrl-${i}`} type="text" bind:value={rtspConfig.rtsp_url_list[i]} class="{inputClass} flex-1" placeholder="rtsp://..." aria-label={`Additional RTSP URL ${i + 1}`} />
@@ -174,7 +174,7 @@
                                     <input type="checkbox" bind:checked={rtspConfig.hls.enabled} class="sr-only peer">
                                     <div class="w-9 h-5 bg-slate-200 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
                                 </div>
-                                <span class="text-xs font-bold text-slate-900 dark:text-white">Enable HLS Streaming</span>
+                                <span class="text-card-title">Enable HLS Streaming</span>
                             </label>
                             {#if rtspConfig.hls.enabled}
                                 <div class="grid grid-cols-2 gap-3">
@@ -201,7 +201,7 @@
                             {status}
                         </div>
                     {:else}
-                        <p class="text-xs text-slate-500">System idle. Ready to start capture.</p>
+                        <p class="text-caption">System idle. Ready to start capture.</p>
                     {/if}
                 </div>
             </Panel>

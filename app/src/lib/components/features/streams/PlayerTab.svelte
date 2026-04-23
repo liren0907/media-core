@@ -171,12 +171,12 @@
     {#if isPlaying}
         <Panel title="Bandwidth History" icon="show_chart">
             {#snippet actions()}
-                <span class="text-[10px] font-mono text-slate-500">{formatBitrate(bandwidth)} est.</span>
+                <span class="text-meta">{formatBitrate(bandwidth)} est.</span>
             {/snippet}
             <div class="p-3">
                 <SparklineBar values={bandwidthHistory.map(bw => (bw / Math.max(...bandwidthHistory, 1)) * 100)} height="h-16" />
                 {#if segmentLoadTimes.length > 0}
-                    <div class="mt-2 text-[10px] text-slate-500 font-mono">
+                    <div class="mt-2 text-meta">
                         Avg segment load: {(segmentLoadTimes.reduce((a, b) => a + b, 0) / segmentLoadTimes.length).toFixed(0)}ms
                     </div>
                 {/if}

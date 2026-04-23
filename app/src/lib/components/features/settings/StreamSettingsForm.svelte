@@ -32,7 +32,7 @@
 
 <Panel title="Stream Settings" icon="stream">
   {#snippet actions()}
-    <button onclick={save} class="text-[10px] font-bold uppercase tracking-wider text-[#137fec] hover:text-blue-400">Save</button>
+    <button onclick={save} class="text-stat-label text-status-info hover:text-blue-400">Save</button>
   {/snippet}
   <div class="p-4">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">

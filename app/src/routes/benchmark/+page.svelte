@@ -92,7 +92,7 @@
                         <div class="flex flex-col gap-2 mb-4">
                             {#each result.results as item}
                                 <div class="flex items-center gap-3">
-                                    <span class="text-[10px] font-mono text-slate-500 w-32 truncate text-right">{item.name}</span>
+                                    <span class="text-meta w-32 truncate text-right">{item.name}</span>
                                     <div class="flex-1 h-5 bg-slate-100 dark:bg-[#1f2937] rounded overflow-hidden relative">
                                         <div class="h-full rounded transition-all {item.name === result.fastest ? 'bg-green-500' : item.name === result.slowest ? 'bg-orange-500' : 'bg-[#137fec]'}" style="width: {(item.averageMs / maxAvg) * 100}%"></div>
                                         <span class="absolute inset-y-0 right-2 flex items-center text-[10px] font-mono font-bold text-slate-700 dark:text-slate-300">{item.averageMs.toFixed(1)}ms</span>

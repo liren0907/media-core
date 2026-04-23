@@ -204,8 +204,8 @@
                                 <span class="material-symbols-outlined text-4xl text-green-500">check_circle</span>
                                 <div class="text-center">
                                     <p class="text-sm font-bold text-slate-900 dark:text-white">Export Complete</p>
-                                    <p class="text-xs text-slate-500 mt-1">{diskResult.frameCount} frames saved to:</p>
-                                    <p class="text-xs font-mono text-slate-600 dark:text-slate-400 mt-1 break-all">{diskResult.outputDir}</p>
+                                    <p class="text-caption mt-1">{diskResult.frameCount} frames saved to:</p>
+                                    <p class="text-xs font-mono text-muted mt-1 break-all">{diskResult.outputDir}</p>
                                 </div>
                             </div>
                         {:else if isProcessing}

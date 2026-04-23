@@ -22,7 +22,7 @@
   <div>
     <div class="flex items-center justify-between mb-1">
       <label class="text-xs font-semibold text-slate-600 dark:text-slate-300" for="fov-slider">Field of View</label>
-      <span class="text-xs text-slate-500 tabular-nums">{fov.toFixed(0)}°</span>
+      <span class="text-caption tabular-nums">{fov.toFixed(0)}°</span>
     </div>
     <input
       id="fov-slider"
@@ -38,7 +38,7 @@
   <div>
     <div class="flex items-center justify-between mb-1">
       <label class="text-xs font-semibold text-slate-600 dark:text-slate-300" for="drag-sens-slider">Drag sensitivity</label>
-      <span class="text-xs text-slate-500 tabular-nums">{dragSensitivity.toFixed(2)}×</span>
+      <span class="text-caption tabular-nums">{dragSensitivity.toFixed(2)}×</span>
     </div>
     <input
       id="drag-sens-slider"
@@ -64,7 +64,7 @@
     Reset view
   </button>
 
-  <div class="border-t border-slate-200 dark:border-[#2a3441] pt-2 grid grid-cols-3 gap-1 text-[10px] tabular-nums text-slate-500 dark:text-slate-400">
+  <div class="border-t border-slate-200 dark:border-[#2a3441] pt-2 grid grid-cols-3 gap-1 text-[10px] tabular-nums text-muted">
     <div><span class="text-slate-400">lon</span> {view.lon.toFixed(1)}°</div>
     <div><span class="text-slate-400">lat</span> {view.lat.toFixed(1)}°</div>
     <div><span class="text-slate-400">fov</span> {view.fov.toFixed(0)}°</div>

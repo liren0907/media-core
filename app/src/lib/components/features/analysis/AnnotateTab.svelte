@@ -100,13 +100,13 @@
     <Panel title="Input Source" icon="video_file">
         <div class="p-3 flex flex-col gap-2">
             <button onclick={openVideoFile} class="w-full px-3 py-2 bg-[#137fec] hover:bg-blue-600 text-white rounded text-xs font-bold transition-colors">Open Video File</button>
-            <p class="text-[10px] font-mono text-slate-500 truncate">{videoPath || "No file selected"}</p>
+            <p class="text-meta truncate">{videoPath || "No file selected"}</p>
         </div>
     </Panel>
     <Panel title="Annotation Data" icon="description">
         <div class="p-3 flex flex-col gap-2">
             <button onclick={openAnnotationFile} class="w-full px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded text-xs font-bold transition-colors">Open JSON File</button>
-            <p class="text-[10px] font-mono text-slate-500 truncate">{annotationPath || "No file selected"}</p>
+            <p class="text-meta truncate">{annotationPath || "No file selected"}</p>
         </div>
     </Panel>
 </div>

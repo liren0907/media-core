@@ -166,7 +166,7 @@
             <!-- Camera Selection -->
             <Panel title="Camera" icon="photo_camera">
                 {#snippet actions()}
-                    <button onclick={loadCameras} disabled={isLoading} class="text-[10px] font-bold uppercase tracking-wider text-[#137fec] hover:text-blue-400 disabled:opacity-50">
+                    <button onclick={loadCameras} disabled={isLoading} class="text-stat-label text-status-info hover:text-blue-400 disabled:opacity-50">
                         {isLoading ? 'Scanning...' : 'Refresh'}
                     </button>
                 {/snippet}
@@ -178,7 +178,7 @@
                                     <span class="material-symbols-outlined text-[18px] text-slate-500">videocam</span>
                                     <div class="flex-1 min-w-0">
                                         <p class="text-xs font-medium text-slate-900 dark:text-white truncate">{camera}</p>
-                                        <p class="text-[10px] text-slate-500 font-mono">Index: {index}</p>
+                                        <p class="text-meta">Index: {index}</p>
                                     </div>
                                     {#if selectedCameraIndex === index}
                                         <span class="material-symbols-outlined text-[16px] text-[#137fec]">check_circle</span>

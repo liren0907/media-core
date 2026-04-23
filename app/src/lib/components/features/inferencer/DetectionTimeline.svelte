@@ -36,7 +36,7 @@
             {/if}
         </div>
         {#if detectionTimeline.length > 0}
-            <div class="flex justify-between mt-1.5 text-[10px] text-slate-500 font-mono">
+            <div class="flex justify-between mt-1.5 text-meta">
                 <span>Start</span><span>25%</span><span>50%</span><span>75%</span><span>End</span>
             </div>
         {/if}

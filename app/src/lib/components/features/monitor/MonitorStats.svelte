@@ -24,7 +24,7 @@
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
     <StatCard label="Streams" icon="cell_tower" iconColor="text-[#137fec]" value="{activeCount} / {totalCount}">
         {#snippet extra()}
-            <div class="mt-1.5 text-[10px] text-slate-500 font-mono">
+            <div class="mt-1.5 text-meta">
                 {#if streamStats}
                     {streamStats.avgLatencyMs.toFixed(0)}ms avg · {(streamStats.totalBitrateKbps / 1000).toFixed(1)} Mbps
                 {:else}
@@ -43,7 +43,7 @@
     <StatCard label="Memory" icon="developer_board" iconColor="text-orange-500" value="{memoryPercent.toFixed(0)}%">
         {#snippet extra()}
             <ProgressBar percent={memoryPercent} color="bg-orange-500" />
-            <div class="mt-1.5 text-[10px] text-slate-500 font-mono">
+            <div class="mt-1.5 text-meta">
                 {memoryUsedGb.toFixed(1)} / {metrics?.memory.totalGb?.toFixed(1) ?? '0'} GB
             </div>
         {/snippet}
@@ -52,7 +52,7 @@
     <StatCard label="Disk" icon="hard_drive" iconColor="text-purple-500" value="{diskPercent.toFixed(0)}%" sub="{diskTotalGb.toFixed(0)} GB">
         {#snippet extra()}
             <ProgressBar percent={diskPercent} color="bg-purple-500" />
-            <div class="mt-1.5 text-[10px] text-slate-500 font-mono">
+            <div class="mt-1.5 text-meta">
                 {writeSpeed > 0 ? `${writeSpeed.toFixed(0)} MB/s write` : 'Idle'}
             </div>
         {/snippet}

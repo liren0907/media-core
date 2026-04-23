@@ -261,7 +261,7 @@
       <Panel title="Source" icon="star">
         {#snippet actions()}
           {#if !sourceEntry}
-            <button onclick={() => addAndScanSource('source')} class="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[#137fec] hover:text-blue-400">
+            <button onclick={() => addAndScanSource('source')} class="flex items-center gap-1 text-stat-label text-status-info hover:text-blue-400">
               <span class="material-symbols-outlined text-[14px]">add</span> Set
             </button>
           {/if}
@@ -278,7 +278,7 @@
           >
             <div class="flex items-center gap-1.5">
               <span class="material-symbols-outlined text-[14px] text-[#137fec]">star</span>
-              <span class="text-xs font-bold text-slate-900 dark:text-white truncate">{sourceEntry.label}</span>
+              <span class="text-card-title truncate">{sourceEntry.label}</span>
             </div>
             <div class="flex items-center gap-2 mt-0.5 ml-5">
               <span class="text-[10px] px-1.5 py-0.5 rounded {sourceEntry.status === 'hashed' ? 'bg-green-500/10 text-green-600' : sourceEntry.status === 'scanned' ? 'bg-blue-500/10 text-blue-600' : 'bg-slate-100 dark:bg-[#283039] text-slate-500'} font-bold">
@@ -323,10 +323,10 @@
       <Panel title="Targets" icon="filter_center_focus">
         {#snippet actions()}
           <div class="flex items-center gap-2">
-            <button onclick={() => addAndScanSource('target')} class="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[#137fec] hover:text-blue-400">
+            <button onclick={() => addAndScanSource('target')} class="flex items-center gap-1 text-stat-label text-status-info hover:text-blue-400">
               <span class="material-symbols-outlined text-[14px]">create_new_folder</span> Folder
             </button>
-            <button onclick={addFilesAsTarget} class="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[#137fec] hover:text-blue-400">
+            <button onclick={addFilesAsTarget} class="flex items-center gap-1 text-stat-label text-status-info hover:text-blue-400">
               <span class="material-symbols-outlined text-[14px]">note_add</span> Files
             </button>
           </div>
@@ -346,7 +346,7 @@
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-1.5">
                     <span class="material-symbols-outlined text-[14px] text-slate-400">filter_center_focus</span>
-                    <span class="text-xs font-bold text-slate-900 dark:text-white truncate">{source.label}</span>
+                    <span class="text-card-title truncate">{source.label}</span>
                   </div>
                   <div class="flex items-center gap-2 mt-0.5 ml-5">
                     <span class="text-[10px] px-1.5 py-0.5 rounded {source.status === 'hashed' ? 'bg-green-500/10 text-green-600' : source.status === 'scanned' ? 'bg-blue-500/10 text-blue-600' : 'bg-slate-100 dark:bg-[#283039] text-slate-500'} font-bold">
@@ -393,7 +393,7 @@
       <!-- Stats summary -->
       {#if stats}
         <div class="px-3 py-2 rounded-lg border border-slate-200 dark:border-[#2a3441] bg-white dark:bg-[#111418]">
-          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Overview</div>
+          <div class="text-stat-label mb-1.5">Overview</div>
           <div class="grid grid-cols-2 gap-1.5 text-[11px]">
             <div class="flex justify-between">
               <span class="text-slate-500">Source</span>
@@ -427,7 +427,7 @@
         {#if lastScanResult}
           <div class="flex items-center gap-3 px-3 py-2 rounded-lg border border-slate-200 dark:border-[#2a3441] bg-white dark:bg-[#111418]">
             <span class="material-symbols-outlined text-[16px] text-green-500">check_circle</span>
-            <span class="text-xs text-slate-700 dark:text-slate-300">Scan complete:</span>
+            <span class="text-body">Scan complete:</span>
             <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-green-500/10 text-green-600">+{lastScanResult.added}</span>
             <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-red-500/10 text-red-600">-{lastScanResult.removed}</span>
             <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600">{lastScanResult.updated} changed</span>

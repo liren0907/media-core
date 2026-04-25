@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { invoke } from '@tauri-apps/api/core';
   import type { UnlistenFn } from '@tauri-apps/api/event';
+  import { ask } from '@tauri-apps/plugin-dialog';
   import { PageContent, Panel, EmptyState, ErrorAlert } from '$lib/components/ui';
   import { selectDirectory, selectFiles } from '$lib/utils/file-dialog';
   import { onDedupScanProgress } from '$lib/events';
@@ -162,7 +163,16 @@
   async function removeSource(source: DedupSource) {
     const id = sourceIdStr(source);
     if (!id) return;
-    if (!confirm(`Remove "${source.label}" and all its data?`)) return;
+    const ok = await ask(
+      `Remove "${source.label}" and all its data?`,
+      {
+        title: 'Remove Scan Source',
+        kind: 'error',
+        okLabel: 'Remove',
+        cancelLabel: 'Cancel',
+      }
+    );
+    if (!ok) return;
 
     try {
       error = '';

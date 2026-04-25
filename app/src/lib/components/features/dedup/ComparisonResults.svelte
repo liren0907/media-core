@@ -1,6 +1,7 @@
 <script lang="ts">
   import { invoke } from '@tauri-apps/api/core';
   import { convertFileSrc } from '@tauri-apps/api/core';
+  import { ask } from '@tauri-apps/plugin-dialog';
   import { Panel, EmptyState } from '$lib/components/ui';
   import { formatFileSize } from '$lib/utils/format';
   import FilePreview from './FilePreview.svelte';
@@ -71,7 +72,16 @@
 
   async function trashSelected() {
     if (selectedTargetIds.size === 0) return;
-    if (!confirm(`Move ${selectedTargetIds.size} file(s) to Trash? This can be undone from the system Trash.`)) return;
+    const ok = await ask(
+      `Move ${selectedTargetIds.size} file(s) to Trash? This can be undone from the system Trash.`,
+      {
+        title: 'Move to Trash',
+        kind: 'warning',
+        okLabel: 'Move to Trash',
+        cancelLabel: 'Cancel',
+      }
+    );
+    if (!ok) return;
 
     try {
       isTrashRunning = true;

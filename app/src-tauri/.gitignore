@@ -10,4 +10,5 @@
 /output_frames/
 /input_videos/
 /*.json
+!tauri.conf.json
 /temp/

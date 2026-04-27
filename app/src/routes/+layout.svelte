@@ -133,7 +133,7 @@
         </header>
 
         <!-- Scrollable Content Area -->
-        <div class="flex-1 overflow-y-auto scrollbar-hide">
+        <div class="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide">
             {@render children()}
         </div>
     </main>

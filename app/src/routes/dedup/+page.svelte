@@ -264,9 +264,9 @@
     <ErrorAlert message={error} />
   {/if}
 
-  <div class="grid grid-cols-[280px_1fr] gap-3 h-full">
-    <!-- Left column: Source + Targets + Stats -->
-    <div class="flex flex-col gap-3">
+  <div class="flex gap-3 items-start">
+    <!-- Sticky page sidebar: Source + Targets + Stats -->
+    <aside class="w-[280px] shrink-0 sticky top-0 self-start max-h-[calc(100vh-80px)] overflow-y-auto flex flex-col gap-3">
       <!-- Source (master) section -->
       <Panel title="Source" icon="star">
         {#snippet actions()}
@@ -424,10 +424,10 @@
           </div>
         </div>
       {/if}
-    </div>
+    </aside>
 
-    <!-- Right column: Tree + Actions + Results -->
-    <div class="flex flex-col gap-3">
+    <!-- Right content: Tree + Actions + Results -->
+    <div class="flex-1 min-w-0 flex flex-col gap-3">
       {#if !selectedSourceId}
         <Panel title="Getting Started" icon="info">
           <EmptyState icon="folder_open" message="Click '+ Add' to open a directory and start scanning" />
@@ -479,11 +479,10 @@
         />
 
       {/if}
+
+      {#if groups.length > 0}
+        <ComparisonResults bind:groups onTrashDone={handleTrashDone} />
+      {/if}
     </div>
   </div>
-
-  <!-- Comparison Results: full width, outside the grid -->
-  {#if groups.length > 0}
-    <ComparisonResults bind:groups onTrashDone={handleTrashDone} />
-  {/if}
 </PageContent>

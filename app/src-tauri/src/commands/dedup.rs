@@ -720,38 +720,32 @@ pub async fn trash_files(
     app: AppHandle,
     file_ids: Vec<String>,
 ) -> Result<db::TrashResult, String> {
+    if file_ids.is_empty() {
+        return Ok(db::TrashResult { trashed: 0, failed: 0, errors: Vec::new() });
+    }
+
     let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     let database = db::get_db(&app_data_dir).await?;
 
-    let mut trashed = 0usize;
     let mut failed = 0usize;
     let mut errors: Vec<String> = Vec::new();
-    let mut trashed_paths: Vec<String> = Vec::new();
-    let mut trashed_ids: Vec<String> = Vec::new();
 
-    // Group files by source for DB cleanup
-    let mut source_to_paths: HashMap<String, Vec<String>> = HashMap::new();
-    let mut source_to_ids: HashMap<String, Vec<String>> = HashMap::new();
+    // Phase 1 — resolve each file_id against the DB. Anything we cannot resolve
+    // counts as a failure now and is excluded from the batch trash call.
+    struct Resolved {
+        id: String,
+        path: String,
+        source_id: String,
+    }
+    let mut resolved: Vec<Resolved> = Vec::with_capacity(file_ids.len());
 
     for file_id in &file_ids {
         match db::get_file_by_id(database, file_id).await {
-            Ok(file) => {
-                let path = std::path::Path::new(&file.file_path);
-                match trash::delete(path) {
-                    Ok(_) => {
-                        trashed += 1;
-                        trashed_paths.push(file.file_path.clone());
-                        trashed_ids.push(file_id.clone());
-                        let source_id = file.source.unwrap_or_default();
-                        source_to_paths.entry(source_id.clone()).or_default().push(file.file_path);
-                        source_to_ids.entry(source_id).or_default().push(file_id.clone());
-                    }
-                    Err(e) => {
-                        failed += 1;
-                        errors.push(format!("{}: {}", file.file_path, e));
-                    }
-                }
-            }
+            Ok(file) => resolved.push(Resolved {
+                id: file_id.clone(),
+                path: file.file_path,
+                source_id: file.source.unwrap_or_default(),
+            }),
             Err(e) => {
                 failed += 1;
                 errors.push(format!("{}: {}", file_id, e));
@@ -759,12 +753,45 @@ pub async fn trash_files(
         }
     }
 
-    // Clean up DB records for trashed files
-    for (source_id, paths) in &source_to_paths {
-        let _ = db::delete_media_files_by_paths(database, source_id, paths).await;
-    }
-    for (source_id, ids) in &source_to_ids {
-        let _ = db::clean_orphan_duplicate_members(database, source_id, ids).await;
+    // Phase 2 — batch the trash call into a single OS invocation so Finder only
+    // plays one trash sound (and one swoosh animation) regardless of count.
+    let mut trashed = 0usize;
+    if !resolved.is_empty() {
+        let paths: Vec<&std::path::Path> = resolved
+            .iter()
+            .map(|r| std::path::Path::new(&r.path))
+            .collect();
+
+        match trash::delete_all(&paths) {
+            Ok(_) => {
+                trashed = resolved.len();
+
+                // Phase 3 — DB cleanup, grouped by source. Only runs on a
+                // successful batch so the DB stays consistent with disk.
+                let mut source_to_paths: HashMap<String, Vec<String>> = HashMap::new();
+                let mut source_to_ids: HashMap<String, Vec<String>> = HashMap::new();
+                for r in &resolved {
+                    source_to_paths
+                        .entry(r.source_id.clone())
+                        .or_default()
+                        .push(r.path.clone());
+                    source_to_ids
+                        .entry(r.source_id.clone())
+                        .or_default()
+                        .push(r.id.clone());
+                }
+                for (source_id, paths) in &source_to_paths {
+                    let _ = db::delete_media_files_by_paths(database, source_id, paths).await;
+                }
+                for (source_id, ids) in &source_to_ids {
+                    let _ = db::clean_orphan_duplicate_members(database, source_id, ids).await;
+                }
+            }
+            Err(e) => {
+                failed += resolved.len();
+                errors.push(format!("batch trash failed: {}", e));
+            }
+        }
     }
 
     Ok(db::TrashResult { trashed, failed, errors })

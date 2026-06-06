@@ -45,8 +45,36 @@
   );
 
   // Role-based derived state
-  let sourceEntry = $derived(sources.find(s => s.role === 'source') ?? null);
+  let sourceEntries = $derived(sources.filter(s => s.role === 'source'));
   let targetEntries = $derived(sources.filter(s => s.role === 'target'));
+
+  // Per-source participation in compare (default: every source is active).
+  // We add new source IDs as they appear, and never auto-remove user choices.
+  let activeSourceIds = $state(new Set<string>());
+
+  $effect(() => {
+    let changed = false;
+    const next = new Set(activeSourceIds);
+    for (const s of sourceEntries) {
+      const id = sourceIdStr(s);
+      if (id && !next.has(id)) {
+        next.add(id);
+        changed = true;
+      }
+    }
+    if (changed) activeSourceIds = next;
+  });
+
+  function toggleActiveSource(id: string) {
+    const next = new Set(activeSourceIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    activeSourceIds = next;
+  }
+
+  let activeSourceIdList = $derived(
+    sourceEntries.map(s => sourceIdStr(s)).filter(id => id && activeSourceIds.has(id))
+  );
 
   // ── Data loading ──
 
@@ -69,9 +97,10 @@
       tree = await invoke('get_source_tree', { sourceId });
       const files: DedupMediaFile[] = await invoke('get_files_by_source', { sourceId });
       filesMap = Object.fromEntries(files.map(f => [f.filePath, f]));
-      // Load comparison results from the source-role entry
-      if (sourceEntry?.id) {
-        groups = await invoke('get_duplicate_groups', { sourceId: sourceEntry.id });
+      // Load comparison results from all source-role entries (union)
+      const sourceIds = sourceEntries.map(s => sourceIdStr(s)).filter(Boolean);
+      if (sourceIds.length > 0) {
+        groups = await invoke('get_duplicate_groups', { sourceIds });
       } else {
         groups = [];
       }
@@ -267,64 +296,77 @@
   <div class="flex gap-3 items-start">
     <!-- Sticky page sidebar: Source + Targets + Stats -->
     <aside class="w-[280px] shrink-0 sticky top-0 self-start max-h-[calc(100vh-80px)] overflow-y-auto flex flex-col gap-3">
-      <!-- Source (master) section -->
-      <Panel title="Source" icon="star">
+      <!-- Sources (reference pool) section -->
+      <Panel title="Sources" icon="star">
         {#snippet actions()}
-          {#if !sourceEntry}
-            <button onclick={() => addAndScanSource('source')} class="flex items-center gap-1 text-stat-label text-status-info hover:text-blue-400">
-              <span class="material-symbols-outlined text-[14px]">add</span> Set
-            </button>
-          {/if}
+          <button onclick={() => addAndScanSource('source')} class="flex items-center gap-1 text-stat-label text-status-info hover:text-blue-400">
+            <span class="material-symbols-outlined text-[14px]">add</span> Set
+          </button>
         {/snippet}
 
-        {#if !sourceEntry}
+        {#if sourceEntries.length === 0}
           <EmptyState icon="star" message="Set a master directory as Source" />
         {:else}
-          {@const id = sourceIdStr(sourceEntry)}
-          <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-          <div
-            onclick={() => selectSource(sourceEntry)}
-            class="px-3 py-2 border-l-2 border-[#137fec] bg-[#137fec]/5 hover:bg-[#137fec]/10 transition-colors cursor-pointer"
-          >
-            <div class="flex items-center gap-1.5">
-              <span class="material-symbols-outlined text-[14px] text-[#137fec]">star</span>
-              <span class="text-card-title truncate">{sourceEntry.label}</span>
-            </div>
-            <div class="flex items-center gap-2 mt-0.5 ml-5">
-              <span class="text-[10px] px-1.5 py-0.5 rounded {sourceEntry.status === 'hashed' ? 'bg-green-500/10 text-green-600' : sourceEntry.status === 'scanned' ? 'bg-blue-500/10 text-blue-600' : 'bg-slate-100 dark:bg-[#283039] text-slate-500'} font-bold">
-                {sourceEntry.status}
-              </span>
-              {#if scanningId === id && scanProgress}
-                <span class="text-[10px] text-[#137fec] font-mono animate-pulse">{scanProgress.filesFound} files...</span>
-                <button onclick={(e: MouseEvent) => { e.stopPropagation(); cancelScan(); }} class="text-[10px] text-red-500 font-bold">Stop</button>
-              {:else if sourceEntry.fileCount > 0}
-                <span class="text-[10px] text-slate-500">{sourceEntry.fileCount} files</span>
-              {/if}
-            </div>
-            <div class="flex items-center gap-0.5 mt-1 ml-4">
-              <button
-                onclick={(e: MouseEvent) => { e.stopPropagation(); scanSource(id); }}
-                class="p-1 rounded text-slate-400 hover:text-[#137fec] hover:bg-[#137fec]/10 transition-colors"
-                title={sourceEntry.status === 'pending' ? 'Scan' : 'Rescan'}
-                disabled={scanningId === id}
+          <div class="flex flex-col divide-y divide-slate-100 dark:divide-[#2a3441]">
+            {#each sourceEntries as source}
+              {@const id = sourceIdStr(source)}
+              {@const isActive = activeSourceIds.has(id)}
+              <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+              <div
+                onclick={() => selectSource(source)}
+                class="flex items-center justify-between gap-1 px-3 py-2 hover:bg-slate-50 dark:hover:bg-[#1f2937]/50 transition-colors cursor-pointer {selectedSourceId === id ? 'bg-[#137fec]/5 border-l-2 border-[#137fec]' : ''} {isActive ? '' : 'opacity-50'}"
               >
-                <span class="material-symbols-outlined text-[14px]">{scanningId === id ? 'hourglass_top' : sourceEntry.status === 'pending' ? 'search' : 'sync'}</span>
-              </button>
-              <button
-                onclick={(e: MouseEvent) => { e.stopPropagation(); setRole(sourceEntry, 'target'); }}
-                class="p-1 rounded text-slate-400 hover:text-amber-500 hover:bg-amber-500/10 transition-colors"
-                title="Demote to Target"
-              >
-                <span class="material-symbols-outlined text-[14px]">arrow_downward</span>
-              </button>
-              <button
-                onclick={(e: MouseEvent) => { e.stopPropagation(); removeSource(sourceEntry); }}
-                class="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-colors"
-                title="Remove"
-              >
-                <span class="material-symbols-outlined text-[14px]">delete</span>
-              </button>
-            </div>
+                <input
+                  type="checkbox"
+                  checked={isActive}
+                  onclick={(e: MouseEvent) => e.stopPropagation()}
+                  onchange={() => toggleActiveSource(id)}
+                  title="Include in compare"
+                  class="shrink-0 size-3.5 accent-[#137fec] cursor-pointer"
+                />
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[14px] text-[#137fec]">star</span>
+                    <span class="text-card-title truncate">{source.label}</span>
+                  </div>
+                  <div class="flex items-center gap-2 mt-0.5 ml-5">
+                    <span class="text-[10px] px-1.5 py-0.5 rounded {source.status === 'hashed' ? 'bg-green-500/10 text-green-600' : source.status === 'scanned' ? 'bg-blue-500/10 text-blue-600' : 'bg-slate-100 dark:bg-[#283039] text-slate-500'} font-bold">
+                      {source.status}
+                    </span>
+                    {#if scanningId === id && scanProgress}
+                      <span class="text-[10px] text-[#137fec] font-mono animate-pulse">{scanProgress.filesFound} files...</span>
+                      <button onclick={(e: MouseEvent) => { e.stopPropagation(); cancelScan(); }} class="text-[10px] text-red-500 font-bold">Stop</button>
+                    {:else if source.fileCount > 0}
+                      <span class="text-[10px] text-slate-500">{source.fileCount} files</span>
+                    {/if}
+                  </div>
+                </div>
+                <div class="flex items-center gap-0.5 ml-1 shrink-0">
+                  <button
+                    onclick={(e: MouseEvent) => { e.stopPropagation(); scanSource(id); }}
+                    class="p-1 rounded text-slate-400 hover:text-[#137fec] hover:bg-[#137fec]/10 transition-colors"
+                    title={source.status === 'pending' ? 'Scan' : 'Rescan'}
+                    disabled={scanningId === id}
+                  >
+                    <span class="material-symbols-outlined text-[14px]">{scanningId === id ? 'hourglass_top' : source.status === 'pending' ? 'search' : 'sync'}</span>
+                  </button>
+                  <button
+                    onclick={(e: MouseEvent) => { e.stopPropagation(); setRole(source, 'target'); }}
+                    class="p-1 rounded text-slate-400 hover:text-amber-500 hover:bg-amber-500/10 transition-colors"
+                    title="Demote to Target"
+                  >
+                    <span class="material-symbols-outlined text-[14px]">arrow_downward</span>
+                  </button>
+                  <button
+                    onclick={(e: MouseEvent) => { e.stopPropagation(); removeSource(source); }}
+                    class="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                    title="Remove"
+                  >
+                    <span class="material-symbols-outlined text-[14px]">delete</span>
+                  </button>
+                </div>
+              </div>
+            {/each}
           </div>
         {/if}
       </Panel>
@@ -406,8 +448,8 @@
           <div class="text-stat-label mb-1.5">Overview</div>
           <div class="grid grid-cols-2 gap-1.5 text-[11px]">
             <div class="flex justify-between">
-              <span class="text-slate-500">Source</span>
-              <span class="font-bold text-slate-700 dark:text-white">{sourceEntry ? 1 : 0}</span>
+              <span class="text-slate-500">Sources</span>
+              <span class="font-bold text-slate-700 dark:text-white">{sourceEntries.length}</span>
             </div>
             <div class="flex justify-between">
               <span class="text-slate-500">Targets</span>
@@ -473,7 +515,7 @@
         <!-- Action Bar -->
         <ActionBar
           sourceId={selectedSourceId}
-          hasSourceRole={!!sourceEntry}
+          activeSourceIds={activeSourceIdList}
           onFingerprintDone={handleFingerprintDone}
           onCompareDone={handleCompareDone}
         />

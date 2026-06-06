@@ -68,7 +68,7 @@
   async function loadExistingGroups() {
     if (!selectedSourceId) return;
     try {
-      groups = await invoke('get_duplicate_groups', { sourceId: selectedSourceId });
+      groups = await invoke('get_duplicate_groups', { sourceIds: [selectedSourceId] });
     } catch (_) {
       groups = [];
     }

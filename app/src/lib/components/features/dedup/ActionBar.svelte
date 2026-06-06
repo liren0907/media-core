@@ -9,12 +9,12 @@
 
   interface Props {
     sourceId: string;
-    hasSourceRole?: boolean;
+    activeSourceIds?: string[];
     onFingerprintDone?: () => void;
     onCompareDone?: (groups: DedupGroupExpanded[]) => void;
   }
 
-  let { sourceId, hasSourceRole = false, onFingerprintDone, onCompareDone }: Props = $props();
+  let { sourceId, activeSourceIds = [], onFingerprintDone, onCompareDone }: Props = $props();
 
   // Algorithm config
   let useBlake3 = $state(true);
@@ -65,7 +65,7 @@
   }
 
   async function runCompare() {
-    if (!hasSourceRole) return;
+    if (activeSourceIds.length === 0) return;
 
     try {
       isCompareRunning = true;
@@ -76,7 +76,7 @@
       if (useDHash) algorithms.push('dHash');
 
       const result: DedupGroupExpanded[] = await invoke('compare_targets', {
-        threshold, algorithms
+        threshold, algorithms, sourceIds: activeSourceIds
       });
       onCompareDone?.(result);
     } catch (e) {
@@ -158,7 +158,7 @@
         />
         <RunButton
           loading={isCompareRunning}
-          disabled={isProcessing || !hasSourceRole}
+          disabled={isProcessing || activeSourceIds.length === 0}
           label="Compare"
           onclick={runCompare}
         />

@@ -12,7 +12,7 @@
     let isResizing = $state(false);
     const SIDEBAR_MIN = 180;
     const SIDEBAR_MAX = 400;
-    const SIDEBAR_COLLAPSED = 80;
+    const SIDEBAR_COLLAPSED = 64;
 
     const headerActions = provideHeaderActions();
 

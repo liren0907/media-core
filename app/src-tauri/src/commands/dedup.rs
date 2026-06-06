@@ -89,15 +89,6 @@ pub async fn add_scan_source(
     let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     let database = db::get_db(&app_data_dir).await?;
 
-    // If adding as source, demote any existing source first
-    if role_val == "source" {
-        if let Ok(Some(existing)) = db::get_source_role_source(database).await {
-            if let Some(ref id) = existing.id {
-                db::update_source_role(database, id, "target").await?;
-            }
-        }
-    }
-
     db::insert_scan_source(database, &path, &label, &role_val).await
 }
 
@@ -530,11 +521,17 @@ async fn expand_groups(
 #[command]
 pub async fn get_duplicate_groups(
     app: AppHandle,
-    source_id: String,
+    source_ids: Vec<String>,
 ) -> Result<Vec<db::DuplicateGroupExpanded>, String> {
     let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     let database = db::get_db(&app_data_dir).await?;
-    expand_groups(database, &source_id).await
+
+    let mut all = Vec::new();
+    for sid in &source_ids {
+        let groups = expand_groups(database, sid).await?;
+        all.extend(groups);
+    }
+    Ok(all)
 }
 
 #[command]
@@ -575,30 +572,29 @@ pub async fn compare_targets(
     app: AppHandle,
     threshold: Option<u32>,
     algorithms: Option<Vec<String>>,
+    source_ids: Option<Vec<String>>,
 ) -> Result<Vec<db::DuplicateGroupExpanded>, String> {
     let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     let database = db::get_db(&app_data_dir).await?;
 
-    // Find the source-role scan_source
-    let source_entry = db::get_source_role_source(database).await?
-        .ok_or_else(|| "No source directory designated. Please set a directory as Source first.".to_string())?;
-    let source_scan_id = source_entry.id
-        .ok_or_else(|| "Source has no ID".to_string())?;
+    // Resolve which sources participate. None or empty → all source-role scan_sources.
+    let resolved_source_ids: Vec<String> = match source_ids {
+        Some(ids) if !ids.is_empty() => ids,
+        _ => {
+            let all_sources = db::get_scan_sources_by_role(database, "source").await?;
+            all_sources.into_iter().filter_map(|s| s.id).collect()
+        }
+    };
 
-    // Load source files (the reference pool)
-    let source_files = db::get_files_by_source(database, &source_scan_id).await?;
-    if source_files.is_empty() {
-        return Err("Source directory has no files. Please scan it first.".to_string());
+    if resolved_source_ids.is_empty() {
+        return Err("No source directory designated. Please set at least one directory as Source first.".to_string());
     }
 
-    // Find all target-role scan_sources
+    // Find all target-role scan_sources (shared across all sources)
     let targets = db::get_scan_sources_by_role(database, "target").await?;
     if targets.is_empty() {
         return Err("No target directories to compare against.".to_string());
     }
-
-    // Clear old comparison results
-    db::clear_duplicate_groups_for_source(database, &source_scan_id).await?;
 
     let threshold_val = threshold.unwrap_or(matcher::similar::DEFAULT_SIMILARITY_THRESHOLD);
     let algos = algorithms.unwrap_or_else(|| vec!["blake3".into(), "pHash".into()]);
@@ -606,113 +602,131 @@ pub async fn compare_targets(
     let use_phash = algos.iter().any(|a| a == "pHash");
     let use_dhash = algos.iter().any(|a| a == "dHash");
 
-    let mut all_matches: Vec<matcher::MatchPair> = Vec::new();
-    let mut total_target_files = 0usize;
-    let mut processed_target_files = 0usize;
-
-    // Count total target files for progress
-    for target in &targets {
-        if let Some(ref tid) = target.id {
-            let files = db::get_files_by_source(database, tid).await?;
-            total_target_files += files.len();
-        }
-    }
-
-    // Compare each target's files against the source pool
-    for target in &targets {
-        let target_id = match target.id {
-            Some(ref id) => id.clone(),
-            None => continue,
-        };
-
-        let target_files = db::get_files_by_source(database, &target_id).await?;
-        if target_files.is_empty() {
+    // Run comparison for each participating source
+    for source_scan_id in &resolved_source_ids {
+        let source_files = db::get_files_by_source(database, source_scan_id).await?;
+        if source_files.is_empty() {
+            // Skip sources that haven't been scanned yet rather than aborting the whole run
             continue;
         }
 
-        if use_blake3 {
-            let app_clone = app.clone();
-            let sid = source_scan_id.clone();
-            let offset = processed_target_files;
-            let total = total_target_files;
-            let exact = matcher::exact::find_exact_matches_against_pool(
-                &target_files,
-                &source_files,
-                |current, _| {
-                    let _ = app_clone.emit(EVENT_COMPARE_PROGRESS, CompareProgressEvent {
-                        source_id: sid.clone(),
-                        current: offset + current,
-                        total,
-                        matches_found: 0,
-                    });
-                },
-            );
-            all_matches.extend(exact);
+        // Clear old comparison results for this source
+        db::clear_duplicate_groups_for_source(database, source_scan_id).await?;
+
+        let mut all_matches: Vec<matcher::MatchPair> = Vec::new();
+        let mut total_target_files = 0usize;
+        let mut processed_target_files = 0usize;
+
+        // Count total target files for progress
+        for target in &targets {
+            if let Some(ref tid) = target.id {
+                let files = db::get_files_by_source(database, tid).await?;
+                total_target_files += files.len();
+            }
         }
 
-        if use_phash {
-            let app_clone = app.clone();
-            let sid = source_scan_id.clone();
-            let offset = processed_target_files;
-            let total = total_target_files;
-            let phash_matches = matcher::similar::find_similar_matches_against_pool(
-                &target_files,
-                &source_files,
-                threshold_val,
-                "phash",
-                |current, _| {
-                    let _ = app_clone.emit(EVENT_COMPARE_PROGRESS, CompareProgressEvent {
-                        source_id: sid.clone(),
-                        current: offset + current,
-                        total,
-                        matches_found: 0,
-                    });
-                },
-            );
-            all_matches.extend(phash_matches);
+        // Compare each target's files against this source's pool
+        for target in &targets {
+            let target_id = match target.id {
+                Some(ref id) => id.clone(),
+                None => continue,
+            };
+
+            let target_files = db::get_files_by_source(database, &target_id).await?;
+            if target_files.is_empty() {
+                continue;
+            }
+
+            if use_blake3 {
+                let app_clone = app.clone();
+                let sid = source_scan_id.clone();
+                let offset = processed_target_files;
+                let total = total_target_files;
+                let exact = matcher::exact::find_exact_matches_against_pool(
+                    &target_files,
+                    &source_files,
+                    |current, _| {
+                        let _ = app_clone.emit(EVENT_COMPARE_PROGRESS, CompareProgressEvent {
+                            source_id: sid.clone(),
+                            current: offset + current,
+                            total,
+                            matches_found: 0,
+                        });
+                    },
+                );
+                all_matches.extend(exact);
+            }
+
+            if use_phash {
+                let app_clone = app.clone();
+                let sid = source_scan_id.clone();
+                let offset = processed_target_files;
+                let total = total_target_files;
+                let phash_matches = matcher::similar::find_similar_matches_against_pool(
+                    &target_files,
+                    &source_files,
+                    threshold_val,
+                    "phash",
+                    |current, _| {
+                        let _ = app_clone.emit(EVENT_COMPARE_PROGRESS, CompareProgressEvent {
+                            source_id: sid.clone(),
+                            current: offset + current,
+                            total,
+                            matches_found: 0,
+                        });
+                    },
+                );
+                all_matches.extend(phash_matches);
+            }
+
+            if use_dhash {
+                let app_clone = app.clone();
+                let sid = source_scan_id.clone();
+                let offset = processed_target_files;
+                let total = total_target_files;
+                let dhash_matches = matcher::similar::find_similar_matches_against_pool(
+                    &target_files,
+                    &source_files,
+                    threshold_val,
+                    "dhash",
+                    |current, _| {
+                        let _ = app_clone.emit(EVENT_COMPARE_PROGRESS, CompareProgressEvent {
+                            source_id: sid.clone(),
+                            current: offset + current,
+                            total,
+                            matches_found: 0,
+                        });
+                    },
+                );
+                all_matches.extend(dhash_matches);
+            }
+
+            processed_target_files += target_files.len();
         }
 
-        if use_dhash {
-            let app_clone = app.clone();
-            let sid = source_scan_id.clone();
-            let offset = processed_target_files;
-            let total = total_target_files;
-            let dhash_matches = matcher::similar::find_similar_matches_against_pool(
-                &target_files,
-                &source_files,
-                threshold_val,
-                "dhash",
-                |current, _| {
-                    let _ = app_clone.emit(EVENT_COMPARE_PROGRESS, CompareProgressEvent {
-                        source_id: sid.clone(),
-                        current: offset + current,
-                        total,
-                        matches_found: 0,
-                    });
-                },
-            );
-            all_matches.extend(dhash_matches);
+        // Create one DuplicateGroup per match pair (source file left, target file right)
+        for m in &all_matches {
+            let member_ids = vec![m.existing_file_id.clone(), m.new_file_id.clone()];
+            db::insert_duplicate_group(
+                database,
+                &m.match_type,
+                m.similarity_score,
+                &m.algorithm,
+                &member_ids,
+                source_scan_id,
+                Some(&m.existing_file_id),  // source_file = the reference file
+                Some(&m.new_file_id),       // target_file = the duplicate
+            ).await?;
         }
-
-        processed_target_files += target_files.len();
     }
 
-    // Create one DuplicateGroup per match pair (source file left, target file right)
-    for m in &all_matches {
-        let member_ids = vec![m.existing_file_id.clone(), m.new_file_id.clone()];
-        db::insert_duplicate_group(
-            database,
-            &m.match_type,
-            m.similarity_score,
-            &m.algorithm,
-            &member_ids,
-            &source_scan_id,
-            Some(&m.existing_file_id),  // source_file = the reference file
-            Some(&m.new_file_id),       // target_file = the duplicate
-        ).await?;
+    // Collect expanded groups for all participating sources
+    let mut all_expanded = Vec::new();
+    for sid in &resolved_source_ids {
+        let groups = expand_groups(database, sid).await?;
+        all_expanded.extend(groups);
     }
-
-    expand_groups(database, &source_scan_id).await
+    Ok(all_expanded)
 }
 
 #[command]

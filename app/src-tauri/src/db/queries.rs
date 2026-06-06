@@ -274,16 +274,6 @@ pub async fn update_source_role(db: &Surreal<Db>, id: &str, role: &str) -> Resul
     source.map(|s| s.into_api()).ok_or_else(|| format!("Source not found: {}", id))
 }
 
-pub async fn get_source_role_source(db: &Surreal<Db>) -> Result<Option<ScanSource>, String> {
-    let mut result = db
-        .query("SELECT * FROM scan_source WHERE role = 'source' LIMIT 1")
-        .await
-        .map_err(|e| format!("Failed to query source role: {}", e))?;
-
-    let source: Option<DbScanSource> = result.take(0).map_err(|e| format!("Failed to parse source: {}", e))?;
-    Ok(source.map(|s| s.into_api()))
-}
-
 pub async fn get_scan_sources_by_role(db: &Surreal<Db>, role: &str) -> Result<Vec<ScanSource>, String> {
     let mut result = db
         .query("SELECT * FROM scan_source WHERE role = $role ORDER BY created_at DESC")

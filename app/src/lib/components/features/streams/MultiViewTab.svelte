@@ -2,7 +2,7 @@
   import { invoke, convertFileSrc } from "@tauri-apps/api/core";
   import Hls from "hls.js";
   import { appConfig, getDefaultRtspUrl } from "$lib/config.svelte";
-  import { Panel, StatCard, StatusBadge, EmptyState } from '$lib/components/ui';
+  import { Panel, StatCard, StatusBadge, EmptyState, Icon } from '$lib/components/ui';
   import type { StreamStats } from '$lib/types';
 
   interface Props {
@@ -88,17 +88,17 @@
             <div class="flex items-center gap-2">
                 <div class="flex bg-slate-100 dark:bg-[#1f2937] rounded p-0.5">
                     <button onclick={() => layoutMode = 'grid'} class="p-1 rounded transition-colors {layoutMode === 'grid' ? 'bg-[#137fec] text-white' : 'text-slate-500 hover:text-slate-700 dark:hover:text-white'}">
-                        <span class="material-symbols-outlined text-[14px]">grid_view</span>
+                        <Icon name="grid_view" class="text-[14px]" />
                     </button>
                     <button onclick={() => layoutMode = '2x2'} class="p-1 rounded transition-colors {layoutMode === '2x2' ? 'bg-[#137fec] text-white' : 'text-slate-500 hover:text-slate-700 dark:hover:text-white'}">
-                        <span class="material-symbols-outlined text-[14px]">view_module</span>
+                        <Icon name="view_module" class="text-[14px]" />
                     </button>
                     <button onclick={() => layoutMode = 'focus'} class="p-1 rounded transition-colors {layoutMode === 'focus' ? 'bg-[#137fec] text-white' : 'text-slate-500 hover:text-slate-700 dark:hover:text-white'}">
-                        <span class="material-symbols-outlined text-[14px]">center_focus_strong</span>
+                        <Icon name="center_focus_strong" class="text-[14px]" />
                     </button>
                 </div>
                 <button class="flex items-center gap-1 px-2 py-1 bg-[#137fec] hover:bg-blue-600 text-white rounded text-[10px] font-bold transition-colors disabled:opacity-50" onclick={startAllStreams} disabled={isLoading}>
-                    {#if isLoading}<span class="material-symbols-outlined animate-spin text-[14px]">sync</span>{/if}
+                    {#if isLoading}<Icon name="sync" class="animate-spin text-[14px]" />{/if}
                     Start
                 </button>
             </div>
@@ -158,7 +158,7 @@
                             </div>
                             <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <span class="bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                                    <span class="material-symbols-outlined text-[12px]">fullscreen</span> Focus
+                                    <Icon name="fullscreen" class="text-[12px]" /> Focus
                                 </span>
                             </div>
                         </div>

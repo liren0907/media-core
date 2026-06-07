@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
+  import { Icon } from '$lib/components/ui';
 
   interface Props {
     code: string;
@@ -34,7 +35,7 @@
     aria-label="Copy to clipboard"
     class="absolute top-2 right-2 flex items-center gap-1 px-1.5 py-1 rounded text-[10px] font-bold text-slate-400 hover:text-[#137fec] hover:bg-[#137fec]/10 transition-colors"
   >
-    <span class="material-symbols-outlined text-[14px]">{copied ? 'check' : 'content_copy'}</span>
+    <Icon name={copied ? 'check' : 'content_copy'} class="text-[14px]" />
     {#if copied}Copied{/if}
   </button>
 </div>

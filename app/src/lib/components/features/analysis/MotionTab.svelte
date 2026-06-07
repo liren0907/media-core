@@ -1,6 +1,6 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
-  import { Panel, StatusBadge, ErrorAlert, EmptyState, RunButton, FormField } from '$lib/components/ui';
+  import { Panel, StatusBadge, ErrorAlert, EmptyState, RunButton, FormField, Icon } from '$lib/components/ui';
   import { FilePicker } from '$lib/components/form';
   import type { AnalysisResult } from '$lib/types';
   import { inputClass } from '$lib/utils/styles';
@@ -57,7 +57,7 @@
                     <ErrorAlert message={error} />
                 {:else if isProcessing}
                     <div class="flex flex-col items-center justify-center h-full gap-3 text-slate-500 py-12">
-                        <span class="material-symbols-outlined text-3xl animate-spin">progress_activity</span>
+                        <Icon name="progress_activity" class="text-3xl animate-spin" />
                         <p class="text-xs">Analyzing...</p>
                     </div>
                 {:else if result}

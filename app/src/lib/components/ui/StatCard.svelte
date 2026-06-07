@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import Icon from './Icon.svelte';
 
   interface Props {
     label: string;
@@ -16,7 +17,7 @@
 <div class="bg-white dark:bg-[#161e27] rounded-lg border border-slate-200 dark:border-[#2a3441] p-3">
   <div class="flex items-center justify-between mb-2">
     <h3 class="text-stat-label">{label}</h3>
-    <span class="material-symbols-outlined text-[16px] {iconColor}">{icon}</span>
+    <Icon name={icon} class="text-[16px] {iconColor}" />
   </div>
   <div class="flex items-baseline gap-2">
     <span class="text-stat-value">{value}</span>

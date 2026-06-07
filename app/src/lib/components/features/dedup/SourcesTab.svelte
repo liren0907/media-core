@@ -3,7 +3,7 @@
   import { invoke } from '@tauri-apps/api/core';
   import type { UnlistenFn } from '@tauri-apps/api/event';
   import { ask } from '@tauri-apps/plugin-dialog';
-  import { Panel, EmptyState, ErrorAlert } from '$lib/components/ui';
+  import { Panel, EmptyState, ErrorAlert, Icon } from '$lib/components/ui';
   import { selectDirectory } from '$lib/utils/file-dialog';
   import { getFileName, formatFileSize } from '$lib/utils/format';
   import { onDedupScanProgress } from '$lib/events';
@@ -132,7 +132,7 @@
   <Panel title="Sources" icon="folder">
     {#snippet actions()}
       <button onclick={addSource} class="flex items-center gap-1 text-stat-label text-status-info hover:text-blue-400">
-        <span class="material-symbols-outlined text-[14px]">add</span> Add Directory
+        <Icon name="add" class="text-[14px]" /> Add Directory
       </button>
     {/snippet}
 
@@ -169,14 +169,14 @@
                 title={source.status === 'pending' ? 'Scan' : 'Rescan'}
                 disabled={scanningId === id}
               >
-                <span class="material-symbols-outlined text-[16px]">{scanningId === id ? 'hourglass_top' : source.status === 'pending' ? 'search' : 'sync'}</span>
+                <Icon name={scanningId === id ? 'hourglass_top' : source.status === 'pending' ? 'search' : 'sync'} class="text-[16px]" />
               </button>
               <button
                 onclick={(e: MouseEvent) => { e.stopPropagation(); removeSource(source); }}
                 class="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-colors"
                 title="Remove"
               >
-                <span class="material-symbols-outlined text-[16px]">delete</span>
+                <Icon name="delete" class="text-[16px]" />
               </button>
             </div>
           </div>
@@ -189,14 +189,14 @@
   <div class="lg:col-span-2">
     {#if lastScanResult}
       <div class="mb-3 flex items-center gap-3 px-3 py-2 rounded-lg border border-slate-200 dark:border-[#2a3441] bg-white dark:bg-[#111418]">
-        <span class="material-symbols-outlined text-[16px] text-green-500">check_circle</span>
+        <Icon name="check_circle" class="text-[16px] text-green-500" />
         <span class="text-body">Scan complete:</span>
         <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-green-500/10 text-green-600">+{lastScanResult.added} added</span>
         <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-red-500/10 text-red-600">-{lastScanResult.removed} removed</span>
         <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600">{lastScanResult.updated} changed</span>
         <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#283039] text-slate-500">{lastScanResult.unchanged} unchanged</span>
         <button onclick={() => lastScanResult = null} class="ml-auto text-slate-400 hover:text-slate-600">
-          <span class="material-symbols-outlined text-[14px]">close</span>
+          <Icon name="close" class="text-[14px]" />
         </button>
       </div>
     {/if}

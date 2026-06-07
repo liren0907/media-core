@@ -1,6 +1,6 @@
 <script lang="ts">
   import { invoke } from '@tauri-apps/api/core';
-  import { StatCard, Panel, StatusBadge, ProgressBar } from '$lib/components/ui';
+  import { StatCard, Panel, StatusBadge, ProgressBar, Icon } from '$lib/components/ui';
   import { SparklineBar } from '$lib/components/data';
   import { ThroughputChart } from '$lib/components/media';
   import type { SystemMetrics, StreamStats, ThroughputHistory } from '$lib/types';
@@ -166,7 +166,7 @@
                                 <td class="px-3 py-1.5 text-muted">{stream.latencyMs ? `${stream.latencyMs}ms` : '--'}</td>
                                 <td class="px-3 py-1.5 text-right">
                                     <button class="text-slate-400 hover:text-[#137fec] transition-colors">
-                                        <span class="material-symbols-outlined text-[16px]">more_vert</span>
+                                        <Icon name="more_vert" class="text-[16px]" />
                                     </button>
                                 </td>
                             </tr>

@@ -3,7 +3,7 @@
   import { invoke } from '@tauri-apps/api/core';
   import type { UnlistenFn } from '@tauri-apps/api/event';
   import { ask } from '@tauri-apps/plugin-dialog';
-  import { PageContent, Panel, EmptyState, ErrorAlert } from '$lib/components/ui';
+  import { PageContent, Panel, EmptyState, ErrorAlert, Icon } from '$lib/components/ui';
   import { selectDirectory, selectFiles } from '$lib/utils/file-dialog';
   import { onDedupScanProgress } from '$lib/events';
   import DirectoryTree from '$lib/components/features/dedup/DirectoryTree.svelte';
@@ -300,7 +300,7 @@
       <Panel title="Sources" icon="star">
         {#snippet actions()}
           <button onclick={() => addAndScanSource('source')} class="flex items-center gap-1 text-stat-label text-status-info hover:text-blue-400">
-            <span class="material-symbols-outlined text-[14px]">add</span> Set
+            <Icon name="add" class="text-[14px]" /> Set
           </button>
         {/snippet}
 
@@ -326,7 +326,7 @@
                 />
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-1.5">
-                    <span class="material-symbols-outlined text-[14px] text-[#137fec]">star</span>
+                    <Icon name="star" class="text-[14px] text-[#137fec]" />
                     <span class="text-card-title truncate">{source.label}</span>
                   </div>
                   <div class="flex items-center gap-2 mt-0.5 ml-5">
@@ -348,21 +348,21 @@
                     title={source.status === 'pending' ? 'Scan' : 'Rescan'}
                     disabled={scanningId === id}
                   >
-                    <span class="material-symbols-outlined text-[14px]">{scanningId === id ? 'hourglass_top' : source.status === 'pending' ? 'search' : 'sync'}</span>
+                    <Icon name={scanningId === id ? 'hourglass_top' : source.status === 'pending' ? 'search' : 'sync'} class="text-[14px]" />
                   </button>
                   <button
                     onclick={(e: MouseEvent) => { e.stopPropagation(); setRole(source, 'target'); }}
                     class="p-1 rounded text-slate-400 hover:text-amber-500 hover:bg-amber-500/10 transition-colors"
                     title="Demote to Target"
                   >
-                    <span class="material-symbols-outlined text-[14px]">arrow_downward</span>
+                    <Icon name="arrow_downward" class="text-[14px]" />
                   </button>
                   <button
                     onclick={(e: MouseEvent) => { e.stopPropagation(); removeSource(source); }}
                     class="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-colors"
                     title="Remove"
                   >
-                    <span class="material-symbols-outlined text-[14px]">delete</span>
+                    <Icon name="delete" class="text-[14px]" />
                   </button>
                 </div>
               </div>
@@ -376,10 +376,10 @@
         {#snippet actions()}
           <div class="flex items-center gap-2">
             <button onclick={() => addAndScanSource('target')} class="flex items-center gap-1 text-stat-label text-status-info hover:text-blue-400">
-              <span class="material-symbols-outlined text-[14px]">create_new_folder</span> Folder
+              <Icon name="create_new_folder" class="text-[14px]" /> Folder
             </button>
             <button onclick={addFilesAsTarget} class="flex items-center gap-1 text-stat-label text-status-info hover:text-blue-400">
-              <span class="material-symbols-outlined text-[14px]">note_add</span> Files
+              <Icon name="note_add" class="text-[14px]" /> Files
             </button>
           </div>
         {/snippet}
@@ -397,7 +397,7 @@
               >
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-1.5">
-                    <span class="material-symbols-outlined text-[14px] text-slate-400">filter_center_focus</span>
+                    <Icon name="filter_center_focus" class="text-[14px] text-slate-400" />
                     <span class="text-card-title truncate">{source.label}</span>
                   </div>
                   <div class="flex items-center gap-2 mt-0.5 ml-5">
@@ -419,21 +419,21 @@
                     title={source.status === 'pending' ? 'Scan' : 'Rescan'}
                     disabled={scanningId === id}
                   >
-                    <span class="material-symbols-outlined text-[14px]">{scanningId === id ? 'hourglass_top' : source.status === 'pending' ? 'search' : 'sync'}</span>
+                    <Icon name={scanningId === id ? 'hourglass_top' : source.status === 'pending' ? 'search' : 'sync'} class="text-[14px]" />
                   </button>
                   <button
                     onclick={(e: MouseEvent) => { e.stopPropagation(); setRole(source, 'source'); }}
                     class="p-1 rounded text-slate-400 hover:text-amber-500 hover:bg-amber-500/10 transition-colors"
                     title="Promote to Source"
                   >
-                    <span class="material-symbols-outlined text-[14px]">arrow_upward</span>
+                    <Icon name="arrow_upward" class="text-[14px]" />
                   </button>
                   <button
                     onclick={(e: MouseEvent) => { e.stopPropagation(); removeSource(source); }}
                     class="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-colors"
                     title="Remove"
                   >
-                    <span class="material-symbols-outlined text-[14px]">delete</span>
+                    <Icon name="delete" class="text-[14px]" />
                   </button>
                 </div>
               </div>
@@ -478,14 +478,14 @@
         <!-- Scan result summary -->
         {#if lastScanResult}
           <div class="flex items-center gap-3 px-3 py-2 rounded-lg border border-slate-200 dark:border-[#2a3441] bg-white dark:bg-[#111418]">
-            <span class="material-symbols-outlined text-[16px] text-green-500">check_circle</span>
+            <Icon name="check_circle" class="text-[16px] text-green-500" />
             <span class="text-body">Scan complete:</span>
             <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-green-500/10 text-green-600">+{lastScanResult.added}</span>
             <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-red-500/10 text-red-600">-{lastScanResult.removed}</span>
             <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600">{lastScanResult.updated} changed</span>
             <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#283039] text-slate-500">{lastScanResult.unchanged} same</span>
             <button onclick={() => lastScanResult = null} class="ml-auto text-slate-400 hover:text-slate-600">
-              <span class="material-symbols-outlined text-[14px]">close</span>
+              <Icon name="close" class="text-[14px]" />
             </button>
           </div>
         {/if}

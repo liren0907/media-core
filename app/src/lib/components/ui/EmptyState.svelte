@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import Icon from './Icon.svelte';
 
   interface Props {
     icon: string;
@@ -11,7 +12,7 @@
 </script>
 
 <div class="flex flex-col items-center py-12 text-slate-500">
-  <span class="material-symbols-outlined text-3xl mb-2">{icon}</span>
+  <Icon name={icon} class="text-3xl mb-2" />
   <p class="text-xs">{message}</p>
   {#if children}{@render children()}{/if}
 </div>

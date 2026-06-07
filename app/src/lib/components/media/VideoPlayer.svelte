@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import { Icon } from '$lib/components/ui';
 
   interface Props {
     src?: string;
@@ -20,7 +21,7 @@
     </video>
   {:else}
     <div class="text-center text-slate-500">
-      <span class="material-symbols-outlined text-3xl mb-1">{placeholderIcon}</span>
+      <Icon name={placeholderIcon} class="text-3xl mb-1" />
       <p class="text-xs">{placeholderText}</p>
     </div>
   {/if}

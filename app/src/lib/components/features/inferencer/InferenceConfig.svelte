@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Panel, StatCard, StatusBadge, ProgressBar, ErrorAlert, FormField } from '$lib/components/ui';
+  import { Panel, StatCard, StatusBadge, ProgressBar, ErrorAlert, FormField, Icon } from '$lib/components/ui';
   import { inputClass } from '$lib/utils/styles';
 
   interface Props {
@@ -119,6 +119,6 @@
         <ErrorAlert message={errorMessage} />
     {/if}
     <button onclick={onprocess} disabled={isProcessing || !videoPath || !annotationPath} class="w-full py-2 bg-[#137fec] hover:bg-blue-600 text-white rounded text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-1.5 transition-colors">
-        {#if isProcessing}<span class="material-symbols-outlined animate-spin text-[16px]">sync</span> Processing...{:else}<span class="material-symbols-outlined text-[16px]">play_arrow</span> Run Inference{/if}
+        {#if isProcessing}<Icon name="sync" class="animate-spin text-[16px]" /> Processing...{:else}<Icon name="play_arrow" class="text-[16px]" /> Run Inference{/if}
     </button>
 </div>

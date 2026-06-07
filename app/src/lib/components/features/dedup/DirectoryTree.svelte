@@ -1,5 +1,6 @@
 <script lang="ts">
   import { formatFileSize } from '$lib/utils/format';
+  import { Icon } from '$lib/components/ui';
   import FilePreview from './FilePreview.svelte';
   import type { DedupTreeNode, DedupMediaFile } from '$lib/types';
 
@@ -36,8 +37,8 @@
         class="flex items-center gap-1 w-full px-2 py-0.5 hover:bg-slate-50 dark:hover:bg-[#1f2937]/50 transition-colors text-left"
         style="padding-left: {depth * 16 + 8}px"
       >
-        <span class="material-symbols-outlined text-[14px] text-slate-400 transition-transform {expanded[node.path] ? 'rotate-90' : ''}">chevron_right</span>
-        <span class="material-symbols-outlined text-[14px] text-amber-500">{expanded[node.path] ? 'folder_open' : 'folder'}</span>
+        <Icon name="chevron_right" class="text-[14px] text-slate-400 transition-transform {expanded[node.path] ? 'rotate-90' : ''}" />
+        <Icon name={expanded[node.path] ? 'folder_open' : 'folder'} class="text-[14px] text-amber-500" />
         <span class="text-slate-900 dark:text-white">{node.name}</span>
         {#if node.children.length > 0}
           <span class="text-[10px] text-slate-400 ml-1">({node.children.length})</span>
@@ -56,9 +57,7 @@
           class="flex items-center gap-1 px-2 py-0.5 hover:bg-slate-50 dark:hover:bg-[#1f2937]/50 transition-colors cursor-pointer group"
           style="padding-left: {depth * 16 + 28}px"
         >
-          <span class="material-symbols-outlined text-[14px] {fileType === 'image' ? 'text-blue-400' : fileType === 'video' ? 'text-purple-400' : 'text-slate-400'}">
-            {fileType === 'image' ? 'image' : fileType === 'video' ? 'movie' : 'description'}
-          </span>
+          <Icon name={fileType === 'image' ? 'image' : fileType === 'video' ? 'movie' : 'description'} class="text-[14px] {fileType === 'image' ? 'text-blue-400' : fileType === 'video' ? 'text-purple-400' : 'text-slate-400'}" />
           <span class="text-slate-700 dark:text-slate-300 truncate flex-1">{node.name}</span>
 
           <!-- Hash status badges -->
@@ -80,9 +79,7 @@
             <span class="text-[10px] text-slate-400 shrink-0">{formatFileSize(node.fileSize)}</span>
           {/if}
 
-          <span class="material-symbols-outlined text-[14px] text-slate-300 group-hover:text-[#137fec] transition-colors shrink-0">
-            {previewFile === node.path ? 'expand_less' : 'visibility'}
-          </span>
+          <Icon name={previewFile === node.path ? 'expand_less' : 'visibility'} class="text-[14px] text-slate-300 group-hover:text-[#137fec] transition-colors shrink-0" />
         </div>
 
         {#if previewFile === node.path}

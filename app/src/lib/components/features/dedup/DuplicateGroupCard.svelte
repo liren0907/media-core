@@ -1,6 +1,6 @@
 <script lang="ts">
   import { convertFileSrc } from '@tauri-apps/api/core';
-  import { Panel } from '$lib/components/ui';
+  import { Panel, Icon } from '$lib/components/ui';
   import { formatFileSize } from '$lib/utils/format';
   import type { DedupGroupExpanded } from '$lib/types';
 
@@ -32,9 +32,7 @@
           {#if file.fileType === 'image'}
             <img src={convertFileSrc(file.filePath)} class="size-10 rounded object-cover" alt="" />
           {:else}
-            <span class="material-symbols-outlined text-[20px] text-slate-400">
-              {file.fileType === 'video' ? 'movie' : 'description'}
-            </span>
+            <Icon name={file.fileType === 'video' ? 'movie' : 'description'} class="text-[20px] text-slate-400" />
           {/if}
         </div>
         <div class="flex-1 min-w-0">

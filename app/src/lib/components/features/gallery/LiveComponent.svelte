@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import { Icon } from '$lib/components/ui';
 
   interface Props {
     /** Component name shown as the stage label. */
@@ -26,7 +27,7 @@
       {#snippet failed(error)}
         <div class="flex flex-col gap-1 text-meta text-status-warning">
           <div class="flex items-center gap-2">
-            <span class="material-symbols-outlined text-[16px]">warning</span>
+            <Icon name="warning" class="text-[16px]" />
             <span>Couldn't render in isolation — needs live data / backend.</span>
           </div>
           <code class="text-code break-all opacity-80">{error instanceof Error ? error.message : String(error)}</code>

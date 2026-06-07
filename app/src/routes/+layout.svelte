@@ -5,6 +5,7 @@
     import { navItems } from '$lib/nav';
     import { provideHeaderActions } from '$lib/header.svelte';
     import Breadcrumb from '$lib/components/ui/Breadcrumb.svelte';
+    import { Icon } from '$lib/components/ui';
 
     let { children } = $props();
     let isSidebarOpen = $state(true);
@@ -75,7 +76,7 @@
                 <div class="flex items-center justify-between px-2">
                     <div class="flex items-center gap-2">
                         <div class="flex items-center justify-center size-8 rounded-lg bg-[#137fec] text-white shrink-0">
-                            <span class="material-symbols-outlined text-xl">movie</span>
+                            <Icon name="movie" class="text-xl" />
                         </div>
                         <div class="flex flex-col overflow-hidden transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">
                             <h1 class="text-base font-bold leading-tight font-display whitespace-nowrap">Media Core</h1>
@@ -83,13 +84,13 @@
                     </div>
 
                     <button onclick={toggleSidebar} class="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#283039] transition-colors {isSidebarOpen ? '' : 'hidden'}">
-                        <span class="material-symbols-outlined text-[20px]">first_page</span>
+                        <Icon name="first_page" class="text-[20px]" />
                     </button>
                 </div>
 
                 <!-- Collapsed Toggle Button (Centered when sidebar is closed) -->
                 <button onclick={toggleSidebar} class="mx-auto p-2 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#283039] transition-colors {!isSidebarOpen ? 'block' : 'hidden'}">
-                    <span class="material-symbols-outlined text-[24px]">last_page</span>
+                    <Icon name="last_page" class="text-[24px]" />
                 </button>
 
                 <!-- Navigation Links -->
@@ -97,7 +98,7 @@
                     {#each visibleNavItems as item (item.href)}
                         {@const active = item.match(page.url.pathname)}
                         <a href={item.href} class="flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors group relative {active ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
-                            <span class="material-symbols-outlined {active ? 'filled' : ''} shrink-0">{item.icon}</span>
+                            <Icon name={item.icon} class="shrink-0" />
                             <span class="text-nav leading-normal whitespace-nowrap transition-opacity duration-200 {isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}">{item.label}</span>
                             {#if !isSidebarOpen}
                                 <div class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
@@ -140,7 +141,7 @@
                     title="Toggle theme"
                     class="flex items-center justify-center rounded-lg size-8 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039] transition-colors"
                 >
-                    <span class="material-symbols-outlined text-[18px]">{effectiveTheme.value === 'dark' ? 'light_mode' : 'dark_mode'}</span>
+                    <Icon name={effectiveTheme.value === 'dark' ? 'light_mode' : 'dark_mode'} class="text-[18px]" />
                 </button>
             </div>
         </header>

@@ -1,6 +1,7 @@
 <script lang="ts">
   import * as THREE from 'three';
   import { untrack } from 'svelte';
+  import { Icon } from '$lib/components/ui';
 
   interface Props {
     source: HTMLImageElement | HTMLVideoElement | null;
@@ -222,7 +223,7 @@
   {#if !source}
     <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
       <div class="text-center text-muted">
-        <span class="material-symbols-outlined text-4xl mb-2">panorama_photosphere</span>
+        <Icon name="panorama_photosphere" class="text-4xl mb-2" />
         <p class="text-xs">Load a 360° image or video to begin</p>
       </div>
     </div>

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { invoke } from '@tauri-apps/api/core';
-  import { Panel, StatCard, StatusBadge, ProgressBar, ErrorAlert, EmptyState, RunButton, FormField } from '$lib/components/ui';
+  import { Panel, StatCard, StatusBadge, ProgressBar, ErrorAlert, EmptyState, RunButton, FormField, Icon } from '$lib/components/ui';
   import { FilePicker, DirPicker } from '$lib/components/form';
   import { getFileName } from '$lib/utils/format';
   import { inputClass } from '$lib/utils/styles';
@@ -172,7 +172,7 @@
                             <div class="mb-3 relative">
                                 <img src="data:image/jpeg;base64,{selectedFrame}" alt="Selected frame" class="w-full rounded border border-slate-200 dark:border-[#2a3441]" />
                                 <button onclick={() => selectedFrame = null} class="absolute top-2 right-2 p-1 bg-black/60 text-white rounded hover:bg-black/80 transition-colors">
-                                    <span class="material-symbols-outlined text-[16px]">close</span>
+                                    <Icon name="close" class="text-[16px]" />
                                 </button>
                             </div>
                         {/if}
@@ -188,7 +188,7 @@
                             </div>
                         {:else if isProcessing}
                             <div class="flex flex-col items-center py-12 text-slate-500">
-                                <span class="material-symbols-outlined text-3xl animate-spin mb-2">sync</span>
+                                <Icon name="sync" class="text-3xl animate-spin mb-2" />
                                 <p class="text-xs">Extracting frames...</p>
                             </div>
                         {:else}
@@ -201,7 +201,7 @@
                     <div class="p-3">
                         {#if diskResult}
                             <div class="flex flex-col items-center py-8 gap-3">
-                                <span class="material-symbols-outlined text-4xl text-green-500">check_circle</span>
+                                <Icon name="check_circle" class="text-4xl text-green-500" />
                                 <div class="text-center">
                                     <p class="text-sm font-bold text-slate-900 dark:text-white">Export Complete</p>
                                     <p class="text-caption mt-1">{diskResult.frameCount} frames saved to:</p>
@@ -210,7 +210,7 @@
                             </div>
                         {:else if isProcessing}
                             <div class="flex flex-col items-center py-12 text-slate-500">
-                                <span class="material-symbols-outlined text-3xl animate-spin mb-2">sync</span>
+                                <Icon name="sync" class="text-3xl animate-spin mb-2" />
                                 <p class="text-xs">Extracting frames to disk...</p>
                             </div>
                         {:else}

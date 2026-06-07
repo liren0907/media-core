@@ -2,6 +2,7 @@
   import { page } from '$app/state';
   import { theme, effectiveTheme } from '$lib/theme.svelte';
   import { galleryGroups, galleryLabel } from '$lib/components/features/gallery';
+  import { Icon } from '$lib/components/ui';
 
   let { children } = $props();
 
@@ -24,7 +25,7 @@
     <!-- Brand -->
     <div class="flex items-center gap-2 px-4 h-12 border-b border-slate-200 dark:border-[#2a3441] shrink-0">
       <div class="flex items-center justify-center size-7 rounded-lg bg-[#137fec] text-white shrink-0">
-        <span class="material-symbols-outlined text-lg">palette</span>
+        <Icon name="palette" class="text-lg" />
       </div>
       <span class="text-card-title text-sm font-display">Gallery</span>
     </div>
@@ -35,7 +36,7 @@
         href="/gallery"
         class="flex items-center gap-2 px-2 py-1.5 rounded-md text-nav transition-colors {overviewActive ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}"
       >
-        <span class="material-symbols-outlined text-[18px] shrink-0">grid_view</span>
+        <Icon name="grid_view" class="text-[18px] shrink-0" />
         Overview
       </a>
 
@@ -61,7 +62,7 @@
         href="/"
         class="flex items-center gap-2 px-2 py-1.5 rounded-md text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039] transition-colors"
       >
-        <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+        <Icon name="arrow_back" class="text-[20px]" />
         <span class="text-nav">Back to App</span>
       </a>
     </div>
@@ -81,7 +82,7 @@
         title="Toggle theme"
         class="flex items-center justify-center rounded-lg size-8 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039] transition-colors"
       >
-        <span class="material-symbols-outlined text-[18px]">{effectiveTheme.value === 'dark' ? 'light_mode' : 'dark_mode'}</span>
+        <Icon name={effectiveTheme.value === 'dark' ? 'light_mode' : 'dark_mode'} class="text-[18px]" />
       </button>
     </header>
 

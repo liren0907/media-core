@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { PageContent, Panel, StatusBadge } from '$lib/components/ui';
+  import { PageContent, Panel, StatusBadge, Icon } from '$lib/components/ui';
   import { ThemeSelector, StreamSettingsForm, PathSettingsForm, HardwareSettings } from '$lib/components/features/settings';
   import { appConfig } from '$lib/config.svelte';
 
@@ -54,7 +54,7 @@
             {/each}
           </select>
           <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-slate-500">
-            <span class="material-symbols-outlined text-[18px]">expand_more</span>
+            <Icon name="expand_more" class="text-[18px]" />
           </div>
         </div>
         <p class="mt-2 text-[10px] text-slate-400">Language switching is under development.</p>
@@ -68,7 +68,7 @@
     </button>
     {#if saveStatus}
       <div class="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400">
-        <span class="material-symbols-outlined text-[16px]">check_circle</span>
+        <Icon name="check_circle" class="text-[16px]" />
         <span>{saveStatus}</span>
       </div>
     {/if}

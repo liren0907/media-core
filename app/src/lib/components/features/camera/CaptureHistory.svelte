@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Panel } from '$lib/components/ui';
+  import { Panel, Icon } from '$lib/components/ui';
 
   interface CaptureEntry {
     timestamp: Date;
@@ -29,11 +29,11 @@
                     <button onclick={() => onselect?.(item)} class="aspect-square rounded overflow-hidden border-2 border-transparent hover:border-[#137fec] transition-colors relative group">
                         <img src="data:image/jpeg;base64,{item.data}" alt="Capture {i + 1}" class="w-full h-full object-cover" />
                         <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <span class="material-symbols-outlined text-white text-[14px]">visibility</span>
+                            <Icon name="visibility" class="text-white text-[14px]" />
                         </div>
                         {#if item.path}
                             <div class="absolute bottom-0.5 right-0.5">
-                                <span class="material-symbols-outlined text-white text-[12px] drop-shadow">save</span>
+                                <Icon name="save" class="text-white text-[12px] drop-shadow-sm" />
                             </div>
                         {/if}
                     </button>
@@ -41,7 +41,7 @@
             </div>
         {:else}
             <div class="text-center py-4 text-slate-500">
-                <span class="material-symbols-outlined text-2xl mb-1">photo_library</span>
+                <Icon name="photo_library" class="text-2xl mb-1" />
                 <p class="text-[10px]">No captures yet</p>
             </div>
         {/if}

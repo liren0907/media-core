@@ -1,6 +1,7 @@
 <script lang="ts">
   import PageContent from '$lib/components/ui/PageContent.svelte';
   import TabBar from '$lib/components/ui/TabBar.svelte';
+  import { Icon } from '$lib/components/ui';
   import PhotoDemo from '$lib/components/features/demo360/PhotoDemo.svelte';
   import VideoDemo from '$lib/components/features/demo360/VideoDemo.svelte';
 
@@ -19,7 +20,7 @@
   <div class="flex items-center justify-between gap-3 flex-wrap">
     <div class="flex items-center gap-3">
       <h1 class="text-page-title text-lg flex items-center gap-2">
-        <span class="material-symbols-outlined text-status-info">panorama_photosphere</span>
+        <Icon name="panorama_photosphere" class="text-status-info" />
         360° Media Demo
       </h1>
       <span class="px-2 py-0.5 rounded-full bg-amber-500/10 text-badge text-status-warning border border-amber-500/20 uppercase tracking-wider">Experimental</span>

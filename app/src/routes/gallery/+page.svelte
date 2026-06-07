@@ -1,5 +1,6 @@
 <script lang="ts">
   import { galleryGroups } from '$lib/components/features/gallery';
+  import { Icon } from '$lib/components/ui';
 </script>
 
 <svelte:head>
@@ -10,7 +11,7 @@
   <!-- Intro -->
   <div class="flex flex-col gap-2">
     <h1 class="text-page-title flex items-center gap-2">
-      <span class="material-symbols-outlined text-status-info">palette</span>
+      <Icon name="palette" class="text-status-info" />
       Component Gallery
     </h1>
     <p class="text-body text-slate-500 dark:text-slate-400 max-w-2xl">
@@ -27,10 +28,10 @@
         {#each group.items as item (item.href)}
           <a
             href={item.href}
-            class="group rounded-lg border border-slate-200 dark:border-[#2a3441] bg-white dark:bg-[#161e27] p-4 flex items-center justify-between gap-2 hover:border-[#137fec] hover:shadow-sm transition-all"
+            class="group rounded-lg border border-slate-200 dark:border-[#2a3441] bg-white dark:bg-[#161e27] p-4 flex items-center justify-between gap-2 hover:border-[#137fec] hover:shadow-xs transition-all"
           >
             <span class="text-card-title text-sm">{item.label}</span>
-            <span class="material-symbols-outlined text-[18px] text-slate-300 dark:text-slate-600 group-hover:text-[#137fec] transition-colors">arrow_forward</span>
+            <Icon name="arrow_forward" class="text-[18px] text-slate-300 dark:text-slate-600 group-hover:text-[#137fec] transition-colors" />
           </a>
         {/each}
       </div>

@@ -1,5 +1,6 @@
 <script lang="ts">
   import Panel from '$lib/components/ui/Panel.svelte';
+  import { Icon } from '$lib/components/ui';
   import Panoramic360Viewer from './Panoramic360Viewer.svelte';
   import ControlsOverlay from './ControlsOverlay.svelte';
 
@@ -122,7 +123,7 @@
     <Panel title="Source Video" icon="movie">
       <div class="p-3 flex flex-col gap-2">
         <label class="flex items-center justify-center gap-2 px-3 py-2 rounded bg-[#137fec] hover:bg-[#0f6ed1] text-white text-xs font-semibold cursor-pointer transition-colors">
-          <span class="material-symbols-outlined text-[16px]">upload</span>
+          <Icon name="upload" class="text-[16px]" />
           Choose video file
           <input type="file" accept="video/*" class="hidden" onchange={onFileChange} />
         </label>
@@ -130,7 +131,7 @@
           <div class="flex items-center justify-between gap-2 text-body bg-slate-50 dark:bg-[#1f2937] px-2 py-1.5 rounded">
             <span class="truncate" title={fileName}>{fileName}</span>
             <button onclick={clearVideo} class="text-muted hover:text-red-500 shrink-0" aria-label="Clear">
-              <span class="material-symbols-outlined text-[14px]">close</span>
+              <Icon name="close" class="text-[14px]" />
             </button>
           </div>
         {/if}
@@ -152,7 +153,7 @@
               class="flex items-center justify-center size-8 rounded bg-[#137fec] hover:bg-[#0f6ed1] text-white transition-colors"
               aria-label={isPlaying ? 'Pause' : 'Play'}
             >
-              <span class="material-symbols-outlined text-[18px]">{isPlaying ? 'pause' : 'play_arrow'}</span>
+              <Icon name={isPlaying ? 'pause' : 'play_arrow'} class="text-[18px]" />
             </button>
             <span class="text-caption tabular-nums">{fmtTime(currentTime)} / {fmtTime(duration)}</span>
           </div>
@@ -171,7 +172,7 @@
 
           <div class="flex items-center gap-2">
             <button onclick={toggleMute} class="text-muted hover:text-slate-700 dark:hover:text-slate-200" aria-label={muted ? 'Unmute' : 'Mute'}>
-              <span class="material-symbols-outlined text-[18px]">{muted || volume === 0 ? 'volume_off' : 'volume_up'}</span>
+              <Icon name={muted || volume === 0 ? 'volume_off' : 'volume_up'} class="text-[18px]" />
             </button>
             <input
               type="range"

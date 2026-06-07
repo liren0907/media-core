@@ -2,7 +2,7 @@
   import { invoke } from '@tauri-apps/api/core';
   import { convertFileSrc } from '@tauri-apps/api/core';
   import { ask } from '@tauri-apps/plugin-dialog';
-  import { Panel, EmptyState } from '$lib/components/ui';
+  import { Panel, EmptyState, Icon } from '$lib/components/ui';
   import { formatFileSize } from '$lib/utils/format';
   import FilePreview from './FilePreview.svelte';
   import type { DedupGroupExpanded, DedupMediaFile, TrashResult } from '$lib/types';
@@ -127,9 +127,7 @@
         {#if file.fileType === 'image'}
           <img src={convertFileSrc(file.filePath)} class="size-10 rounded object-cover" alt="" />
         {:else}
-          <span class="material-symbols-outlined text-[18px] text-slate-400">
-            {file.fileType === 'video' ? 'movie' : 'description'}
-          </span>
+          <Icon name={file.fileType === 'video' ? 'movie' : 'description'} class="text-[18px] text-slate-400" />
         {/if}
       </div>
       <div class="flex-1 min-w-0">
@@ -137,9 +135,7 @@
         <div class="text-meta truncate">{file.filePath}</div>
         <div class="text-[10px] text-slate-400 mt-0.5">{formatFileSize(file.fileSize)}</div>
       </div>
-      <span class="material-symbols-outlined text-[14px] text-slate-400 shrink-0">
-        {expandedFile === filePath ? 'expand_less' : 'visibility'}
-      </span>
+      <Icon name={expandedFile === filePath ? 'expand_less' : 'visibility'} class="text-[14px] text-slate-400 shrink-0" />
     </div>
     {#if expandedFile === filePath}
       <FilePreview
@@ -171,9 +167,7 @@
           {#if file.fileType === 'image'}
             <img src={convertFileSrc(file.filePath)} class="size-10 rounded object-cover" alt="" />
           {:else}
-            <span class="material-symbols-outlined text-[18px] text-slate-400">
-              {file.fileType === 'video' ? 'movie' : 'description'}
-            </span>
+            <Icon name={file.fileType === 'video' ? 'movie' : 'description'} class="text-[18px] text-slate-400" />
           {/if}
         </div>
         <div class="flex-1 min-w-0">
@@ -181,9 +175,7 @@
           <div class="text-meta truncate">{file.filePath}</div>
           <div class="text-[10px] text-slate-400 mt-0.5">{formatFileSize(file.fileSize)}</div>
         </div>
-        <span class="material-symbols-outlined text-[14px] text-slate-400 shrink-0">
-          {expandedFile === filePath ? 'expand_less' : 'visibility'}
-        </span>
+        <Icon name={expandedFile === filePath ? 'expand_less' : 'visibility'} class="text-[14px] text-slate-400 shrink-0" />
       </div>
     </div>
     {#if expandedFile === filePath}
@@ -216,10 +208,10 @@
 
   {#if trashMessage}
     <div class="flex items-center gap-2 px-3 py-1.5 text-[11px] {trashMessage.startsWith('Error') ? 'text-red-600 bg-red-50 dark:bg-red-500/10' : 'text-green-600 bg-green-50 dark:bg-green-500/10'}">
-      <span class="material-symbols-outlined text-[14px]">{trashMessage.startsWith('Error') ? 'error' : 'check_circle'}</span>
+      <Icon name={trashMessage.startsWith('Error') ? 'error' : 'check_circle'} class="text-[14px]" />
       {trashMessage}
       <button onclick={() => trashMessage = ''} class="ml-auto text-slate-400 hover:text-slate-600">
-        <span class="material-symbols-outlined text-[14px]">close</span>
+        <Icon name="close" class="text-[14px]" />
       </button>
     </div>
   {/if}
@@ -232,7 +224,7 @@
       <!-- Column headers -->
       <div class="grid grid-cols-2 gap-3 px-3 py-2 border-b border-slate-200 dark:border-[#2a3441]">
         <div class="flex items-center gap-1.5">
-          <span class="material-symbols-outlined text-[14px] text-[#137fec]">star</span>
+          <Icon name="star" class="text-[14px] text-[#137fec]" />
           <span class="text-stat-label text-status-info">Source</span>
           <span class="text-[10px] text-slate-400">(keep)</span>
         </div>
@@ -244,7 +236,7 @@
             class="size-3 accent-red-500 cursor-pointer"
             title="Select all targets"
           />
-          <span class="material-symbols-outlined text-[14px] text-amber-500">filter_center_focus</span>
+          <Icon name="filter_center_focus" class="text-[14px] text-amber-500" />
           <span class="text-stat-label text-amber-500">Target</span>
           <span class="text-[10px] text-slate-400">(duplicate)</span>
         </div>
@@ -256,9 +248,7 @@
           <div class="px-3 py-2">
             <!-- Match badge -->
             <div class="flex items-center gap-2 mb-2">
-              <span class="material-symbols-outlined text-[14px] {group.matchType === 'exact' ? 'text-green-500' : 'text-amber-500'}">
-                {group.matchType === 'exact' ? 'check_circle' : 'change_circle'}
-              </span>
+              <Icon name={group.matchType === 'exact' ? 'check_circle' : 'change_circle'} class="text-[14px] {group.matchType === 'exact' ? 'text-green-500' : 'text-amber-500'}" />
               <span class="text-[10px] font-bold {group.matchType === 'exact' ? 'text-green-600' : 'text-amber-600'}">
                 {group.matchType === 'exact' ? 'Exact Match' : `${similarityPercent(group.similarityScore)}% Similar`}
               </span>
@@ -289,7 +279,7 @@
     {#if selectedTargetIds.size > 0}
       <div class="sticky bottom-0 flex items-center justify-between gap-3 px-4 py-2.5 border-t border-slate-200 dark:border-[#2a3441] bg-white dark:bg-[#111418]">
         <div class="flex items-center gap-2 text-[11px]">
-          <span class="material-symbols-outlined text-[16px] text-red-500">delete</span>
+          <Icon name="delete" class="text-[16px] text-red-500" />
           <span class="font-bold text-slate-700 dark:text-white">{selectedTargetIds.size} file(s) selected</span>
           <span class="text-slate-400">({formatFileSize(selectedTotalSize)})</span>
         </div>
@@ -306,10 +296,10 @@
             class="flex items-center gap-1.5 px-3 py-1 text-xs font-bold text-white bg-red-500 hover:bg-red-600 disabled:opacity-50 rounded transition-colors"
           >
             {#if isTrashRunning}
-              <span class="material-symbols-outlined text-[14px] animate-spin">progress_activity</span>
+              <Icon name="progress_activity" class="text-[14px] animate-spin" />
               Moving...
             {:else}
-              <span class="material-symbols-outlined text-[14px]">delete</span>
+              <Icon name="delete" class="text-[14px]" />
               Move to Trash
             {/if}
           </button>
@@ -322,9 +312,7 @@
       {#each filteredGroups as group (group.id)}
         <div class="px-3 py-2">
           <div class="flex items-center gap-2 mb-1.5">
-            <span class="material-symbols-outlined text-[14px] {group.matchType === 'exact' ? 'text-green-500' : 'text-amber-500'}">
-              {group.matchType === 'exact' ? 'check_circle' : 'change_circle'}
-            </span>
+            <Icon name={group.matchType === 'exact' ? 'check_circle' : 'change_circle'} class="text-[14px] {group.matchType === 'exact' ? 'text-green-500' : 'text-amber-500'}" />
             <span class="text-[10px] font-bold {group.matchType === 'exact' ? 'text-green-600' : 'text-amber-600'}">
               {group.matchType === 'exact' ? 'Exact Match' : `${similarityPercent(group.similarityScore)}% Similar`}
             </span>

@@ -3,7 +3,7 @@
   import { convertFileSrc, invoke } from "@tauri-apps/api/core";
   import Hls from "hls.js";
   import { appConfig, getDefaultRtspUrl, getHlsOutputDir } from "$lib/config.svelte";
-  import { Panel, ToggleSwitch, FormField } from '$lib/components/ui';
+  import { Panel, ToggleSwitch, FormField, Icon } from '$lib/components/ui';
   import { StreamStatsStrip, ActiveStreamsList } from '$lib/components/features/stream';
   import type { StreamStats } from '$lib/types';
 
@@ -113,7 +113,7 @@
             <Panel title="Configure Stream" icon="settings">
                 {#snippet actions()}
                     <button type="button" disabled={isStreaming} onclick={startCapture} class="flex items-center gap-1 px-2 py-1 bg-[#137fec] hover:bg-blue-600 text-white rounded text-[10px] font-bold transition-colors disabled:opacity-50">
-                        {#if isStreaming}<span class="material-symbols-outlined animate-spin text-[14px]">sync</span>{/if}
+                        {#if isStreaming}<Icon name="sync" class="animate-spin text-[14px]" />{/if}
                         Start Capture
                     </button>
                 {/snippet}
@@ -140,7 +140,7 @@
                                 <div class="flex gap-2">
                                     <input id={`additionalRtspUrl-${i}`} type="text" bind:value={rtspConfig.rtsp_url_list[i]} class="{inputClass} flex-1" placeholder="rtsp://..." aria-label={`Additional RTSP URL ${i + 1}`} />
                                     <button type="button" onclick={() => removeUrlField(i)} class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors">
-                                        <span class="material-symbols-outlined text-[18px]">delete</span>
+                                        <Icon name="delete" class="text-[18px]" />
                                     </button>
                                 </div>
                             {/each}
@@ -153,7 +153,7 @@
                             <FormField label="Output Directory" id="outputDirectory">
                                 <div class="flex gap-2">
                                     <input id="outputDirectory" type="text" readonly bind:value={rtspConfig.output_directory} class="{inputClass} flex-1" placeholder="Select..." />
-                                    <button type="button" onclick={selectOutputDirectory} class="px-3 py-2 bg-slate-100 dark:bg-[#1f2937] border border-slate-200 dark:border-[#2a3441] rounded text-xs transition-colors"><span class="material-symbols-outlined text-[18px]">folder_open</span></button>
+                                    <button type="button" onclick={selectOutputDirectory} class="px-3 py-2 bg-slate-100 dark:bg-[#1f2937] border border-slate-200 dark:border-[#2a3441] rounded text-xs transition-colors"><Icon name="folder_open" class="text-[18px]" /></button>
                                 </div>
                             </FormField>
                             <FormField label="Segment Duration (sec)" id="segmentDuration">

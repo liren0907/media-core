@@ -1,7 +1,7 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
   import { appConfig, getPlaylistUrl, getHlsOutputDir } from "$lib/config.svelte";
-  import { Panel, StatCard, StatusBadge, ProgressBar, FormField, ErrorAlert } from '$lib/components/ui';
+  import { Panel, StatCard, StatusBadge, ProgressBar, FormField, ErrorAlert, Icon } from '$lib/components/ui';
   import { SparklineBar } from '$lib/components/data';
   import { formatBitrate, formatLatency } from '$lib/utils/format';
 
@@ -192,7 +192,7 @@
                     <video bind:this={videoElement} class="w-full h-full object-contain" controls muted playsinline><track kind="captions" /></video>
                     {#if isLoading}
                         <div class="absolute inset-0 flex items-center justify-center bg-black/50">
-                            <span class="material-symbols-outlined text-3xl text-white animate-spin">sync</span>
+                            <Icon name="sync" class="text-3xl text-white animate-spin" />
                         </div>
                     {/if}
                 </div>
@@ -207,7 +207,7 @@
                 </FormField>
 
                 <button onclick={loadPlaylist} disabled={isLoading || !hlsStatus.playlist_exists} class="w-full py-2 bg-[#137fec] hover:bg-blue-600 text-white rounded text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-1.5 transition-colors">
-                    {#if isLoading}<span class="material-symbols-outlined animate-spin text-[16px]">sync</span>{:else}<span class="material-symbols-outlined text-[16px]">play_arrow</span>{/if}
+                    {#if isLoading}<Icon name="sync" class="animate-spin text-[16px]" />{:else}<Icon name="play_arrow" class="text-[16px]" />{/if}
                     Load Stream
                 </button>
 

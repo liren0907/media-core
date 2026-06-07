@@ -1,19 +1,119 @@
+/* Self-hosted fonts via @fontsource — bundled locally so the desktop app's
+   typography works fully offline (no Google Fonts CDN dependency). */
+@import '@fontsource-variable/space-grotesk';
+@import '@fontsource-variable/noto-sans';
 @import '@fontsource/fira-mono';
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Noto+Sans:wght@300;400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+@import 'tailwindcss';
+@import 'tw-animate-css';
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Class-based dark mode. Tailwind v4 defaults `dark:` to prefers-color-scheme;
+   this app toggles a `.dark` class on <html> (see lib/theme.svelte.ts), so we
+   re-point the variant at that class. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: 'Noto Sans Variable', 'Noto Sans', sans-serif;
+  --font-display: 'Space Grotesk Variable', 'Space Grotesk', sans-serif;
+  --font-mono: 'Fira Mono', monospace;
+}
+
+/* ============================================================================
+   shadcn-svelte (bits-ui) design tokens. Brand `--primary` / `--ring` are
+   #137fec; neutrals use the default shadcn palette. Dark mode reuses the app's
+   `.dark` class (see @custom-variant above). We intentionally map ONLY colors
+   (no global body bg/text, no border base rule, no --radius-* override) so the
+   app's existing surfaces and border radii are untouched; shadcn components
+   inherit the default Tailwind radius scale.
+   ============================================================================ */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  /* Radius scale derived from --radius (0.5rem). With that base these equal
+     Tailwind's own defaults, so the app's `rounded-*` are unchanged — but
+     shadcn components that reference var(--radius-md) etc. now resolve. */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
 
 :root {
-	--font-body: 'Noto Sans', sans-serif;
-	--font-display: 'Space Grotesk', sans-serif;
-	--font-mono: 'Fira Mono', monospace;
+  --radius: 0.5rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: #137fec;
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: #137fec;
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.269 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: #137fec;
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.371 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: #137fec;
+}
+
+/* v3 compatibility: Tailwind v4 changed the default border color to
+   `currentColor`. Preserve the old gray-200 default so bare `border`
+   utilities keep their previous appearance. */
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
 }
 
 body {
-    font-family: var(--font-body);
+  font-family: var(--font-sans);
 }
 
 /* =============================================================================
@@ -99,21 +199,4 @@ body {
   .dark .text-status-info {
     color: #137fec;
   }
-}
-
-/* Material Symbols classes */
-.material-symbols-outlined {
-  font-variation-settings:
-  'FILL' 0,
-  'wght' 400,
-  'GRAD' 0,
-  'opsz' 24
-}
-
-.material-symbols-outlined.filled {
-  font-variation-settings:
-  'FILL' 1,
-  'wght' 400,
-  'GRAD' 0,
-  'opsz' 24
 }

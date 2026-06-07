@@ -1,5 +1,6 @@
 <script lang="ts">
   import Panel from '$lib/components/ui/Panel.svelte';
+  import { Icon } from '$lib/components/ui';
   import Panoramic360Viewer from './Panoramic360Viewer.svelte';
   import ControlsOverlay from './ControlsOverlay.svelte';
 
@@ -58,7 +59,7 @@
     <Panel title="Source Image" icon="image">
       <div class="p-3 flex flex-col gap-2">
         <label class="flex items-center justify-center gap-2 px-3 py-2 rounded bg-[#137fec] hover:bg-[#0f6ed1] text-white text-xs font-semibold cursor-pointer transition-colors">
-          <span class="material-symbols-outlined text-[16px]">upload</span>
+          <Icon name="upload" class="text-[16px]" />
           Choose image file
           <input type="file" accept="image/*" class="hidden" onchange={onFileChange} />
         </label>
@@ -66,7 +67,7 @@
           <div class="flex items-center justify-between gap-2 text-body bg-slate-50 dark:bg-[#1f2937] px-2 py-1.5 rounded">
             <span class="truncate" title={fileName}>{fileName}</span>
             <button onclick={clearImage} class="text-muted hover:text-red-500 shrink-0" aria-label="Clear">
-              <span class="material-symbols-outlined text-[14px]">close</span>
+              <Icon name="close" class="text-[14px]" />
             </button>
           </div>
         {/if}

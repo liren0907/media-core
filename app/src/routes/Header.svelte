@@ -6,7 +6,7 @@
 	<nav class="glass-card-static border-b border-white/50 sticky top-0 z-50 bg-white/40 rounded-none">
 		<div class="max-w-7xl mx-auto px-4">
 			<div class="flex justify-between h-20">
-				<div class="flex-shrink-0 flex items-center">
+				<div class="shrink-0 flex items-center">
 					<span class="text-2xl font-bold">
 						<!-- Warm Gradient: Orange -> Pink -> Purple -->
 						<span class="bg-gradient-to-r from-orange-500 via-pink-500 to-purple-500 bg-clip-text text-transparent">Stream Viewer</span>

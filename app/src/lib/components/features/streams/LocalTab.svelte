@@ -1,7 +1,7 @@
 <script lang="ts">
   import { invoke, convertFileSrc } from "@tauri-apps/api/core";
   import { open } from "@tauri-apps/plugin-dialog";
-  import { Panel, StatCard } from '$lib/components/ui';
+  import { Panel, StatCard, Icon } from '$lib/components/ui';
   import { VideoPlayer } from '$lib/components/media';
   import type { MediaMetadata } from '$lib/types';
   import { formatDuration, formatFileSize, formatBitrate } from '$lib/utils/format';
@@ -42,7 +42,7 @@
                     <span class="text-meta truncate max-w-[200px]">{metadata.filename}</span>
                 {/if}
                 <button onclick={loadVideo} disabled={isLoading} class="flex items-center gap-1 px-2 py-1 bg-[#137fec] hover:bg-blue-600 text-white rounded text-[10px] font-bold transition-colors disabled:opacity-50">
-                    {#if isLoading}<span class="material-symbols-outlined animate-spin text-[14px]">sync</span>{/if}
+                    {#if isLoading}<Icon name="sync" class="animate-spin text-[14px]" />{/if}
                     Open File
                 </button>
             </div>

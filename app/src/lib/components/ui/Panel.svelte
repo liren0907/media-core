@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import Icon from './Icon.svelte';
 
   interface Props {
     title: string;
@@ -15,7 +16,7 @@
   <div class="px-4 py-2 border-b border-slate-200 dark:border-[#2a3441] flex justify-between items-center bg-slate-50 dark:bg-[#1f2937]/50">
     <div class="flex items-center gap-2">
       {#if icon}
-        <span class="material-symbols-outlined text-slate-500 text-[16px]">{icon}</span>
+        <Icon name={icon} class="text-slate-500 text-[16px]" />
       {/if}
       <h3 class="text-section-title">{title}</h3>
     </div>

@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { invoke } from '@tauri-apps/api/core';
   import type { UnlistenFn } from '@tauri-apps/api/event';
-  import { Panel, EmptyState, ErrorAlert, ToggleSwitch, RunButton } from '$lib/components/ui';
+  import { Panel, EmptyState, ErrorAlert, ToggleSwitch, RunButton, Icon } from '$lib/components/ui';
   import { onDedupHashProgress } from '$lib/events';
   import ProgressPanel from './ProgressPanel.svelte';
   import type { DedupSource, DedupHashProgressEvent } from '$lib/types';
@@ -136,7 +136,7 @@
     {:else if lastResult !== null}
       <Panel title="Complete" icon="check_circle">
         <div class="p-4 text-center">
-          <span class="material-symbols-outlined text-[48px] text-green-500">check_circle</span>
+          <Icon name="check_circle" class="text-[48px] text-green-500" />
           <p class="text-sm font-bold mt-2 text-slate-900 dark:text-white">Fingerprinting Complete</p>
           <p class="text-caption mt-1">{lastResult} files processed</p>
         </div>

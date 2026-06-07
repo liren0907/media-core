@@ -1,7 +1,7 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
   import { save } from "@tauri-apps/plugin-dialog";
-  import { PageContent, Panel, StatusBadge, ErrorAlert } from '$lib/components/ui';
+  import { PageContent, Panel, StatusBadge, ErrorAlert, Icon } from '$lib/components/ui';
   import { CaptureHistory } from '$lib/components/features/camera';
   import type { CameraCaptureResult } from '$lib/types';
 
@@ -140,22 +140,22 @@
                         <img src={previewImage} alt="Camera preview" class="w-full h-full object-contain" />
                     {:else}
                         <div class="text-center text-slate-500">
-                            <span class="material-symbols-outlined text-5xl mb-2">videocam</span>
+                            <Icon name="videocam" class="text-5xl mb-2" />
                             <p class="text-xs">No preview — start preview or capture a snapshot</p>
                         </div>
                     {/if}
                     {#if isCapturing}
                         <div class="absolute inset-0 bg-white/20 flex items-center justify-center">
-                            <span class="material-symbols-outlined text-3xl text-white animate-pulse">photo_camera</span>
+                            <Icon name="photo_camera" class="text-3xl text-white animate-pulse" />
                         </div>
                     {/if}
                 </div>
                 <div class="p-3 border-t border-slate-200 dark:border-[#2a3441] flex justify-center gap-3">
                     <button onclick={() => captureSnapshot(false)} disabled={isCapturing || availableCameras.length === 0} class="flex items-center gap-1.5 px-4 py-2 bg-[#137fec] hover:bg-blue-600 text-white rounded text-xs font-bold transition-colors disabled:opacity-50">
-                        <span class="material-symbols-outlined text-[18px]">photo_camera</span> Capture
+                        <Icon name="photo_camera" class="text-[18px]" /> Capture
                     </button>
                     <button onclick={() => captureSnapshot(true)} disabled={isCapturing || availableCameras.length === 0} class="flex items-center gap-1.5 px-4 py-2 bg-white dark:bg-[#1f2937] border border-slate-200 dark:border-[#2a3441] text-slate-700 dark:text-white rounded text-xs font-bold transition-colors disabled:opacity-50 hover:bg-slate-50 dark:hover:bg-[#283039]">
-                        <span class="material-symbols-outlined text-[18px]">save</span> Capture & Save
+                        <Icon name="save" class="text-[18px]" /> Capture & Save
                     </button>
                 </div>
             </Panel>
@@ -175,20 +175,20 @@
                         <div class="flex flex-col gap-1.5">
                             {#each availableCameras as camera, index}
                                 <button onclick={() => { selectedCameraIndex = index; stopLivePreview(); }} class="w-full flex items-center gap-2 p-2 rounded-lg border transition-all text-left {selectedCameraIndex === index ? 'border-[#137fec] bg-[#137fec]/5' : 'border-slate-200 dark:border-[#2a3441] hover:border-slate-300 dark:hover:border-[#3b4754]'}">
-                                    <span class="material-symbols-outlined text-[18px] text-slate-500">videocam</span>
+                                    <Icon name="videocam" class="text-[18px] text-slate-500" />
                                     <div class="flex-1 min-w-0">
                                         <p class="text-xs font-medium text-slate-900 dark:text-white truncate">{camera}</p>
                                         <p class="text-meta">Index: {index}</p>
                                     </div>
                                     {#if selectedCameraIndex === index}
-                                        <span class="material-symbols-outlined text-[16px] text-[#137fec]">check_circle</span>
+                                        <Icon name="check_circle" class="text-[16px] text-[#137fec]" />
                                     {/if}
                                 </button>
                             {/each}
                         </div>
                     {:else}
                         <div class="text-center py-4 text-slate-500">
-                            <span class="material-symbols-outlined text-2xl mb-1">videocam_off</span>
+                            <Icon name="videocam_off" class="text-2xl mb-1" />
                             <p class="text-[10px]">No cameras detected</p>
                         </div>
                     {/if}

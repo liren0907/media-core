@@ -54,6 +54,13 @@ export const galleryGroups: GalleryGroup[] = [
       { id: 'pagecontent', label: 'PageContent', href: '/gallery/pagecontent' },
     ],
   },
+  {
+    title: 'shadcn-svelte',
+    items: [
+      { id: 'shadcn-button', label: 'Button', href: '/gallery/shadcn/button' },
+      { id: 'shadcn-dialog', label: 'Dialog', href: '/gallery/shadcn/dialog' },
+    ],
+  },
 ];
 
 /** Flat, ordered list of every gallery section. */

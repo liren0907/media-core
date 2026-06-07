@@ -1,6 +1,6 @@
 <script lang="ts">
   import { invoke } from '@tauri-apps/api/core';
-  import { Panel, StatusBadge, ToggleSwitch, FormField } from '$lib/components/ui';
+  import { Panel, StatusBadge, ToggleSwitch, FormField, Icon } from '$lib/components/ui';
   import type { HardwareAccelConfig, HardwareCapabilities } from '$lib/types';
 
   let hwConfig = $state<HardwareAccelConfig>({ enabled: false, mode: 'auto', fallbackToCpu: true, preferBackends: [] });
@@ -28,7 +28,7 @@
   <div class="p-4 flex flex-col gap-3">
     {#if hwCapabilities}
       <div class="flex items-center gap-2 text-caption bg-slate-50 dark:bg-[#1a222c] p-2 rounded border border-slate-100 dark:border-[#2a3441]">
-        <span class="material-symbols-outlined text-[16px]">info</span>
+        <Icon name="info" class="text-[16px]" />
         <span>Platform: <span class="font-bold text-slate-900 dark:text-white">{hwCapabilities.platform}</span></span>
         {#if hwCapabilities.isAppleSilicon}
           <StatusBadge status="Apple Silicon" colorMap={{ 'Apple Silicon': 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20' }} />

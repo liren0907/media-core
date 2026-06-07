@@ -1,6 +1,7 @@
 <script lang="ts">
   import { convertFileSrc } from '@tauri-apps/api/core';
   import { formatFileSize } from '$lib/utils/format';
+  import { Icon } from '$lib/components/ui';
 
   interface Props {
     filePath: string;
@@ -17,9 +18,7 @@
 
 <div class="border border-slate-200 dark:border-[#2a3441] rounded-lg overflow-hidden bg-slate-50 dark:bg-[#0d1117] my-1">
   <div class="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-[#111418] border-b border-slate-100 dark:border-[#2a3441]">
-    <span class="material-symbols-outlined text-[14px] text-slate-400">
-      {fileType === 'image' ? 'image' : 'movie'}
-    </span>
+    <Icon name={fileType === 'image' ? 'image' : 'movie'} class="text-[14px] text-slate-400" />
     <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300 truncate">{fileName}</span>
     {#if fileSize}
       <span class="text-[10px] text-slate-400 ml-auto shrink-0">{formatFileSize(fileSize)}</span>
@@ -30,7 +29,7 @@
     {#if fileType === 'image'}
       {#if !imgLoaded}
         <div class="flex items-center justify-center h-32 text-slate-400">
-          <span class="material-symbols-outlined text-[24px] animate-pulse">hourglass_top</span>
+          <Icon name="hourglass_top" class="text-[24px] animate-pulse" />
         </div>
       {/if}
       <img
@@ -49,7 +48,7 @@
       ></video>
     {:else}
       <div class="flex items-center justify-center h-20 text-slate-400">
-        <span class="material-symbols-outlined text-[32px]">description</span>
+        <Icon name="description" class="text-[32px]" />
       </div>
     {/if}
   </div>

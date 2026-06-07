@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { FormField } from '$lib/components/ui';
+  import { FormField, Icon } from '$lib/components/ui';
   import { selectFiles } from '$lib/utils/file-dialog';
   import { getFileName } from '$lib/utils/format';
 
@@ -37,7 +37,7 @@
         <div class="flex items-center justify-between px-2 py-1 rounded bg-slate-50 dark:bg-[#1f2937]/50 border border-slate-100 dark:border-[#2a3441] text-[10px] font-mono">
           <span class="truncate max-w-[180px]" title={file}>{getFileName(file)}</span>
           <button onclick={() => removeFile(i)} class="text-slate-400 hover:text-red-500 transition-colors">
-            <span class="material-symbols-outlined text-[14px]">close</span>
+            <Icon name="close" class="text-[14px]" />
           </button>
         </div>
       {/each}

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { open } from '@tauri-apps/plugin-dialog';
   import { convertFileSrc, invoke } from '@tauri-apps/api/core';
-  import { Panel, StatusBadge } from '$lib/components/ui';
+  import { Panel, StatusBadge, Icon } from '$lib/components/ui';
   import { InferenceConfig, DetectionTimeline } from '$lib/components/features/inferencer';
   import type { AnnotationData } from '$lib/types';
 
@@ -126,7 +126,7 @@
                     <video bind:this={videoPlayer} controls class="w-full h-full object-contain"><track kind="captions" /></video>
                 {:else}
                     <div class="flex flex-col items-center gap-2 text-slate-500">
-                        <span class="material-symbols-outlined text-4xl">perm_media</span>
+                        <Icon name="perm_media" class="text-4xl" />
                         <p class="text-xs">Select video source</p>
                     </div>
                 {/if}

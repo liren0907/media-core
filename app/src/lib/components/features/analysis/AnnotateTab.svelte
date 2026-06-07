@@ -1,7 +1,7 @@
 <script lang="ts">
   import { invoke, convertFileSrc } from '@tauri-apps/api/core';
   import { open } from '@tauri-apps/plugin-dialog';
-  import { Panel, StatCard, ErrorAlert } from '$lib/components/ui';
+  import { Panel, StatCard, ErrorAlert, Icon } from '$lib/components/ui';
 
   let videoSrc = $state("");
   let videoPath = $state("");
@@ -88,7 +88,7 @@
             <video src={videoSrc} controls class="w-full h-full object-contain"><track kind="captions" /></video>
         {:else}
             <div class="text-center text-slate-500">
-                <span class="material-symbols-outlined text-4xl mb-2">movie</span>
+                <Icon name="movie" class="text-4xl mb-2" />
                 <p class="text-xs">No video selected</p>
             </div>
         {/if}
@@ -145,7 +145,7 @@
 
 <!-- Action -->
 <button onclick={startAnnotation} disabled={isProcessing} class="w-full py-2.5 bg-[#137fec] hover:bg-blue-600 text-white rounded font-bold text-sm disabled:opacity-50 flex items-center justify-center gap-2 transition-colors">
-    {#if isProcessing}<span class="material-symbols-outlined animate-spin text-[18px]">sync</span> Processing...{:else}Start Annotation{/if}
+    {#if isProcessing}<Icon name="sync" class="animate-spin text-[18px]" /> Processing...{:else}Start Annotation{/if}
 </button>
 
 <!-- Alerts -->
@@ -154,7 +154,7 @@
 {/if}
 {#if annotationResponse}
     <div class="p-2 rounded bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900/30 text-green-600 dark:text-green-400 text-xs flex items-center gap-2">
-        <span class="material-symbols-outlined text-[16px]">check_circle</span>
+        <Icon name="check_circle" class="text-[16px]" />
         <div><span class="font-bold">Success!</span> Output: {annotationResponse.data.output_video}</div>
     </div>
 {/if}

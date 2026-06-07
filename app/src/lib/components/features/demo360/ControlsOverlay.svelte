@@ -1,5 +1,6 @@
 <script lang="ts">
   import ToggleSwitch from '$lib/components/ui/ToggleSwitch.svelte';
+  import { Icon } from '$lib/components/ui';
 
   interface Props {
     fov: number;
@@ -60,7 +61,7 @@
     onclick={onReset}
     class="flex items-center justify-center gap-1 px-3 py-1.5 rounded bg-slate-100 dark:bg-[#283039] text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-xs font-semibold"
   >
-    <span class="material-symbols-outlined text-[14px]">restart_alt</span>
+    <Icon name="restart_alt" class="text-[14px]" />
     Reset view
   </button>
 

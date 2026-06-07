@@ -1,6 +1,7 @@
 <script lang="ts">
     import { page } from '$app/state';
     import { buildBreadcrumb } from '$lib/nav';
+    import Icon from './Icon.svelte';
 
     const segments = $derived(buildBreadcrumb(page.url.pathname));
 </script>
@@ -8,7 +9,7 @@
 <nav class="flex items-center gap-1.5" aria-label="Breadcrumb">
     {#each segments as seg, i (seg.href)}
         {#if i > 0}
-            <span class="material-symbols-outlined text-[18px] text-slate-300 dark:text-slate-600 select-none" aria-hidden="true">chevron_right</span>
+            <Icon name="chevron_right" class="text-[18px] text-slate-300 dark:text-slate-600 select-none" />
         {/if}
         {#if i === segments.length - 1}
             <span class="text-base font-bold font-display tracking-tight text-slate-900 dark:text-white" aria-current="page">{seg.label}</span>

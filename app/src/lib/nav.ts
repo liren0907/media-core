@@ -5,6 +5,8 @@ export interface NavItem {
     label: string;
     /** Descriptive title used in the header breadcrumb */
     title: string;
+    /** When true, the route is reachable by URL but hidden from the sidebar */
+    hidden?: boolean;
     match: (pathname: string) => boolean;
 }
 
@@ -18,6 +20,7 @@ export const navItems: NavItem[] = [
     { href: '/dedup',     icon: 'fingerprint',           label: 'Dedup',     title: 'Deduplication',   match: (p) => p.startsWith('/dedup') },
     { href: '/demo-360',  icon: 'panorama_photosphere',  label: '360° Demo', title: '360° Demo',       match: (p) => p.startsWith('/demo-360') },
     { href: '/settings',  icon: 'settings',              label: 'Settings',  title: 'Settings',        match: (p) => p.startsWith('/settings') },
+    { href: '/gallery',   icon: 'palette',               label: 'Gallery',   title: 'Component Gallery', hidden: true, match: (p) => p.startsWith('/gallery') },
 ];
 
 export interface BreadcrumbSegment {

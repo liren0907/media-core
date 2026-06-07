@@ -16,6 +16,15 @@
 
     const headerActions = provideHeaderActions();
 
+    // Hidden routes (e.g. /gallery) are reachable by URL but excluded from the sidebar.
+    const visibleNavItems = navItems.filter((item) => !item.hidden);
+
+    // Gallery is a self-contained sub-app: it supplies its own shell (sidebar + top
+    // bar) via src/routes/gallery/+layout.svelte, so we skip the app shell entirely.
+    const isGallery = $derived(
+        page.url.pathname === '/gallery' || page.url.pathname.startsWith('/gallery/')
+    );
+
     function toggleSidebar() {
         isSidebarOpen = !isSidebarOpen;
         if (isSidebarOpen) {
@@ -50,6 +59,10 @@
     }
 </script>
 
+{#if isGallery}
+    <!-- Gallery owns the whole viewport (its own sidebar + top bar). -->
+    {@render children()}
+{:else}
 <div class="flex h-screen w-full bg-[#f6f7f8] dark:bg-[#101922] text-slate-900 dark:text-slate-50 overflow-hidden {isResizing ? 'select-none' : ''}">
     <!-- Side Navigation -->
     <aside
@@ -81,7 +94,7 @@
 
                 <!-- Navigation Links -->
                 <nav class="flex flex-col gap-1">
-                    {#each navItems as item (item.href)}
+                    {#each visibleNavItems as item (item.href)}
                         {@const active = item.match(page.url.pathname)}
                         <a href={item.href} class="flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors group relative {active ? 'bg-[#137fec] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#283039]'}">
                             <span class="material-symbols-outlined {active ? 'filled' : ''} shrink-0">{item.icon}</span>
@@ -138,3 +151,4 @@
         </div>
     </main>
 </div>
+{/if}

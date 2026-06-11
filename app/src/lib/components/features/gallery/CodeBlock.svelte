@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
   import { Icon } from '$lib/components/ui';
+  import { copyText } from '$lib/utils/clipboard';
 
   interface Props {
     code: string;
@@ -12,14 +13,10 @@
   let timer: ReturnType<typeof setTimeout> | null = null;
 
   async function copy() {
-    try {
-      await navigator.clipboard.writeText(code);
-      copied = true;
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(() => (copied = false), 1500);
-    } catch (e) {
-      console.error('Copy failed:', e);
-    }
+    if (!(await copyText(code))) return;
+    copied = true;
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => (copied = false), 1500);
   }
 
   onDestroy(() => {

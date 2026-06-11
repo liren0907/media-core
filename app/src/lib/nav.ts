@@ -16,6 +16,7 @@ export const navItems: NavItem[] = [
     { href: '/analysis',  icon: 'query_stats',           label: 'Analysis',  title: 'Media Analysis',  match: (p) => p.startsWith('/analysis') },
     { href: '/processing',icon: 'conversion_path',       label: 'Processing',title: 'Processing',      match: (p) => p.startsWith('/processing') },
     { href: '/camera',    icon: 'photo_camera',          label: 'Camera',    title: 'Camera Capture',  match: (p) => p.startsWith('/camera') },
+    { href: '/audio',     icon: 'mic',                   label: 'Audio',     title: 'Audio Tools',     match: (p) => p.startsWith('/audio') },
     { href: '/benchmark', icon: 'speed',                 label: 'Benchmark', title: 'Benchmark',       match: (p) => p.startsWith('/benchmark') },
     { href: '/dedup',     icon: 'fingerprint',           label: 'Dedup',     title: 'Deduplication',   match: (p) => p.startsWith('/dedup') },
     { href: '/demo-360',  icon: 'panorama_photosphere',  label: '360° Demo', title: '360° Demo',       match: (p) => p.startsWith('/demo-360') },

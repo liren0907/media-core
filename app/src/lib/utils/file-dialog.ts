@@ -1,4 +1,4 @@
-import { open } from '@tauri-apps/plugin-dialog';
+import { open, save } from '@tauri-apps/plugin-dialog';
 
 interface FileFilter {
   name: string;
@@ -18,4 +18,9 @@ export async function selectDirectory(): Promise<string | null> {
 export async function selectFiles(filters: FileFilter[]): Promise<string[] | null> {
   const result = await open({ filters, multiple: true });
   return result ? (result as string[]) : null;
+}
+
+export async function saveFile(filters: FileFilter[], defaultPath?: string): Promise<string | null> {
+  const result = await save({ filters, defaultPath });
+  return result ?? null;
 }

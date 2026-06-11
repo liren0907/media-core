@@ -1,6 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod asr;
 mod commands;
 mod db;
 mod handlers;
@@ -92,6 +93,19 @@ fn main() {
             commands::dedup::trash_files,
             commands::dedup::add_files_as_target,
             commands::dedup::cancel_dedup,
+            // Audio commands
+            commands::audio::save_audio_recording,
+            commands::audio::list_audio_recordings,
+            commands::audio::delete_audio_recording,
+            commands::audio::rename_audio_recording,
+            commands::audio::get_recording_info,
+            commands::audio::get_audio_metadata,
+            // ASR commands
+            commands::asr::list_asr_models,
+            commands::asr::download_asr_model,
+            commands::asr::transcribe_audio,
+            commands::asr::cancel_asr,
+            commands::asr::save_text_file,
         ])
         .on_window_event(|app_handle, event| {
             if let tauri::WindowEvent::Destroyed = event {

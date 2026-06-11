@@ -46,6 +46,24 @@ export interface SystemMetricsEvent {
   timestamp: number;
 }
 
+export interface AsrProgressEvent {
+  kind: 'progress' | 'segment' | 'complete';
+  progress: number | null;
+  message: string | null;
+  segmentIndex: number | null;
+  startSeconds: number | null;
+  endSeconds: number | null;
+  text: string | null;
+}
+
+export interface AsrModelProgressEvent {
+  model: string;
+  downloadedBytes: number;
+  totalBytes: number | null;
+  percent: number | null;
+  done: boolean;
+}
+
 // ============================================================================
 // EVENT NAMES
 // ============================================================================
@@ -56,6 +74,8 @@ export const EVENTS = {
   STREAM_STATUS: 'stream:status',
   SYSTEM_METRICS: 'system:metrics',
   RTSP_STATUS: 'rtsp-status',
+  ASR_PROGRESS: 'asr:progress',
+  ASR_MODEL_PROGRESS: 'asr:model-progress',
 } as const;
 
 // ============================================================================
@@ -102,6 +122,28 @@ export async function onSystemMetrics(
   callback: (event: SystemMetricsEvent) => void
 ): Promise<UnlistenFn> {
   return listen<SystemMetricsEvent>(EVENTS.SYSTEM_METRICS, (event) => {
+    callback(event.payload);
+  });
+}
+
+/**
+ * Listen for ASR transcription progress / live segment events
+ */
+export async function onAsrProgress(
+  callback: (event: AsrProgressEvent) => void
+): Promise<UnlistenFn> {
+  return listen<AsrProgressEvent>(EVENTS.ASR_PROGRESS, (event) => {
+    callback(event.payload);
+  });
+}
+
+/**
+ * Listen for whisper model download progress events
+ */
+export async function onAsrModelProgress(
+  callback: (event: AsrModelProgressEvent) => void
+): Promise<UnlistenFn> {
+  return listen<AsrModelProgressEvent>(EVENTS.ASR_MODEL_PROGRESS, (event) => {
     callback(event.payload);
   });
 }

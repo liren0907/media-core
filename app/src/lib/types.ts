@@ -235,3 +235,39 @@ export interface DedupCompareProgressEvent {
   total: number;
   matchesFound: number;
 }
+
+// -- Audio --
+
+export interface RecordingInfo {
+  filename: string;
+  filePath: string;
+  sizeBytes: number;
+  sizeKb: number;
+  sizeMb: number;
+  createdTimestamp: number;
+  createdDate: string;
+}
+
+export interface AudioMetadata {
+  durationSeconds: number;
+  sampleRate: number;
+  bitrate: number;
+  channels: number;
+  srtSegments: number | null;
+  srtSpeechDuration: number | null;
+  srtAvgSegmentDuration: number | null;
+}
+
+export interface AsrModelInfo {
+  name: string;
+  file: string;
+  approxMb: number;
+  downloaded: boolean;
+  sizeBytes: number | null;
+}
+
+export interface TranscriptionResult {
+  text: string;
+  srt: string;
+  json: unknown;
+}

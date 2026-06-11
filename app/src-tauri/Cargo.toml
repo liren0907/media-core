@@ -35,6 +35,10 @@ chrono = "0.4.38"
 lazy_static = "1.4.0"
 media_core = { path = "crates/media-core" }
 annotation = { path = "crates/annotation" }
+audio-core = { path = "crates/audio-core" }
+whisper-rs = { path = "crates/whisper-rs" }
+symphonia = { version = "0.5.4", features = ["mp3", "aac", "isomp4"] }
+reqwest = { version = "0.12", features = ["blocking", "rustls-tls"] }
 thiserror = "1.0.63"
 log = "0.4.22"
 simple_logger = "5.0.0"

@@ -1,0 +1,129 @@
+// Prevents additional console window on Windows in release, DO NOT REMOVE!!
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+mod asr;
+mod commands;
+mod db;
+mod graph;
+mod handlers;
+mod hasher;
+mod matcher;
+mod scanner;
+
+
+use annotation::VideoAnnotation;
+use tauri::Manager;
+
+fn main() {
+    tauri::Builder::default()
+        .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_dialog::init())
+        .invoke_handler(tauri::generate_handler![
+            commands::video::get_video_info,
+            commands::video::read_video_file,
+            commands::video::read_image_file,
+            commands::video::open_file_dialog,
+            commands::video::extract_all_frames_ffmpeg,
+            commands::video::extract_frames_ffmpeg_interval,
+            commands::annotation::read_annotation_file,
+            commands::annotation::start_video_annotation,
+            commands::rtsp::process_rtsp_config,
+            commands::rtsp::validate_config,
+            commands::rtsp::start_rtsp_capture,
+            commands::hls::get_hls_status,
+            commands::hls::start_hls_playback,
+            commands::hls::start_direct_playback,
+            commands::hls::start_multiple_hls_playback,
+            // Analysis commands
+            commands::analysis::analyze_similarity,
+            commands::analysis::detect_motion,
+            // Metadata commands
+            commands::metadata::get_media_metadata,
+            commands::metadata::check_media_support,
+            // Camera commands
+            commands::camera::get_available_cameras,
+            commands::camera::check_camera_access,
+            commands::camera::capture_camera_snapshot,
+            // Pipeline executor commands
+            commands::pipeline::execute_metadata_pipeline,
+            commands::pipeline::execute_motion_pipeline,
+            commands::pipeline::execute_similarity_pipeline,
+            commands::pipeline::execute_compare_pipeline,
+            commands::pipeline::execute_extract_frames_pipeline,
+            commands::pipeline::execute_hls_pipeline,
+            commands::pipeline::execute_extract_to_disk_pipeline,
+            commands::pipeline::execute_camera_pipeline,
+            commands::pipeline::execute_full_analysis_pipeline,
+            commands::pipeline::execute_batch_pipeline,
+            // System metrics commands
+            commands::system::get_system_metrics,
+            commands::system::get_stream_stats,
+            commands::system::get_throughput_history,
+            commands::system::record_bytes_processed,
+            commands::system::record_frames_processed,
+            commands::system::reset_metrics,
+            // Event system commands
+            commands::events::start_metrics_stream,
+            commands::events::stop_metrics_stream,
+            commands::events::is_metrics_streaming,
+            commands::events::start_pipeline_tracking,
+            commands::events::cancel_pipeline,
+            commands::events::is_pipeline_cancelled,
+            commands::events::finish_pipeline_tracking,
+            commands::events::get_active_pipelines,
+            commands::events::emit_progress,
+            // Benchmark commands
+            commands::benchmark::run_benchmark,
+            commands::benchmark::run_benchmark_suite,
+            // Hardware acceleration commands
+            commands::system::get_hardware_accel_config,
+            commands::system::detect_hardware_capabilities,
+            // Dedup commands
+            commands::dedup::add_scan_source,
+            commands::dedup::get_scan_sources,
+            commands::dedup::delete_scan_source,
+            commands::dedup::get_source_tree,
+            commands::dedup::start_scan,
+            commands::dedup::start_fingerprinting,
+            commands::dedup::compare_source,
+            commands::dedup::compare_targets,
+            commands::dedup::set_source_role,
+            commands::dedup::get_duplicate_groups,
+            commands::dedup::get_files_by_source,
+            commands::dedup::get_dedup_stats,
+            commands::dedup::trash_files,
+            commands::dedup::add_files_as_target,
+            commands::dedup::cancel_dedup,
+            // Audio commands
+            commands::audio::save_audio_recording,
+            commands::audio::list_audio_recordings,
+            commands::audio::delete_audio_recording,
+            commands::audio::rename_audio_recording,
+            commands::audio::get_recording_info,
+            commands::audio::get_audio_metadata,
+            // ASR commands
+            commands::asr::list_asr_models,
+            commands::asr::download_asr_model,
+            commands::asr::transcribe_audio,
+            commands::asr::cancel_asr,
+            commands::asr::save_text_file,
+            // Composer graph commands
+            commands::graph::list_graph_methods,
+            commands::graph::validate_graph,
+            commands::graph::execute_graph,
+            commands::graph::cancel_graph_run,
+        ])
+        .on_window_event(|app_handle, event| {
+            if let tauri::WindowEvent::Destroyed = event {
+                if let Err(e) = VideoAnnotation::cleanup_tmp_files() {
+                    eprintln!("Failed to cleanup temporary files: {}", e);
+                }
+                // Release SurrealDB LOCK file
+                if let Ok(dir) = app_handle.path().app_data_dir() {
+                    db::cleanup_lock(&dir);
+                }
+            }
+        })
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
+}

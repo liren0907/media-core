@@ -1,0 +1,247 @@
+<script lang="ts">
+  import { Panel, StatCard, StatusBadge, ProgressBar, ErrorAlert, EmptyState, ToggleSwitch, RunButton, FormField } from '$lib/components/ui';
+  import { FileMultiPicker } from '$lib/components/form';
+  import { getFileName } from '$lib/utils/format';
+  import {
+    executeBatchPipeline,
+    getActivePipelines,
+    cancelPipeline,
+    onPipelineProgress,
+    onPipelineComplete,
+    type PipelineProgressEvent,
+    type PipelineCompleteEvent,
+    type BatchProcessConfig,
+    type BatchProcessResult,
+    type BatchItemResult,
+  } from '$lib/events';
+  import type { UnlistenFn } from '@tauri-apps/api/event';
+
+  // Config state
+  let selectedFiles: string[] = $state([]);
+  let operation = $state<'metadata' | 'motion' | 'hls' | 'extract'>('metadata');
+  let parallel = $state(false);
+  let isRunning = $state(false);
+  let error = $state('');
+
+  // Progress state
+  let activePipelines: string[] = $state([]);
+  let currentProgress = $state<PipelineProgressEvent | null>(null);
+
+  // Results state
+  let batchResult = $state<BatchProcessResult | null>(null);
+  let completionEvent = $state<PipelineCompleteEvent | null>(null);
+
+  async function runBatch() {
+    if (selectedFiles.length === 0) {
+      error = 'Select files first';
+      return;
+    }
+
+    isRunning = true;
+    error = '';
+    batchResult = null;
+    completionEvent = null;
+    currentProgress = null;
+
+    try {
+      const config: BatchProcessConfig = {
+        filePaths: selectedFiles,
+        operation,
+        parallel,
+      };
+      batchResult = await executeBatchPipeline(config);
+    } catch (e) {
+      error = `Batch processing failed: ${e}`;
+    }
+
+    isRunning = false;
+  }
+
+  async function handleCancel(pipelineId: string) {
+    try {
+      await cancelPipeline(pipelineId);
+    } catch (e) {
+      console.error('Failed to cancel pipeline:', e);
+    }
+  }
+
+  // Event listeners
+  $effect(() => {
+    let unlistenProgress: UnlistenFn | undefined;
+    let unlistenComplete: UnlistenFn | undefined;
+
+    // Poll active pipelines
+    const fetchPipelines = async () => {
+      try { activePipelines = await getActivePipelines(); } catch { /* ignore */ }
+    };
+    fetchPipelines();
+    const pollInterval = setInterval(fetchPipelines, 3000);
+
+    // Subscribe to progress events
+    onPipelineProgress((event) => {
+      currentProgress = event;
+    }).then((fn) => { unlistenProgress = fn; });
+
+    onPipelineComplete((event) => {
+      completionEvent = event;
+      currentProgress = null;
+      fetchPipelines();
+    }).then((fn) => { unlistenComplete = fn; });
+
+    return () => {
+      clearInterval(pollInterval);
+      unlistenProgress?.();
+      unlistenComplete?.();
+    };
+  });
+
+  let progressPercent = $derived(currentProgress?.progressPercent ?? 0);
+
+  const operationLabels: Record<string, string> = {
+    metadata: 'Metadata Extraction',
+    motion: 'Motion Detection',
+    hls: 'HLS Conversion',
+    extract: 'Frame Extraction',
+  };
+</script>
+
+    <!-- Stats Strip -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatCard label="Files" icon="folder_open" iconColor="text-[#137fec]" value="{String(selectedFiles.length)}" sub="selected" />
+        <StatCard label="Operation" icon="settings" iconColor="text-purple-500" value={operationLabels[operation]} />
+        <StatCard label="Active Jobs" icon="conversion_path" iconColor="text-orange-500" value="{String(activePipelines.length)}" />
+        <StatCard label="Progress" icon="trending_up" iconColor="text-green-500" value="{progressPercent.toFixed(0)}%">
+            {#snippet extra()}
+                <ProgressBar percent={progressPercent} />
+            {/snippet}
+        </StatCard>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        <!-- Config Panel -->
+        <Panel title="Batch Configuration" icon="settings">
+            {#snippet actions()}
+                <RunButton loading={isRunning} disabled={selectedFiles.length === 0} onclick={runBatch} />
+            {/snippet}
+            <div class="p-3 flex flex-col gap-3">
+                <!-- File selection -->
+                <FileMultiPicker bind:files={selectedFiles} label="Files" filters={[{ name: 'Media', extensions: ['mp4', 'avi', 'mkv', 'mov', 'webm', 'jpg', 'jpeg', 'png', 'bmp'] }]} />
+
+                <!-- Operation -->
+                <FormField label="Operation" id="operation">
+                    <select id="operation" bind:value={operation} class="bg-white dark:bg-[#111418] border border-slate-200 dark:border-[#2a3441] rounded px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-[#137fec]">
+                        <option value="metadata">Metadata Extraction</option>
+                        <option value="motion">Motion Detection</option>
+                        <option value="hls">HLS Conversion</option>
+                        <option value="extract">Frame Extraction</option>
+                    </select>
+                </FormField>
+
+                <!-- Parallel toggle -->
+                <ToggleSwitch bind:checked={parallel} label="Parallel Processing" />
+
+                {#if error}
+                    <ErrorAlert message={error} />
+                {/if}
+            </div>
+        </Panel>
+
+        <!-- Active Jobs + Results -->
+        <div class="lg:col-span-2 flex flex-col gap-3">
+            <!-- Progress -->
+            {#if currentProgress}
+                <Panel title="Current Job" icon="pending">
+                    <div class="p-3 flex flex-col gap-2">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="font-mono text-slate-500">{currentProgress.pipelineId.slice(0, 8)}...</span>
+                            <StatusBadge status={currentProgress.hasError ? 'error' : 'active'} />
+                        </div>
+                        <ProgressBar percent={currentProgress.progressPercent} />
+                        <div class="flex justify-between text-meta">
+                            <span>{currentProgress.stepName}</span>
+                            <span>{currentProgress.stepIndex + 1} / {currentProgress.totalSteps}</span>
+                        </div>
+                        {#if currentProgress.message}
+                            <p class="text-[10px] text-slate-500">{currentProgress.message}</p>
+                        {/if}
+                    </div>
+                </Panel>
+            {/if}
+
+            <!-- Active Pipelines -->
+            <Panel title="Active Pipelines" icon="conversion_path">
+                {#snippet actions()}
+                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-500 font-bold">{activePipelines.length}</span>
+                {/snippet}
+                <div class="p-3">
+                    {#if activePipelines.length > 0}
+                        <div class="flex flex-col gap-1.5">
+                            {#each activePipelines as pipelineId}
+                                <div class="flex items-center justify-between px-2 py-1.5 rounded bg-slate-50 dark:bg-[#1f2937]/50 border border-slate-100 dark:border-[#2a3441]">
+                                    <div class="flex items-center gap-2">
+                                        <StatusBadge status="active" />
+                                        <span class="text-xs font-mono text-slate-700 dark:text-slate-300 truncate max-w-[200px]">{pipelineId}</span>
+                                    </div>
+                                    <button onclick={() => handleCancel(pipelineId)} class="px-2 py-0.5 text-[10px] font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors">Cancel</button>
+                                </div>
+                            {/each}
+                        </div>
+                    {:else}
+                        <div class="text-center text-caption py-4">No active pipelines</div>
+                    {/if}
+                </div>
+            </Panel>
+
+            <!-- Results -->
+            <Panel title="Results" icon="task_alt">
+                <div class="p-3">
+                    {#if batchResult}
+                        <div class="flex flex-col gap-3">
+                            <!-- Summary -->
+                            <div class="grid grid-cols-3 gap-2">
+                                <div class="p-2 rounded bg-slate-50 dark:bg-[#1f2937]/50 border border-slate-100 dark:border-[#2a3441] text-center">
+                                    <div class="text-lg font-bold text-slate-900 dark:text-white">{batchResult.total}</div>
+                                    <div class="text-[10px] text-slate-500">Total</div>
+                                </div>
+                                <div class="p-2 rounded bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-900/30 text-center">
+                                    <div class="text-lg font-bold text-green-600 dark:text-green-400">{batchResult.succeeded}</div>
+                                    <div class="text-[10px] text-green-600 dark:text-green-400">Succeeded</div>
+                                </div>
+                                <div class="p-2 rounded bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 text-center">
+                                    <div class="text-lg font-bold text-red-600 dark:text-red-400">{batchResult.failed}</div>
+                                    <div class="text-[10px] text-red-600 dark:text-red-400">Failed</div>
+                                </div>
+                            </div>
+
+                            <!-- Individual results -->
+                            <table class="w-full text-xs font-mono">
+                                <thead class="text-slate-500 border-b border-slate-100 dark:border-[#2a3441]">
+                                    <tr>
+                                        <th class="px-3 py-1.5 font-medium text-left">FILE</th>
+                                        <th class="px-3 py-1.5 font-medium text-left">STATUS</th>
+                                        <th class="px-3 py-1.5 font-medium text-left">DETAILS</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 dark:divide-[#2a3441]">
+                                    {#each batchResult.results as item}
+                                        <tr class="hover:bg-slate-50 dark:hover:bg-[#1f2937]/50">
+                                            <td class="px-3 py-1.5 truncate max-w-[200px]" title={item.filePath}>{getFileName(item.filePath)}</td>
+                                            <td class="px-3 py-1.5"><StatusBadge status={item.success ? 'active' : 'error'} /></td>
+                                            <td class="px-3 py-1.5 text-slate-500 truncate max-w-[200px]">{item.error || 'OK'}</td>
+                                        </tr>
+                                    {/each}
+                                </tbody>
+                            </table>
+                        </div>
+                    {:else if completionEvent}
+                        <div class="text-center py-4">
+                            <div class="text-xs text-green-600 dark:text-green-400 font-bold">Batch Complete</div>
+                            <div class="text-[10px] text-slate-500 mt-1">{completionEvent.succeeded}/{completionEvent.total} succeeded</div>
+                        </div>
+                    {:else}
+                        <div class="text-center text-caption py-6">Run a batch to see results here</div>
+                    {/if}
+                </div>
+            </Panel>
+        </div>
+    </div>

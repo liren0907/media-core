@@ -271,3 +271,159 @@ export interface TranscriptionResult {
   srt: string;
   json: unknown;
 }
+
+// -- Composer graph --
+//
+// Mirrors src-tauri/src/graph/. `list_graph_methods` is the single source of truth
+// for what can be placed and what can be tuned: nothing here hard-codes a method id.
+
+/** A slot on the MediaContext blackboard — the graph's port types. */
+export type GraphSlot =
+  | 'source'
+  | 'metadata'
+  | 'analysis'
+  | 'extractedFrames'
+  | 'hlsResult'
+  | 'annotationResult'
+  | 'videoProcessResult'
+  | 'processResult';
+
+export type GraphSourceKind = 'file' | 'stream' | 'camera';
+export type GraphNodeKind = 'source' | 'method' | 'sink';
+export type GraphWriteMode = 'replace' | 'merge' | 'append';
+export type GraphCategory =
+  | 'source'
+  | 'extract'
+  | 'analysis'
+  | 'convert'
+  | 'annotate'
+  | 'process'
+  | 'report';
+export type GraphParamKind = 'bool' | 'int' | 'float' | 'string' | 'path' | 'dir' | 'enum';
+
+export interface GraphSlotRef {
+  slot: GraphSlot;
+  /** Only meaningful for `source`. Absent = no constraint. */
+  accepts?: GraphSourceKind[];
+  /** The step still runs when nothing supplies this slot. */
+  optional: boolean;
+  /** Setting this parameter removes the need for an upstream supplier. */
+  satisfiedByParam?: string;
+}
+
+export interface GraphSlotWrite {
+  slot: GraphSlot;
+  mode: GraphWriteMode;
+}
+
+export interface GraphParamOption {
+  value: string;
+  label: string;
+}
+
+export interface GraphParamSpec {
+  key: string;
+  kind: GraphParamKind;
+  label: string;
+  default?: boolean | number | string;
+  required: boolean;
+  options?: GraphParamOption[];
+  min?: number;
+  max?: number;
+  /** Present = this parameter can inherit from an upstream node's output. */
+  fallbackFrom?: string;
+  hint?: string;
+}
+
+export interface GraphMethodMeta {
+  id: string;
+  label: string;
+  kind: GraphNodeKind;
+  category: GraphCategory;
+  description: string;
+  group?: string;
+  reads: GraphSlotRef[];
+  writes: GraphSlotWrite[];
+  params: GraphParamSpec[];
+  requiresFfmpeg: boolean;
+}
+
+export type GraphNodeParams = Record<string, unknown>;
+
+export interface GraphRecipeNode {
+  nodeId: string;
+  kind: GraphNodeKind;
+  nodeRef: string;
+  params?: GraphNodeParams;
+}
+
+export interface GraphRecipeEdge {
+  from: string;
+  to: string;
+}
+
+export interface GraphRecipe {
+  label: string;
+  nodes: GraphRecipeNode[];
+  edges: GraphRecipeEdge[];
+}
+
+export interface GraphVerdict {
+  valid: boolean;
+  reason?: string;
+  warnings: string[];
+  order: string[];
+}
+
+export interface GraphHlsResult {
+  outputDir: string;
+  playlistPath: string;
+  segmentCount: number;
+  success: boolean;
+}
+
+export interface GraphAnnotationResult {
+  outputPath: string;
+  annotationType: string;
+  success: boolean;
+}
+
+export interface GraphVideoProcessResult {
+  outputDir: string;
+  framesExtracted: number;
+  extractionMode: string;
+  saveMode: string;
+  success: boolean;
+}
+
+export interface GraphProcessResult {
+  filesProcessed: number;
+  filesFailed: number;
+  totalSizeBytes: number;
+  outputDir: string;
+  processingMode: string;
+  success: boolean;
+}
+
+export interface GraphRunResult {
+  runId: string;
+  metadata: MediaMetadata | null;
+  analysis: AnalysisResult | null;
+  /** Frame payloads are not returned — only how many were produced. */
+  extractedFrameCount: number;
+  hlsResult: GraphHlsResult | null;
+  annotationResult: GraphAnnotationResult | null;
+  videoProcessResult: GraphVideoProcessResult | null;
+  processResult: GraphProcessResult | null;
+  warnings: string[];
+}
+
+export interface GraphProgressEvent {
+  runId: string;
+  nodeId: string;
+  nodeRef: string;
+  stepIndex: number;
+  totalSteps: number;
+  phase: 'start' | 'done';
+  progressPercent: number;
+}

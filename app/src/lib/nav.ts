@@ -15,6 +15,7 @@ export const navItems: NavItem[] = [
     { href: '/streams',   icon: 'videocam',              label: 'Streams',   title: 'Streams',         match: (p) => p.startsWith('/streams') },
     { href: '/analysis',  icon: 'query_stats',           label: 'Analysis',  title: 'Media Analysis',  match: (p) => p.startsWith('/analysis') },
     { href: '/processing',icon: 'conversion_path',       label: 'Processing',title: 'Processing',      match: (p) => p.startsWith('/processing') },
+    { href: '/composer',  icon: 'account_tree',          label: 'Composer',  title: 'Pipeline Composer', match: (p) => p.startsWith('/composer') },
     { href: '/camera',    icon: 'photo_camera',          label: 'Camera',    title: 'Camera Capture',  match: (p) => p.startsWith('/camera') },
     { href: '/audio',     icon: 'mic',                   label: 'Audio',     title: 'Audio Tools',     match: (p) => p.startsWith('/audio') },
     { href: '/benchmark', icon: 'speed',                 label: 'Benchmark', title: 'Benchmark',       match: (p) => p.startsWith('/benchmark') },

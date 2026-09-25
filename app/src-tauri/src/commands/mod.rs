@@ -14,3 +14,4 @@ pub mod benchmark;
 pub mod dedup;
 pub mod audio;
 pub mod asr;
+pub mod graph;

@@ -102,6 +102,8 @@ import {
   VolumeX,
   Workflow,
   X,
+  ZoomIn,
+  ZoomOut,
   Zap
 } from "@lucide/svelte";
 import type { Component } from "svelte";
@@ -219,4 +221,6 @@ export const icons: Record<string, Component> = {
   volume_off: VolumeX,
   volume_up: Volume2,
   warning: TriangleAlert,
+  zoom_in: ZoomIn,
+  zoom_out: ZoomOut,
 };

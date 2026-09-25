@@ -4,6 +4,7 @@
 mod asr;
 mod commands;
 mod db;
+mod graph;
 mod handlers;
 mod hasher;
 mod matcher;
@@ -106,6 +107,11 @@ fn main() {
             commands::asr::transcribe_audio,
             commands::asr::cancel_asr,
             commands::asr::save_text_file,
+            // Composer graph commands
+            commands::graph::list_graph_methods,
+            commands::graph::validate_graph,
+            commands::graph::execute_graph,
+            commands::graph::cancel_graph_run,
         ])
         .on_window_event(|app_handle, event| {
             if let tauri::WindowEvent::Destroyed = event {

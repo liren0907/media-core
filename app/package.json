@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-    "tauri": "TAURI_DEV_WATCHER_IGNORE=src-tauri/crates/** tauri"
+    "tauri": "tauri"
   },
   "license": "MIT",
   "dependencies": {

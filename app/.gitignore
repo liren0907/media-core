@@ -23,13 +23,10 @@ pnpm-debug.log*
 
 # Tauri / Rust
 /target/
-/src-tauri/target/
 /src-tauri/.cargo/
 
 **/target/
 **/.git
-# Ignore nested git directory to prevent watcher loops
-src-tauri/crates/media-core/.git/
 
 
 # Generated media / temp

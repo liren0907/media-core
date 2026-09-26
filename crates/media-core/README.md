@@ -153,3 +153,14 @@ Place your `config.json` file in the project root. The `docker-compose.yml` file
 - `rfd`: File dialog functionality
 - `m3u8-rs`: M3U8 playlist handling
 - External dependency on FFmpeg for stream handling
+
+## Build Profiles
+
+This crate is a member of the repository's Cargo workspace, so it no longer carries its own
+`[profile.*]` sections — Cargo ignores profiles declared by non-root members. The previous
+`[profile.release]` (`lto = "fat"`, `panic = "abort"`, …) and `[profile.dev]` settings were
+removed when the crate moved to `crates/media-core/`.
+
+If profiles are needed, add them to the workspace root `Cargo.toml`, but do **not** set
+`panic = "abort"` there: the app's composer runner (`app/src-tauri/src/commands/graph.rs`) relies
+on `JoinHandle::join()` to catch a panicking step, and an abort would take the whole app down.

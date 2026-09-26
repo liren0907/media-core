@@ -57,7 +57,7 @@ path = "src/bin/metadata.rs"
 
 [dependencies]
 # Dependencies from media_core crate
-opencv = "0.93.5"
+opencv = { workspace = true }
 serde = { version = "1.0", features = ["derive"] }
 chrono = "0.4"
 rayon = "1.8"
@@ -76,21 +76,3 @@ thiserror = "2.0.17"
 rfd = "0.14.1"
 m3u8-rs = "5.0.4"
 tempfile = "3.8.0"
-
-# 🚀 PERFORMANCE OPTIMIZATION PROFILES
-[profile.release]
-# Maximum optimization for production builds
-opt-level = 3              # Maximum optimization
-debug = false              # No debug info (smaller binary)
-strip = true               # Strip symbols (even smaller binary)
-lto = "fat"               # Link-time optimization (slower build, faster runtime)
-codegen-units = 1         # Single codegen unit (better optimization)
-panic = "abort"           # Abort on panic (slightly faster)
-overflow-checks = false   # Disable overflow checks (faster math)
-
-[profile.dev]
-# Faster development builds
-opt-level = 1             # Some optimization for dev builds
-debug = true              # Keep debug info
-incremental = true        # Faster incremental builds
-split-debuginfo = "unpacked"  # Better debug experience on macOS

@@ -23,7 +23,7 @@ tauri-plugin-shell = "2.0.0-beta.8"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 image = "0.25.1"
-opencv = { version = "0.98", default-features = false, features = ["features2d", "highgui", "imgcodecs", "imgproc", "video", "videoio"] }
+opencv = { workspace = true }
 prettytable = "0.10.0"
 rfd = "0.15.0"
 anyhow = "1.0.82"
@@ -33,10 +33,10 @@ tempfile = "3.13.0"
 tauri-plugin-dialog = "2.2.0"
 chrono = "0.4.38"
 lazy_static = "1.4.0"
-media_core = { path = "crates/media-core" }
-annotation = { path = "crates/annotation" }
-audio-core = { path = "crates/audio-core" }
-whisper-rs = { path = "crates/whisper-rs" }
+media_core = { path = "../../crates/media-core" }
+annotation = { path = "../../crates/annotation" }
+audio-core = { path = "../../crates/audio-core" }
+whisper-rs = { path = "../../crates/whisper-rs" }
 symphonia = { version = "0.5.4", features = ["mp3", "aac", "isomp4"] }
 reqwest = { version = "0.12", features = ["blocking", "rustls-tls"] }
 thiserror = "1.0.63"

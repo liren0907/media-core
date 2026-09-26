@@ -1,0 +1,7 @@
+[workspace]
+resolver = "2"                   # virtual workspace defaults to "1"; keep the resolver the app has always used
+members = ["crates/*", "app/src-tauri"]
+exclude = ["crates/media-core/examples/media_core_app"]   # points at the old repo name, already broken
+
+[workspace.dependencies]
+opencv = { version = "0.98", default-features = false, features = ["features2d", "highgui", "imgcodecs", "imgproc", "video", "videoio"] }

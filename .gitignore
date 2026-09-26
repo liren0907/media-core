@@ -1,0 +1,10 @@
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Rust (the workspace target dir lives at the repo root)
+/target/
+
+# Claude Code
+.claude/

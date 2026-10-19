@@ -4,7 +4,7 @@
    * coordinate engine assumes exact heights, so CSS must not hold a second opinion.
    */
   import { Icon } from '$lib/components/ui';
-  import type { GraphCategory } from '$lib/types';
+  import type { GraphCategory, GraphIssue } from '$lib/types';
 
   interface Props {
     label: string;
@@ -16,6 +16,8 @@
     /** Currently executing — the run progress highlight. */
     active: boolean;
     requiresFfmpeg: boolean;
+    /** The validation message that belongs to this node, error first. */
+    issue?: GraphIssue | null;
     onselect: () => void;
   }
 
@@ -28,8 +30,11 @@
     selected,
     active,
     requiresFfmpeg,
+    issue = null,
     onselect,
   }: Props = $props();
+
+  const error = $derived(issue?.severity === 'error');
 
   // Tailwind cannot see class names composed at run time, so every variant is spelled
   // out in full here. (The app has been bitten by this before: a `${color}/20` built
@@ -46,13 +51,18 @@
   };
 </script>
 
+<!-- An error keeps its red frame while selected; the selection shows as the ring. -->
 <button
   onclick={onselect}
+  title={issue?.message}
   style="width: {width}px; height: {height}px;"
   class="node group text-left rounded-md border bg-white dark:bg-[#161e27] overflow-hidden transition-colors
-    {selected
-    ? 'border-[#137fec] ring-1 ring-[#137fec]'
-    : 'border-slate-200 dark:border-[#2a3441] hover:border-slate-300 dark:hover:border-slate-600'}
+    {error
+    ? 'border-red-500 dark:border-red-500'
+    : selected
+      ? 'border-[#137fec]'
+      : 'border-slate-200 dark:border-[#2a3441] hover:border-slate-300 dark:hover:border-slate-600'}
+    {selected ? 'ring-1 ring-[#137fec]' : ''}
     {active ? 'node-active' : ''}"
 >
   <div class="flex items-center gap-1.5 px-2 h-[34px]">
@@ -60,8 +70,17 @@
     <span class="flex-1 min-w-0 truncate text-[11px] font-medium text-slate-900 dark:text-white">
       {label}
     </span>
+    <!-- Not a validation finding, so not a warning sign: just a note on what it needs. -->
     {#if requiresFfmpeg}
-      <Icon name="warning" class="shrink-0 text-[12px] text-amber-500" />
+      <span class="shrink-0 flex" title="Needs ffmpeg">
+        <Icon name="info" class="text-[12px] text-slate-400" />
+      </span>
+    {/if}
+    {#if issue}
+      <Icon
+        name="warning"
+        class="shrink-0 text-[12px] {error ? 'text-red-500' : 'text-amber-500'}"
+      />
     {/if}
   </div>
 

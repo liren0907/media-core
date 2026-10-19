@@ -3,11 +3,24 @@
 //! The frontend hard-codes no method names: `list_graph_methods` is the single
 //! source of truth for what can be placed on the canvas and what can be tuned.
 
-use tauri::command;
+use std::path::PathBuf;
+
+use tauri::{command, AppHandle, Manager};
 
 use crate::graph::manifest::{MethodMeta, METHODS};
-use crate::graph::types::{GraphRecipe, GraphRunResult, GraphVerdict};
-use crate::graph::{runner, validate};
+use crate::graph::types::{GraphListItem, GraphRecipe, GraphRunResult, GraphVerdict, SavedGraph};
+use crate::graph::{runner, store, validate};
+
+/// Saved graphs live under the app data dir, next to the recordings and the dedup
+/// database.
+fn graphs_dir(app: &AppHandle) -> Result<PathBuf, String> {
+    Ok(app
+        .path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?
+        .join("composer")
+        .join("graphs"))
+}
 
 /// Everything the canvas needs to build its picker and its inspector.
 #[command]
@@ -52,4 +65,31 @@ pub async fn execute_graph(
 #[command]
 pub async fn cancel_graph_run(run_id: String) -> Result<bool, String> {
     Ok(runner::cancel_run(&run_id))
+}
+
+/// Saved graphs, newest first, each judged as it stands now.
+#[command]
+pub async fn list_graphs(app: AppHandle) -> Result<Vec<GraphListItem>, String> {
+    store::list(&graphs_dir(&app)?)
+}
+
+#[command]
+pub async fn load_graph(app: AppHandle, id: String) -> Result<GraphRecipe, String> {
+    store::load(&graphs_dir(&app)?, &id)
+}
+
+/// Without an id this saves a new graph; with one it overwrites that graph. Only a
+/// graph that could not be read back is refused — one that cannot run yet is saved.
+#[command]
+pub async fn save_graph(
+    app: AppHandle,
+    id: Option<String>,
+    recipe: GraphRecipe,
+) -> Result<SavedGraph, String> {
+    store::save(&graphs_dir(&app)?, id.as_deref(), recipe)
+}
+
+#[command]
+pub async fn delete_graph(app: AppHandle, id: String) -> Result<(), String> {
+    store::delete(&graphs_dir(&app)?, &id)
 }

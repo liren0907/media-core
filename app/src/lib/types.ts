@@ -378,7 +378,37 @@ export interface GraphVerdict {
   valid: boolean;
   reason?: string;
   warnings: string[];
+  /** The same messages as `reason` and `warnings`, each with the node it belongs to. */
+  issues: GraphIssue[];
   order: string[];
+}
+
+export interface GraphIssue {
+  severity: 'error' | 'warning';
+  /** The node it is about; absent when it is about the graph as a whole. */
+  nodeId?: string;
+  message: string;
+}
+
+/** One saved graph in the Open list; runnability is judged afresh on every listing. */
+export interface GraphListItem {
+  id: string;
+  label: string;
+  nodeCount: number;
+  /** When it was last saved, ms since the Unix epoch. */
+  modifiedMs: number;
+  valid: boolean;
+  reason?: string;
+  /** The file cannot be read back; the row can only be deleted. */
+  broken?: string;
+}
+
+export interface SavedGraph {
+  id: string;
+  /** What was actually written — the canvas takes its parameters back from this. */
+  recipe: GraphRecipe;
+  /** Undeclared parameters dropped on the way. */
+  removedParams: number;
 }
 
 export interface GraphHlsResult {

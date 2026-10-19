@@ -10,12 +10,15 @@
 //! linearisation of the picture, and the picture is what the user drew. Anything
 //! ancestry allows, execution order also allows, so this is the stricter and more
 //! honest of the two readings.
+//!
+//! Every message `validate` produces also says which node it is about (`issues`), so
+//! the canvas can mark that node. A missing input belongs to the node that needs it.
 
 use std::collections::{HashMap, HashSet};
 use std::sync::OnceLock;
 
 use super::manifest::{self, MethodMeta, ParamKind, Slot, SourceKind, WriteMode};
-use super::types::{GraphRecipe, GraphVerdict, NodeParams};
+use super::types::{GraphIssue, GraphRecipe, GraphVerdict, NodeParams};
 
 const KINDS: [&str; 3] = ["source", "method", "sink"];
 
@@ -141,26 +144,36 @@ pub fn validate(recipe: &GraphRecipe) -> GraphVerdict {
 
     // ---- G3: every node resolves to a manifest entry, params are well formed ----
     let mut metas: HashMap<&str, &'static MethodMeta> = HashMap::new();
-    let mut param_warnings: Vec<String> = Vec::new();
+    let mut param_warnings: Vec<GraphIssue> = Vec::new();
     for node in &recipe.nodes {
         let Some(meta) = manifest::find(&node.node_ref) else {
-            return GraphVerdict::invalid(format!(
-                "Node '{}' refers to an unknown method '{}'",
-                node.node_id, node.node_ref
-            ));
+            return GraphVerdict::invalid_at(
+                &node.node_id,
+                format!(
+                    "Node '{}' refers to an unknown method '{}'",
+                    node.node_id, node.node_ref
+                ),
+            );
         };
         if meta.kind.as_str() != node.kind {
-            return GraphVerdict::invalid(format!(
-                "Node '{}' is stored as '{}' but '{}' is a {}",
-                node.node_id,
-                node.kind,
-                node.node_ref,
-                meta.kind.as_str()
-            ));
+            return GraphVerdict::invalid_at(
+                &node.node_id,
+                format!(
+                    "Node '{}' is stored as '{}' but '{}' is a {}",
+                    node.node_id,
+                    node.kind,
+                    node.node_ref,
+                    meta.kind.as_str()
+                ),
+            );
         }
         match check_params(meta, &node.params()) {
-            Ok(warnings) => param_warnings.extend(warnings),
-            Err(reason) => return GraphVerdict::invalid(reason),
+            Ok(warnings) => param_warnings.extend(
+                warnings
+                    .into_iter()
+                    .map(|w| GraphIssue::warning(Some(&node.node_id), w)),
+            ),
+            Err(reason) => return GraphVerdict::invalid_at(&node.node_id, reason),
         }
         metas.insert(node.node_id.as_str(), meta);
     }
@@ -184,29 +197,33 @@ pub fn validate(recipe: &GraphRecipe) -> GraphVerdict {
     }
     for node in &recipe.nodes {
         if node.kind == "source" && recipe.in_degree(&node.node_id) > 0 {
-            return GraphVerdict::invalid(format!(
-                "Source node '{}' cannot have an input",
-                node.node_id
-            ));
+            return GraphVerdict::invalid_at(
+                &node.node_id,
+                format!("Source node '{}' cannot have an input", node.node_id),
+            );
         }
         if node.kind == "sink" && recipe.out_degree(&node.node_id) > 0 {
-            return GraphVerdict::invalid(format!(
-                "Sink node '{}' cannot have an output",
-                node.node_id
-            ));
+            return GraphVerdict::invalid_at(
+                &node.node_id,
+                format!("Sink node '{}' cannot have an output", node.node_id),
+            );
         }
     }
 
     // ---- G7: one node per method -------------------------------------------
     // The blackboard holds one value per slot, so a second copy of the same method
-    // would silently overwrite the first. A v1 restriction, recorded as such.
+    // would silently overwrite the first. A v1 restriction, recorded as such. The error
+    // belongs to the second copy: the first one is fine on its own.
     let mut refs: HashSet<&str> = HashSet::new();
     for node in &recipe.nodes {
         if !refs.insert(node.node_ref.as_str()) {
-            return GraphVerdict::invalid(format!(
-                "'{}' appears more than once; each method can only be used once per graph",
-                node.node_ref
-            ));
+            return GraphVerdict::invalid_at(
+                &node.node_id,
+                format!(
+                    "'{}' appears more than once; each method can only be used once per graph",
+                    node.node_ref
+                ),
+            );
         }
     }
 
@@ -251,19 +268,22 @@ pub fn validate(recipe: &GraphRecipe) -> GraphVerdict {
                 .unwrap_or(false);
 
             if !read.optional && !satisfied_by_param && !avail.contains(&read.slot) {
-                return GraphVerdict::invalid(match read.satisfied_by_param {
-                    Some(key) => format!(
-                        "'{}' needs {} — connect a step that produces it, or fill in '{}'",
-                        meta.label,
-                        read.slot.label(),
-                        key
-                    ),
-                    None => format!(
-                        "'{}' needs {}, which nothing upstream produces",
-                        meta.label,
-                        read.slot.label()
-                    ),
-                });
+                return GraphVerdict::invalid_at(
+                    &node.node_id,
+                    match read.satisfied_by_param {
+                        Some(key) => format!(
+                            "'{}' needs {} — connect a step that produces it, or fill in '{}'",
+                            meta.label,
+                            read.slot.label(),
+                            key
+                        ),
+                        None => format!(
+                            "'{}' needs {}, which nothing upstream produces",
+                            meta.label,
+                            read.slot.label()
+                        ),
+                    },
+                );
             }
 
             // The three MediaSource variants are not interchangeable: as_path_str()
@@ -271,11 +291,14 @@ pub fn validate(recipe: &GraphRecipe) -> GraphVerdict {
             if read.slot == Slot::Source && !read.accepts.is_empty() && !satisfied_by_param {
                 if let Some(kind) = source_kind {
                     if !read.accepts.contains(&kind) {
-                        return GraphVerdict::invalid(format!(
-                            "'{}' cannot read from a {} source",
-                            meta.label,
-                            source_label(kind)
-                        ));
+                        return GraphVerdict::invalid_at(
+                            &node.node_id,
+                            format!(
+                                "'{}' cannot read from a {} source",
+                                meta.label,
+                                source_label(kind)
+                            ),
+                        );
                     }
                 }
             }
@@ -285,12 +308,7 @@ pub fn validate(recipe: &GraphRecipe) -> GraphVerdict {
     let mut warnings = param_warnings;
     warnings.extend(collect_warnings(recipe, &metas, &available));
 
-    GraphVerdict {
-        valid: true,
-        reason: None,
-        warnings,
-        order,
-    }
+    GraphVerdict::runnable(order, warnings)
 }
 
 // ============================================================================
@@ -301,7 +319,7 @@ fn collect_warnings(
     recipe: &GraphRecipe,
     metas: &HashMap<&str, &'static MethodMeta>,
     available: &HashMap<&str, HashSet<Slot>>,
-) -> Vec<String> {
+) -> Vec<GraphIssue> {
     let mut warnings = Vec::new();
 
     // A slot written by several steps where at least one overwrites wholesale.
@@ -320,11 +338,15 @@ fn collect_warnings(
     }
     for (slot, list) in &writers {
         if list.len() > 1 && list.iter().any(|(_, mode)| *mode == WriteMode::Replace) {
+            // About several nodes at once, so about none of them in particular.
             let names: Vec<&str> = list.iter().map(|(label, _)| *label).collect();
-            warnings.push(format!(
-                "{} is written by {} — one of them replaces the whole value, so earlier results may be lost",
-                slot.label(),
-                names.join(", ")
+            warnings.push(GraphIssue::warning(
+                None,
+                format!(
+                    "{} is written by {} — one of them replaces the whole value, so earlier results may be lost",
+                    slot.label(),
+                    names.join(", ")
+                ),
             ));
         }
     }
@@ -337,7 +359,10 @@ fn collect_warnings(
         .any(|n| metas.get(n.node_id.as_str()).is_some_and(|m| m.requires_ffmpeg))
         && !ffmpeg_available()
     {
-        warnings.push("ffmpeg was not found on PATH; steps that need it will fail".to_string());
+        warnings.push(GraphIssue::warning(
+            None,
+            "ffmpeg was not found on PATH; steps that need it will fail",
+        ));
     }
 
     // Disconnected nodes: not a broken graph, just an unfinished one.
@@ -348,7 +373,10 @@ fn collect_warnings(
                     .get(node.node_id.as_str())
                     .map(|m| m.label)
                     .unwrap_or(node.node_ref.as_str());
-                warnings.push(format!("'{}' is not connected to anything", label));
+                warnings.push(GraphIssue::warning(
+                    Some(&node.node_id),
+                    format!("'{}' is not connected to anything", label),
+                ));
             }
         }
     }
@@ -363,9 +391,12 @@ fn collect_warnings(
         }
         let avail = &available[node.node_id.as_str()];
         if !meta.reads.iter().any(|r| avail.contains(&r.slot)) {
-            warnings.push(format!(
-                "'{}' has no input to report on; it will fail when the graph runs",
-                meta.label
+            warnings.push(GraphIssue::warning(
+                Some(&node.node_id),
+                format!(
+                    "'{}' has no input to report on; it will fail when the graph runs",
+                    meta.label
+                ),
             ));
         }
     }

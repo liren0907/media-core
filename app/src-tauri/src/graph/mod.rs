@@ -13,6 +13,7 @@ pub mod manifest;
 pub mod registry;
 pub mod runner;
 pub mod steps;
+pub mod store;
 pub mod types;
 pub mod validate;
 
@@ -22,3 +23,5 @@ mod tests;
 mod tests_manifest;
 #[cfg(test)]
 mod tests_run;
+#[cfg(test)]
+mod tests_store;

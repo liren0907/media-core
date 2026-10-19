@@ -4,7 +4,7 @@
 //! run in milliseconds. Actually executing steps is verified separately.
 
 use super::manifest::{self, ParamKind, METHODS};
-use super::types::{GraphRecipe, NodeParams};
+use super::types::{GraphIssue, GraphRecipe, GraphVerdict, IssueSeverity, NodeParams};
 use super::{registry, validate};
 
 fn recipe(value: serde_json::Value) -> GraphRecipe {
@@ -441,6 +441,163 @@ fn a_sink_with_nothing_to_report_produces_a_warning() {
         "got: {:?}",
         v.warnings
     );
+}
+
+// ============================================================================
+// ISSUES — which node a message belongs to
+// ============================================================================
+
+/// The issue whose message contains `needle`.
+fn issue<'a>(v: &'a GraphVerdict, needle: &str) -> &'a GraphIssue {
+    v.issues
+        .iter()
+        .find(|i| i.message.contains(needle))
+        .unwrap_or_else(|| panic!("no issue mentions {needle:?}: {:?}", v.issues))
+}
+
+#[test]
+fn a_missing_parameter_is_an_error_on_that_node() {
+    let g = recipe(serde_json::json!({
+        "nodes": [
+            file_source("/tmp/sample.mp4"),
+            { "nodeId": "n1", "kind": "method", "nodeRef": "extract_frames_to_disk" }
+        ],
+        "edges": [{ "from": "n0", "to": "n1" }]
+    }));
+
+    let v = validate::validate(&g);
+    assert!(!v.valid);
+    // The first error stops validation, so it is the only issue — and it is `reason`.
+    assert_eq!(v.issues.len(), 1, "got {:?}", v.issues);
+    assert_eq!(v.issues[0].severity, IssueSeverity::Error);
+    assert_eq!(v.issues[0].node_id.as_deref(), Some("n1"));
+    assert_eq!(Some(v.issues[0].message.as_str()), v.reason.as_deref());
+}
+
+#[test]
+fn a_missing_input_belongs_to_the_node_that_needs_it() {
+    // n1 is fine; it is n2 that has nothing to read. The edge between them is not
+    // wrong either — the fix is on n2 (connect a producer or fill in its inputDir).
+    let g = recipe(serde_json::json!({
+        "nodes": [
+            file_source("/tmp/sample.mp4"),
+            { "nodeId": "n1", "kind": "method", "nodeRef": "extract_metadata" },
+            { "nodeId": "n2", "kind": "method", "nodeRef": "group_similar_images",
+              "params": { "outputDir": "/tmp/groups" } }
+        ],
+        "edges": [{ "from": "n0", "to": "n1" }, { "from": "n1", "to": "n2" }]
+    }));
+
+    let v = validate::validate(&g);
+    assert!(!v.valid);
+    assert_eq!(issue(&v, "inputDir").node_id.as_deref(), Some("n2"));
+}
+
+#[test]
+fn the_second_copy_of_a_method_carries_the_error() {
+    let g = recipe(serde_json::json!({
+        "nodes": [
+            file_source("/tmp/sample.mp4"),
+            { "nodeId": "n1", "kind": "method", "nodeRef": "extract_metadata" },
+            { "nodeId": "n2", "kind": "method", "nodeRef": "extract_metadata" }
+        ],
+        "edges": [{ "from": "n0", "to": "n1" }, { "from": "n0", "to": "n2" }]
+    }));
+
+    let v = validate::validate(&g);
+    let error = issue(&v, "more than once");
+    assert_eq!(error.severity, IssueSeverity::Error);
+    assert_eq!(error.node_id.as_deref(), Some("n2"));
+}
+
+#[test]
+fn an_unknown_parameter_is_a_warning_on_that_node() {
+    let g = recipe(serde_json::json!({
+        "nodes": [
+            file_source("/tmp/sample.mp4"),
+            { "nodeId": "n1", "kind": "method", "nodeRef": "extract_metadata",
+              "params": { "windowLines": 12 } }
+        ],
+        "edges": [{ "from": "n0", "to": "n1" }]
+    }));
+
+    let v = validate::validate(&g);
+    assert!(v.valid, "{:?}", v.reason);
+    let warning = issue(&v, "windowLines");
+    assert_eq!(warning.severity, IssueSeverity::Warning);
+    assert_eq!(warning.node_id.as_deref(), Some("n1"));
+    // `warnings` is the same list of messages, so older readers see no change.
+    let messages: Vec<&str> = v.issues.iter().map(|i| i.message.as_str()).collect();
+    assert_eq!(v.warnings, messages);
+}
+
+#[test]
+fn a_disconnected_node_warning_is_on_that_node() {
+    let g = recipe(serde_json::json!({
+        "nodes": [
+            file_source("/tmp/sample.mp4"),
+            { "nodeId": "n1", "kind": "method", "nodeRef": "compare_images",
+              "params": { "image1": "/tmp/a.png", "image2": "/tmp/b.png" } }
+        ],
+        "edges": []
+    }));
+
+    let v = validate::validate(&g);
+    let warning = issue(&v, "not connected");
+    assert_eq!(warning.severity, IssueSeverity::Warning);
+    // n0 is disconnected too; each node gets its own warning.
+    let nodes: Vec<Option<&str>> = v
+        .issues
+        .iter()
+        .filter(|i| i.message.contains("not connected"))
+        .map(|i| i.node_id.as_deref())
+        .collect();
+    assert_eq!(nodes, [Some("n0"), Some("n1")]);
+}
+
+#[test]
+fn a_cycle_belongs_to_no_node() {
+    let g = recipe(serde_json::json!({
+        "nodes": [
+            file_source("/tmp/sample.mp4"),
+            { "nodeId": "n1", "kind": "method", "nodeRef": "extract_metadata" },
+            { "nodeId": "n2", "kind": "method", "nodeRef": "detect_motion" }
+        ],
+        "edges": [
+            { "from": "n0", "to": "n1" },
+            { "from": "n1", "to": "n2" },
+            { "from": "n2", "to": "n1" }
+        ]
+    }));
+
+    let v = validate::validate(&g);
+    let error = issue(&v, "cycle");
+    assert_eq!(error.severity, IssueSeverity::Error);
+    assert_eq!(error.node_id, None);
+}
+
+#[test]
+fn clobbering_writers_belong_to_no_node() {
+    let g = recipe(serde_json::json!({
+        "nodes": [
+            file_source("/tmp/sample.mp4"),
+            { "nodeId": "n1", "kind": "method", "nodeRef": "detect_motion" },
+            { "nodeId": "n2", "kind": "method", "nodeRef": "extract_frames_to_disk",
+              "params": { "outputDir": "/tmp/frames" } },
+            { "nodeId": "n3", "kind": "method", "nodeRef": "group_similar_images",
+              "params": { "outputDir": "/tmp/groups" } }
+        ],
+        "edges": [
+            { "from": "n0", "to": "n1" },
+            { "from": "n0", "to": "n2" },
+            { "from": "n2", "to": "n3" }
+        ]
+    }));
+
+    let v = validate::validate(&g);
+    let warning = issue(&v, "replaces the whole value");
+    assert_eq!(warning.severity, IssueSeverity::Warning);
+    assert_eq!(warning.node_id, None);
 }
 
 // ============================================================================

@@ -8,16 +8,20 @@
    * validator, never re-derived here.
    */
   import { onDestroy, onMount } from 'svelte';
+  import { beforeNavigate, goto } from '$app/navigation';
   import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+  import { invoke } from '@tauri-apps/api/core';
+  import { ask } from '@tauri-apps/plugin-dialog';
   import { Panel, ErrorAlert, EmptyState, RunButton, Icon, StatusBadge } from '$lib/components/ui';
   import { inputClass } from '$lib/utils/styles';
   import { formatFileSize } from '$lib/utils/format';
-  import type { GraphProgressEvent } from '$lib/types';
+  import type { GraphIssue, GraphListItem, GraphProgressEvent } from '$lib/types';
   import { GraphController } from './graph-controller.svelte';
   import { layoutGraph, NODE_W } from './graph/layout';
   import { optionsAt, type InsertPoint } from './graph/node-options';
   import NodeCard from './graph/NodeCard.svelte';
   import NodeInspector from './graph/NodeInspector.svelte';
+  import SavedGraphRow, { savedTime } from './SavedGraphRow.svelte';
 
   const graph = new GraphController();
 
@@ -29,6 +33,17 @@
   let sideWidth = $state(280);
   let canvasEl = $state<HTMLDivElement | null>(null);
   let containerEl = $state<HTMLDivElement | null>(null);
+
+  // Saved graphs
+  let openMenu = $state(false);
+  let openMenuEl = $state<HTMLDivElement | null>(null);
+  let savedList = $state<GraphListItem[]>([]);
+  let listLoading = $state(false);
+  let listError = $state('');
+  let fileError = $state('');
+  /** Said beside "Saved" when the last save dropped parameters. */
+  let saveNote = $state('');
+  let saving = $state(false);
 
   const MIN_ZOOM = 0.5;
   const MAX_ZOOM = 1.5;
@@ -50,7 +65,24 @@
   );
 
   const verdict = $derived(graph.verdict);
+
+  /** The message each node shows on its card — an error before a warning. */
+  const issueByNode = $derived.by(() => {
+    const map = new Map<string, GraphIssue>();
+    for (const issue of verdict?.issues ?? []) {
+      if (!issue.nodeId) continue;
+      const current = map.get(issue.nodeId);
+      if (!current || (current.severity === 'warning' && issue.severity === 'error')) {
+        map.set(issue.nodeId, issue);
+      }
+    }
+    return map;
+  });
+  const errorNodeId = $derived(verdict?.issues.find((i) => i.severity === 'error')?.nodeId);
+  const warningIssues = $derived(verdict?.issues.filter((i) => i.severity === 'warning') ?? []);
   const canRun = $derived(graph.nodes.length > 0 && verdict?.valid === true && !graph.running);
+  const canSave = $derived(graph.nodes.length > 0 && graph.dirty && !saving);
+  const canSaveAs = $derived(graph.nodes.length > 0 && !saving);
 
   // ------------------------------------------------------------- lifecycle
   let unlistenProgress: UnlistenFn | null = null;
@@ -126,6 +158,35 @@
     return () => window.removeEventListener('keydown', onKeydown);
   });
 
+  // The Open menu closes on any press outside it, like the picker does on the canvas.
+  $effect(() => {
+    if (!openMenu) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!openMenuEl?.contains(event.target as Node)) openMenu = false;
+    };
+    window.addEventListener('pointerdown', onPointerDown);
+    return () => window.removeEventListener('pointerdown', onPointerDown);
+  });
+
+  // Leaving /composer with unsaved changes asks first. The guard has to decide at once
+  // while the dialog answers later, so the navigation is stopped and, if the answer is
+  // to leave, started again. Unloading the page (reload, closing the window) is not
+  // intercepted.
+  let leaveApproved = false;
+  beforeNavigate((navigation) => {
+    if (navigation.willUnload || leaveApproved || !graph.dirty) return;
+    const to = navigation.to?.url;
+    navigation.cancel();
+    if (!to) return;
+    void confirmDiscard('This graph has unsaved changes. Leave and discard them?', 'Leave').then(
+      (leave) => {
+        if (!leave) return;
+        leaveApproved = true;
+        goto(to);
+      }
+    );
+  });
+
   onDestroy(() => {
     if (validateTimer) clearTimeout(validateTimer);
   });
@@ -182,10 +243,17 @@
   }
 
   function onKeydown(event: KeyboardEvent) {
+    // Save works from the name field too: that is where a name was just typed.
+    if ((event.metaKey || event.ctrlKey) && !event.shiftKey && event.key.toLowerCase() === 's') {
+      event.preventDefault();
+      if (canSave) save();
+      return;
+    }
     const target = event.target as HTMLElement;
     if (target?.matches?.('input, select, textarea')) return;
     if (event.key === 'Escape') {
       picker = null;
+      openMenu = false;
       return;
     }
     if (!(event.metaKey || event.ctrlKey)) return;
@@ -227,6 +295,19 @@
     };
   }
 
+  /** Select a node and bring it to the middle of the canvas. */
+  function focusNode(nodeId: string) {
+    selected = nodeId;
+    picker = null;
+    const box = layout.boxes.find((b) => b.id === nodeId);
+    const rect = canvasEl?.getBoundingClientRect();
+    if (!box || !rect) return;
+    pan = {
+      x: rect.width / 2 - box.cx * zoom,
+      y: rect.height / 2 - box.cy * zoom,
+    };
+  }
+
   function clamp(value: number, min: number, max: number) {
     return Math.max(min, Math.min(max, value));
   }
@@ -249,11 +330,103 @@
     picker = null;
   }
 
-  function newGraph() {
+  async function newGraph() {
+    if (graph.running) return;
+    if (
+      graph.dirty &&
+      !(await confirmDiscard('This graph has unsaved changes. Discard them and start a new one?', 'Discard'))
+    ) {
+      return;
+    }
     graph.clear();
     selected = '';
     picker = null;
+    saveNote = '';
+    fileError = '';
     resetView();
+  }
+
+  // ----------------------------------------------------------- saved graphs
+
+  /** The native dialog in the app; the browser preview has no Tauri, so fall back. */
+  async function confirmDiscard(message: string, okLabel: string): Promise<boolean> {
+    try {
+      return await ask(message, { title: 'Composer', kind: 'warning', okLabel, cancelLabel: 'Cancel' });
+    } catch {
+      return window.confirm(message);
+    }
+  }
+
+  async function save(asNew = false) {
+    if (saving) return;
+    saving = true;
+    try {
+      const saved = await graph.save(asNew);
+      const n = saved.removedParams;
+      saveNote = n > 0 ? `removed ${n} unknown parameter${n === 1 ? '' : 's'}` : '';
+      fileError = '';
+      if (openMenu) await refreshList();
+    } catch (e) {
+      fileError = `Could not save: ${e}`;
+    }
+    saving = false;
+  }
+
+  async function refreshList() {
+    listLoading = true;
+    try {
+      savedList = await invoke<GraphListItem[]>('list_graphs');
+      listError = '';
+    } catch (e) {
+      listError = `Could not list saved graphs: ${e}`;
+    }
+    listLoading = false;
+  }
+
+  function toggleOpenMenu() {
+    openMenu = !openMenu;
+    picker = null;
+    if (openMenu) refreshList();
+  }
+
+  async function openSaved(item: GraphListItem) {
+    if (graph.running || item.broken) return;
+    if (item.id === graph.openId && !graph.dirty) {
+      openMenu = false;
+      return;
+    }
+    if (
+      graph.dirty &&
+      !(await confirmDiscard('This graph has unsaved changes. Discard them and open another?', 'Discard'))
+    ) {
+      return;
+    }
+    try {
+      await graph.open(item.id, item.modifiedMs);
+      openMenu = false;
+      selected = '';
+      picker = null;
+      saveNote = '';
+      fileError = '';
+      resetView();
+    } catch (e) {
+      listError = `Could not open: ${e}`;
+    }
+  }
+
+  async function deleteSaved(item: GraphListItem) {
+    const name = item.broken ? 'this unreadable file' : `“${item.label}”`;
+    if (!(await confirmDiscard(`Delete ${name}? This cannot be undone.`, 'Delete'))) return;
+    try {
+      await invoke('delete_graph', { id: item.id });
+      // The canvas keeps what it has, now as never saved.
+      if (item.id === graph.openId) graph.forgetFile();
+      savedList = savedList.filter((row) => row.id !== item.id);
+      listError = '';
+    } catch (e) {
+      listError = `Could not delete: ${e}`;
+      await refreshList();
+    }
   }
 
   const pickerSections = $derived(
@@ -331,10 +504,73 @@
       class="{inputClass} w-56 py-1"
       aria-label="Graph name"
     />
+    {#if graph.dirty}
+      <span class="text-[10px] text-slate-400 whitespace-nowrap">Unsaved</span>
+    {:else if graph.savedAt !== null}
+      <span class="text-[10px] text-slate-400 whitespace-nowrap truncate min-w-0">
+        Saved · {savedTime(graph.savedAt)}{saveNote ? ` · ${saveNote}` : ''}
+      </span>
+    {/if}
 
     <div class="flex-1"></div>
 
-    <button onclick={newGraph} class="tool-btn" title="Clear the canvas">
+    <div bind:this={openMenuEl} class="relative">
+      <button
+        onclick={toggleOpenMenu}
+        disabled={graph.running}
+        class="tool-btn disabled:opacity-40 disabled:cursor-not-allowed"
+        title="Open a saved graph"
+        aria-expanded={openMenu}
+      >
+        <Icon name="folder_open" class="text-[14px]" /> Open
+        <Icon name="expand_more" class="text-[12px]" />
+      </button>
+      {#if openMenu}
+        <div
+          class="open-pop absolute right-0 top-full mt-1 z-30 w-80 max-h-80 overflow-y-auto rounded-lg border border-slate-200 dark:border-[#2a3441]
+                 bg-white dark:bg-[#161e27] shadow-xl"
+        >
+          {#if listError}
+            <p class="px-3 py-2 text-[10px] text-red-600 dark:text-red-400">{listError}</p>
+          {/if}
+          {#if listLoading && savedList.length === 0}
+            <p class="px-3 py-4 text-[11px] text-slate-500">Loading…</p>
+          {:else if savedList.length === 0 && !listError}
+            <p class="px-3 py-4 text-[11px] text-slate-500">No saved graphs yet.</p>
+          {/if}
+          {#each savedList as item (item.id)}
+            <SavedGraphRow
+              {item}
+              open={item.id === graph.openId}
+              onopen={() => openSaved(item)}
+              ondelete={() => deleteSaved(item)}
+            />
+          {/each}
+        </div>
+      {/if}
+    </div>
+    <button
+      onclick={() => save()}
+      disabled={!canSave}
+      class="tool-btn disabled:opacity-40 disabled:cursor-not-allowed"
+      title="Save (⌘S)"
+    >
+      <Icon name="save" class="text-[14px]" /> Save
+    </button>
+    <button
+      onclick={() => save(true)}
+      disabled={!canSaveAs}
+      class="tool-btn whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
+      title="Save as a new graph"
+    >
+      Save as
+    </button>
+    <button
+      onclick={newGraph}
+      disabled={graph.running}
+      class="tool-btn disabled:opacity-40 disabled:cursor-not-allowed"
+      title="Clear the canvas"
+    >
       <Icon name="note_add" class="text-[14px]" /> New
     </button>
     <div class="w-px h-4 bg-slate-200 dark:bg-[#2a3441]"></div>
@@ -372,6 +608,9 @@
 
   {#if graph.loadError}
     <ErrorAlert message={graph.loadError} />
+  {/if}
+  {#if fileError}
+    <ErrorAlert message={fileError} />
   {/if}
 
   <!-- Canvas + inspector.
@@ -440,6 +679,7 @@
                 selected={selected === box.id}
                 active={graph.activeNodeId === box.id}
                 requiresFfmpeg={meta?.requiresFfmpeg ?? false}
+                issue={issueByNode.get(box.id) ?? null}
                 onselect={() => {
                   selected = box.id;
                   picker = null;
@@ -575,10 +815,22 @@
     {:else if graph.validating}
       <span class="text-slate-400">Checking…</span>
     {:else if verdict && !verdict.valid}
-      <span class="flex items-center gap-1 text-red-600 dark:text-red-400">
-        <Icon name="error" class="text-[13px]" />
-        {verdict.reason}
-      </span>
+      {#if errorNodeId}
+        {@const at = errorNodeId}
+        <button
+          onclick={() => focusNode(at)}
+          class="flex items-center gap-1 text-left text-red-600 dark:text-red-400 hover:underline"
+          title="Show this node"
+        >
+          <Icon name="error" class="text-[13px] shrink-0" />
+          {verdict.reason}
+        </button>
+      {:else}
+        <span class="flex items-center gap-1 text-red-600 dark:text-red-400">
+          <Icon name="error" class="text-[13px]" />
+          {verdict.reason}
+        </span>
+      {/if}
     {:else if verdict?.valid}
       <span class="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
         <Icon name="check_circle" class="text-[13px]" /> Ready to run
@@ -599,12 +851,27 @@
     {/if}
   </div>
 
-  {#if verdict?.warnings?.length}
+  <!-- A warning about one node takes you to it; one about the whole graph is just said. -->
+  {#if warningIssues.length}
     <ul class="flex flex-col gap-1">
-      {#each verdict.warnings as warning (warning)}
-        <li class="text-[11px] text-amber-600 dark:text-amber-400 flex items-start gap-1.5">
-          <Icon name="warning" class="text-[12px] mt-0.5 shrink-0" />
-          <span>{warning}</span>
+      {#each warningIssues as warning (`${warning.nodeId ?? ''}|${warning.message}`)}
+        <li class="text-[11px] text-amber-600 dark:text-amber-400">
+          {#if warning.nodeId}
+            {@const at = warning.nodeId}
+            <button
+              onclick={() => focusNode(at)}
+              class="flex items-start gap-1.5 text-left hover:underline"
+              title="Show this node"
+            >
+              <Icon name="warning" class="text-[12px] mt-0.5 shrink-0" />
+              <span>{warning.message}</span>
+            </button>
+          {:else}
+            <span class="flex items-start gap-1.5">
+              <Icon name="warning" class="text-[12px] mt-0.5 shrink-0" />
+              <span>{warning.message}</span>
+            </span>
+          {/if}
         </li>
       {/each}
     </ul>

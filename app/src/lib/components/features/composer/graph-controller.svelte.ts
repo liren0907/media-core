@@ -13,18 +13,28 @@
 import { invoke } from '@tauri-apps/api/core';
 import type {
   GraphMethodMeta,
+  GraphNodeKind,
   GraphNodeParams,
   GraphRecipe,
   GraphRecipeEdge,
   GraphRunResult,
   GraphVerdict,
+  SavedGraph,
 } from '$lib/types';
 import type { InsertPoint } from './graph/node-options';
 
 export interface CanvasNode {
   id: string;
   ref: string;
+  /**
+   * The kind a saved file gave it. Only consulted when the method is no longer in the
+   * manifest — otherwise opening and saving again would turn it into `method`.
+   */
+  kind?: GraphNodeKind;
 }
+
+/** What an empty name is saved as; read back as an empty name again. */
+const UNTITLED = 'Untitled graph';
 
 export class GraphController {
   methods = $state<GraphMethodMeta[]>([]);
@@ -51,6 +61,13 @@ export class GraphController {
   progress = $state(0);
   result = $state<GraphRunResult | null>(null);
   runError = $state('');
+
+  /** The saved graph on the canvas; null = never saved, or its file was deleted. */
+  openId = $state<string | null>(null);
+  /** `snapshot` as of the last save or open; '' = nothing to compare against. */
+  private baseline = $state('');
+  /** When the canvas content was last saved (ms), for the toolbar. */
+  savedAt = $state<number | null>(null);
 
   // -------------------------------------------------------------- manifest
 
@@ -196,6 +213,7 @@ export class GraphController {
     this.verdict = null;
     this.result = null;
     this.runError = '';
+    this.forgetFile();
   }
 
   // ------------------------------------------------------------ parameters
@@ -262,13 +280,13 @@ export class GraphController {
 
   toRecipe(): GraphRecipe {
     return {
-      label: this.label.trim() || 'Untitled graph',
+      label: this.label.trim() || UNTITLED,
       nodes: this.nodes.map((node) => {
         const meta = this.metaOf(node.ref);
         const params = this.paramsOf(node.id);
         return {
           nodeId: node.id,
-          kind: meta?.kind ?? 'method',
+          kind: meta?.kind ?? node.kind ?? 'method',
           nodeRef: node.ref,
           ...(Object.keys(params).length ? { params } : {}),
         };
@@ -294,12 +312,75 @@ export class GraphController {
     try {
       verdict = await invoke<GraphVerdict>('validate_graph', { recipe: this.toRecipe() });
     } catch (e) {
-      verdict = { valid: false, reason: String(e), warnings: [], order: [] };
+      const reason = String(e);
+      verdict = {
+        valid: false,
+        reason,
+        warnings: [],
+        issues: [{ severity: 'error', message: reason }],
+        order: [],
+      };
     }
     // The graph changed while this one was in flight; the newer check has the say.
     if (seq !== this.validateSeq) return;
     this.verdict = verdict;
     this.validating = false;
+  }
+
+  // ------------------------------------------------------------ saved file
+
+  /** Unsaved changes: differs from the last save or open — or, never saved, has anything. */
+  get dirty(): boolean {
+    return this.baseline ? this.snapshot !== this.baseline : this.nodes.length > 0;
+  }
+
+  /** Read a saved graph and put it on the canvas, replacing whatever was there. */
+  async open(id: string, savedAt: number | null = null) {
+    const recipe = await invoke<GraphRecipe>('load_graph', { id });
+    this.loadRecipe(recipe, id, savedAt);
+  }
+
+  loadRecipe(recipe: GraphRecipe, id: string, savedAt: number | null = null) {
+    this.nodes = recipe.nodes.map((n) => ({ id: n.nodeId, ref: n.nodeRef, kind: n.kind }));
+    this.edges = recipe.edges.map((e) => ({ from: e.from, to: e.to }));
+    this.params = paramsFrom(recipe);
+    this.label = recipe.label === UNTITLED ? '' : recipe.label;
+    this.verdict = null;
+    this.result = null;
+    this.runError = '';
+    this.openId = id;
+    this.baseline = this.snapshot;
+    this.savedAt = savedAt;
+  }
+
+  /**
+   * Save to the open file, or to a new one when `asNew` or never saved. The run result
+   * stays: saving is not opening another graph.
+   */
+  async save(asNew = false): Promise<SavedGraph> {
+    const recipe = this.toRecipe();
+    const sent = JSON.stringify(recipe);
+    const saved = await invoke<SavedGraph>('save_graph', {
+      id: asNew ? null : this.openId,
+      recipe,
+    });
+
+    // Only parameters can differ: undeclared ones were dropped. Take them from what was
+    // written so the canvas and the file agree — unless the canvas moved on meanwhile,
+    // in which case it stays unsaved and the next save drops them.
+    const untouched = this.snapshot === sent;
+    if (untouched && saved.removedParams > 0) this.params = paramsFrom(saved.recipe);
+    this.openId = saved.id;
+    this.baseline = untouched ? this.snapshot : sent;
+    this.savedAt = Date.now();
+    return saved;
+  }
+
+  /** The open file is gone; the canvas stays, now as never saved. */
+  forgetFile() {
+    this.openId = null;
+    this.baseline = '';
+    this.savedAt = null;
   }
 
   // ------------------------------------------------------------------- run
@@ -354,6 +435,14 @@ function dedupe(edges: GraphRecipeEdge[]): GraphRecipeEdge[] {
     out.push(edge);
   }
   return out;
+}
+
+function paramsFrom(recipe: GraphRecipe): Record<string, GraphNodeParams> {
+  const params: Record<string, GraphNodeParams> = {};
+  for (const node of recipe.nodes) {
+    if (node.params && Object.keys(node.params).length) params[node.nodeId] = { ...node.params };
+  }
+  return params;
 }
 
 function basename(path: string): string {

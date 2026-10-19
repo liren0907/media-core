@@ -110,6 +110,10 @@ fn main() {
             commands::graph::validate_graph,
             commands::graph::execute_graph,
             commands::graph::cancel_graph_run,
+            commands::graph::list_graphs,
+            commands::graph::load_graph,
+            commands::graph::save_graph,
+            commands::graph::delete_graph,
         ])
         .on_window_event(|app_handle, event| {
             if let tauri::WindowEvent::Destroyed = event {

@@ -1,12 +1,18 @@
 # PLAN — `/composer` 圖編輯器主計畫
 
-## 這份文檔是什麼（2026-08-07）
+## 這份文檔是什麼（2026-08-07 寫；2026-10-19 改寫成 as-built）
+
+**✅ Phase 0、1、2、4 完成；Phase 3 決定不做。** Phase 0＋1 在 2026-08-07 做完，
+2026-09-26 commit（`a913a39`）；2026-10 做過一輪 review 修正；Phase 2（存檔、問題標在
+節點上）和 Phase 4（gallery）在 2026-10-19 做完。
 
 **主計畫**：把 `REFERENCE_composer_graph_editor.md`（別的專案 pvdt 的 as-built 文檔）
 的構想，落到 media-app 的實際條件上。定範圍、拍板決策、切階段、列出刻意不做的事。
 
-這是 PLAN 不是 REFERENCE——裡面有待辦、有未定案、有「做到一半可能推翻」的判斷。
-實作完成後應該回頭改寫成 as-built。
+這份已改寫成 as-built：原本的範圍、決策和推理都保留；§5 各階段後面補上「實際」，
+§9 的待確認事項改成拍板紀錄，跟計畫不同的地方集中在 §10「與計畫的偏離」。
+寫這份計畫時 app 還是獨立的 media-app repo，2026-09 併進本 monorepo
+（見 `PLAN_monorepo_migration.md`）；文中路徑都已是 monorepo 的路徑。
 
 **配套文檔（建議照這個順序 review）：**
 
@@ -93,7 +99,7 @@ File ───┼─→ ExtractFrames
 > ⚠️ **2026-08-07 實作時推翻**：原本以為 `ProcessFiles` 也能吃上游，**是錯的**。它的建構式
 > 只有 `new(output_dir)`，輸入固定取自 `context.source.as_path_str()`，struct 上沒有任何
 > 輸入欄位可注入 ⇒ registry 無從覆寫。要讓它吃上游得先有 `RebindSource`（換掉黑板的
-> source），那是 Phase 2 候選。**路徑繼承鏈只有兩條，不是三條。**
+> source），那是 Phase 2 候選（最後沒做，見下面「還可以再解鎖」）。**路徑繼承鏈只有兩條，不是三條。**
 
 改完之後這兩條鏈是真的：
 
@@ -119,16 +125,17 @@ File ─┬→ ExtractMetadata ────────────────�
 「先看 context 解析參數 → 建 step → execute」。`media-core` 依然**零 diff**，
 `PipelineStep` / `MediaContext` 原樣使用。細節見 `PLAN_composer_phase0_backend.md` §5。
 
-### 還可以再解鎖（列入 Phase 2 候選，不進 v1）
+### 還可以再解鎖（寫計畫時列為 Phase 2 候選，不進 v1）
 
 在 **app 側自己寫 `PipelineStep` 實作**（trait 是 pub 的，不用改 media-core）補幾顆
 「銜接型」節點，圖的深度會再上一層：
 
 - **`SaveReport`**（讀 `metadata` ＋ `analysis` → 寫 JSON 檔）＝真正的**出口節點**。
   現在 `metadata` / `analysis` 兩個槽**沒有任何消費者**，補了這顆它們才有下游。
+  ✅ **實際提前到 Phase 0 做了**：`app/src-tauri/src/graph/steps/save_report.rs`。
 - **`RebindSource`**（讀上游的 `output_path` → 換掉 `context.source`）＝把「A 的產出
   當 B 的輸入來源」一般化。它會讓現在所有死路（HLS 產物、標註產物）全部接得下去。
-  威力很大但語意有點 hacky（黑板中途換 source），**先記帳不做**。
+  威力很大但語意有點 hacky（黑板中途換 source），**先記帳不做**。as-built：仍然沒做。
 
 ---
 
@@ -136,8 +143,8 @@ File ─┬→ ExtractMetadata ────────────────�
 
 | # | 決策 | 拍板 | 理由 |
 |---|---|---|---|
-| D1 | manifest / registry 放哪 | **app 側 `app/src-tauri/src/graph/`** | `media-core` 是 git submodule（v0.4.0，另一個 repo），目前工作流一直排除它。放 app 側＝media-core 全程零 diff、不用跨 repo 升版 |
-| D2 | recipe 存哪 | **`{app_data_dir}/composer/graphs/*.json`** | SurrealDB 有（dedup 在用）但 schema 是 dedup 專用。JSON 檔最簡單、可手改、可版控、debug 時 `cat` 得出來。Phase 2 真的需要查詢再搬 DB |
+| D1 | manifest / registry 放哪 | **app 側 `app/src-tauri/src/graph/`** | `media-core` 是 git submodule（v0.4.0，另一個 repo），目前工作流一直排除它。放 app 側＝media-core 全程零 diff、不用跨 repo 升版。⚠️ **2026-09 併成 monorepo 後這條理由不成立**（改 core 就是一般的 commit），決策照舊，現行理由：manifest 寫的是 composer 這個畫面怎麼呈現、怎麼接 step（標籤、說明、picker 排序、參數提示、留空吃上游），是 app 的事；core 的 `PipelineStep` 保持不認識任何畫面。宣告跟 core 實際行為對不上的風險，由 `graph/tests_manifest.rs` 把每顆 step 實際跑一次、比對寫入的槽來擋 |
+| D2 | recipe 存哪 | **`{app_data_dir}/composer/graphs/*.json`** | SurrealDB 有（dedup 在用）但 schema 是 dedup 專用。JSON 檔最簡單、可手改、可版控、debug 時 `cat` 得出來。Phase 2 真的需要查詢再搬 DB。實際：一張圖一個 `<uuid>.json`，內容就是 `GraphRecipe` 原樣（見 §5 Phase 2） |
 | D3 | 分頁路徑 | **`/composer`** | 沿用參考文檔的詞彙，溝通成本最低。`/pipeline` 會跟既有 `commands/pipeline.rs` 的「單一 pipeline」語意打架 |
 | D4 | 圖框架 | **不引進，手刻** | `package.json` 目前沒有 svelte-flow / xyflow / dagre / elk。svelte-flow 自帶 state model 會跟 Svelte 5 runes 打架。參考文檔的 `layout.ts` 是 235 行純函式，抄得動 |
 | D5 | 執行模型 | **拓樸序 + 逐顆建構的 app 側 runner** | 見 §3。不是真並行——分岔在畫面上是分岔，執行是拓樸線性化。**這是刻意的**，因為資料本來就在黑板上不在線上 |
@@ -160,6 +167,9 @@ File ─┬→ ExtractMetadata ────────────────�
 - **這階段的真正價值**：如果 manifest 寫下去發現埠型別比預期更貧乏、或 runner 的
   參數解析比預期難，我們會在花 1500 行畫布**之前**知道。
 - 細節：`PLAN_composer_phase0_backend.md`
+- **實際（2026-08-07）**：照規劃做完。manifest 是 3 個來源＋11 顆 media-core step＋
+  app 自訂的 `save_report`，共 15 項；command 是 4 支（多了 `cancel_graph_run`）；
+  驗收時 `graph::` 26 個測試全過。偏離見該文件 §11。
 
 ### Phase 1 — 畫布最小可用
 
@@ -170,6 +180,22 @@ File ─┬→ ExtractMetadata ────────────────�
 - **驗收**：畫一張圖 → 按執行 → 看到結果
 - **刻意不做**：小地圖、搜尋、群組收合、自動存檔
 - 細節：`PLAN_composer_phase1_frontend.md`
+- **實際（2026-08-07）**：照規劃做完。兩處改了做法：驗證規則全交給後端、前端不重算；
+  「埠上＋」改做在右欄的 Inputs 區。偏離見該文件 §9b。
+
+### Phase 1 之後的修正（2026-10，計畫外）
+
+一輪 review 改掉的幾件事，都已在 code 裡：
+
+- **每次執行只有一個出口**：`execute_graph` 改在 `spawn_blocking` 裡跑；
+  `runner::RunGuard` 不論完成、取消、失敗或 panic，都會清掉這次執行的登記，並發一次
+  `graph:finished`。因此 workspace 不能設 `panic = "abort"`。
+- **run id 由前端先產生**，跟著 `execute_graph` 送出：按 Run 之後馬上按 Cancel 也取消得到。
+  取消回傳 `status: cancelled` 的結果，帶著停下前已完成的產出，不算錯誤。
+- **未知參數從「不能跑」改成警告**，執行時忽略：manifest 改版後，舊圖照樣打得開、跑得動。
+- **`process_files` 在 picker 排最後**（manifest 的 `picker_rank: last`）：它只吃來源，
+  產出也沒人讀，接不上別的 step。
+- **manifest 宣告的寫入槽**由 `graph/tests_manifest.rs` 對照 media-core 的實際行為檢查（見 D1）。
 
 ### Phase 2 — 存載 ＋ 驗證顯示
 
@@ -177,6 +203,18 @@ recipe 持久化（D2 的 JSON 檔）、已保存清單面板、常駐 ⚠（`is
 候選：§3 的 `SaveReport` 出口節點。
 
 - **規模**：約 500 行
+- **實際（2026-10-19）**：
+  - **存檔**：工具列有 Save（⌘S）／Save as／Open ▾；換圖、清空、切換分頁前，有沒存的
+    改動會先問一聲。沒做自動存檔。後端 `graph/store.rs` 加上 `list_graphs`／`load_graph`／
+    `save_graph`／`delete_graph` 四支 command，檔案存在 `{app_data_dir}/composer/graphs/<uuid>.json`，
+    內容就是 `GraphRecipe` 原樣（不含座標），先寫暫存檔再改名。
+  - **存什麼、擋什麼**：存檔只擋讀不回來的圖（`validate_integrity`），跑不動的圖照樣存；
+    打開時一律重新驗證。存檔時清掉 manifest 沒宣告的參數，並告訴使用者清掉幾個。
+    Open ▾ 每列標出跑不跑得動；讀不回來的檔照樣列出，只能刪除。
+  - **驗證顯示**：沒做「`issues` 三張表」。改成後端每則訊息都帶上它屬於哪顆節點
+    （`GraphVerdict.issues`），卡片上有錯畫紅框、有警告畫橘色 ⚠；狀態列的錯誤和下方的
+    警告點一下，會選中那顆並移到畫面中間。驗證照舊遇到第一個錯就停，一次只會有一顆紅框。
+  - 候選的 `SaveReport` 早在 Phase 0 就做了。
 
 ### Phase 3 —（選配）大圖可讀性
 
@@ -184,10 +222,19 @@ recipe 持久化（D2 的 JSON 檔）、已保存清單面板、常駐 ⚠（`is
 
 **先不排期。** 圖只有 5–8 顆節點時這些是純負擔；等真的畫出 20 顆的圖再說。
 
+- **實際（2026-10-19 決定不做）**：manifest 只有 15 項，同一個方法一張圖只能放一顆
+  （G7），一張圖最多十幾顆，這些功能仍是純負擔。⚠ 導航裡最有用的「點警告跳到那顆」
+  併進了 Phase 2。
+
 ### Phase 4 — gallery catalog
 
 依 repo 慣例（`gallery/pages/composer/+page.svelte` ＋ `sections.ts` 條目 ＋
 `CompositionTree`），與 `/audio` 同一套做法。
+
+- **實際（2026-10-19）**：`/gallery/pages/composer` 擺出組成樹、節點卡的各種狀態
+  （含有錯、有警告）、參數欄位的各種類型、存檔清單的一列（`SavedGraphRow`，從編輯器
+  抽出來共用）。完整的編輯器沒有掛在 gallery 頁：它一掛上就會呼叫後端，還會攔下整個
+  視窗的快捷鍵。
 
 ---
 
@@ -197,10 +244,10 @@ recipe 持久化（D2 的 JSON 檔）、已保存清單面板、常駐 ⚠（`is
 |---|---|---|
 | `lower-graph.ts` / `lift-graph.ts`（模式一互通） | **整組不要** | 那是為了與他們既有的 lane 世界共存。我們沒有模式一，`/processing` 保持原樣不碰 |
 | `chain_pipeline` / `dictionaries` / `top_k` / `window_lines` / `window_ms` | **不要** | 純 ASR 領域參數。我們的參數是 `threshold` / `algorithm` / `interval` / `strategy` / `segmentDuration` / `profile` / `saveMode` |
-| HTTP CRUD（`/api/dev/lab/graph-recipes`）、tier 權限 | **不要** | 我們是 Tauri `invoke()`，沒有 server。CRUD 對應成 3–5 支 command |
+| HTTP CRUD（`/api/dev/lab/graph-recipes`）、tier 權限 | **不要** | 我們是 Tauri `invoke()`，沒有 server。CRUD 對應成 3–5 支 command（實際 4 支：`list_graphs`／`load_graph`／`save_graph`／`delete_graph`） |
 | `/console` 執行模式選單、`rooms/graph.rs`、`GRAPH_SLOT` marker | **不要** | 沒有「房間」概念，也沒有即時 runtime 消費者 |
 | DELETE 409 守衛 | **不要** | 那是為了保護 `/console` 的選取。我們沒有選取狀態 |
-| 自動存檔（1 秒 debounce ＋ 三條守衛 ＋ `autosaveStop`） | **Phase 2 之後再說** | 他們是因為砍掉儲存鈕才**必須**做。我們留一顆儲存鈕就好，省掉一整段複雜度 |
+| 自動存檔（1 秒 debounce ＋ 三條守衛 ＋ `autosaveStop`） | **Phase 2 之後再說**（實際：Phase 2 也不做） | 他們是因為砍掉儲存鈕才**必須**做。我們留一顆儲存鈕就好，省掉一整段複雜度。Phase 2 用「沒存的改動先問一聲」補上會弄丟東西的那幾個時刻 |
 | 「不引進圖框架」的判斷 | ✅ **這條要抄** | 見 D4 |
 | fan-in 上架成停用列（`尚未支援匯流`） | ❌ **反過來，我們支援** | 他們的模型是逐邊傳值所以匯流難。我們是黑板 + 槽依賴，一顆 step 讀兩個槽＝兩條入邊，天生就通 |
 
@@ -212,42 +259,48 @@ recipe 持久化（D2 的 JSON 檔）、已保存清單面板、常駐 ⚠（`is
 |---|---|---|
 | **同一顆 method 在一張圖裡放兩次會互蓋** | 黑板一個槽一份，第二顆的寫入蓋掉第一顆 | v1 **直接擋**：同一 `method_ref` 一張圖最多一顆（validate 的 G7）。「真正逐邊傳值」列入刻意不做 |
 | **`DetectMotion` 是覆寫不是合併** | 它 `context.analysis = Some(report)`，會清掉 `GroupSimilarImages` 寫的 `similarity_groups` | manifest 標 `writes_mode: replace`；validate 警告「同槽多寫入者且其中一顆是 replace」 |
-| **圖的深度只有 2 層** | 見 §3。畫布的價值打折 | 誠實記帳。Phase 0 做完就看得出來值不值得往 Phase 1 走——**這是 Phase 0 先做的主因** |
+| **圖的深度只有 2 層** | 見 §3。畫布的價值打折 | 誠實記帳。Phase 0 做完就看得出來值不值得往 Phase 1 走——**這是 Phase 0 先做的主因**。實際：`save_report` 提前到 Phase 0，深度是 3 層 |
 | **`streaming::ExtractionMode` 與 `video_process::ExtractionMode` 同名不同物** | registry 的參數映射會寫錯 | manifest 用不同的 param key（`frameMode` vs `extractionMode`），文檔標紅 |
 | **兩顆 benchmark step 吃 `BenchmarkContext` 不是 `MediaContext`** | 泛型不同，進不了同一張圖 | v1 排除。要納入得先統一 context，屬 media-core 的工作 |
-| 規模 | 參考文檔背後是 4000+ 行前端 ＋ 一整套後端 | 我們做到 Phase 2 約 **2500–3000 行**，realistically 好幾個 session。不是一個下午的分頁 |
+| 規模 | 參考文檔背後是 4000+ 行前端 ＋ 一整套後端 | 我們做到 Phase 2 約 **2500–3000 行**，realistically 好幾個 session。不是一個下午的分頁。實際（到 Phase 4）：後端約 2,800 行、測試另約 1,500 行，前端約 2,400 行 |
 
 ---
 
-## 8. 檔案地圖（規劃中，尚未存在）
+## 8. 檔案地圖（as-built）
 
-### 後端（Phase 0）
+### 後端
 
 | 檔案 | 角色 |
 |---|---|
 | `app/src-tauri/src/graph/mod.rs` | 模組出口 |
-| `app/src-tauri/src/graph/types.rs` | wire 格式：`GraphRecipe` / `GraphNode` / `GraphEdge` / `NodeParams` |
-| `app/src-tauri/src/graph/manifest.rs` | 方法宣告表（14 顆 step 的埠 ＋ 參數 ＋ 家族） |
+| `app/src-tauri/src/graph/types.rs` | wire 格式：`GraphRecipe` / `GraphNode` / `GraphEdge` / `NodeParams`；回給前端的 `GraphVerdict`（含 `issues`）、`GraphRunResult`、`GraphListItem`、`SavedGraph` |
+| `app/src-tauri/src/graph/manifest.rs` | 方法宣告表 `METHODS`（15 項：3 個來源、11 顆 media-core step、1 個出口；埠 ＋ 參數 ＋ 家族） |
 | `app/src-tauri/src/graph/registry.rs` | `node_ref` ＋ params ＋ context → `Box<dyn PipelineStep<MediaContext>>` |
-| `app/src-tauri/src/graph/validate.rs` | `topo_order` ＋ G1–G7 |
-| `app/src-tauri/src/graph/runner.rs` | 逐顆建構 ＋ 執行 ＋ 進度事件 |
-| `app/src-tauri/src/graph/store.rs` | JSON 檔 CRUD（Phase 2） |
-| `app/src-tauri/src/commands/graph.rs` | Tauri command 層 |
+| `app/src-tauri/src/graph/validate.rs` | `validate_integrity`（寫入閘）、`validate`（G1–G7，每則訊息帶節點）、`topo_order` |
+| `app/src-tauri/src/graph/runner.rs` | 逐顆建構 ＋ 執行 ＋ 進度事件 ＋ 取消登記 ＋ `RunGuard` 單一出口 |
+| `app/src-tauri/src/graph/steps/save_report.rs` | app 側自訂的出口 step：讀 `metadata` ＋ `analysis`，寫 JSON 檔 |
+| `app/src-tauri/src/graph/store.rs` | 存檔：存、列、讀、刪（Phase 2） |
+| `app/src-tauri/src/graph/tests.rs`、`tests_run.rs`、`tests_manifest.rs`、`tests_store.rs` | 驗證規則、真實執行、manifest 對 core 的寫入槽、存檔。`cargo test -p media-app --bin media-app graph::` 共 52 個；`tests_manifest` 需要 ffmpeg，沒有就失敗 |
+| `app/src-tauri/src/commands/graph.rs` | Tauri command 層（8 支：`list_graph_methods`、`validate_graph`、`execute_graph`、`cancel_graph_run`，加上 Phase 2 的四支存檔 command） |
 
-### 前端（Phase 1）
+### 前端
 
 | 檔案 | 角色 |
 |---|---|
 | `app/src/routes/composer/+page.svelte` | 分頁殼 |
 | `app/src/lib/components/features/composer/GraphEditor.svelte` | 編輯器本體（畫面狀態） |
-| `app/src/lib/components/features/composer/graph-controller.svelte.ts` | 模型層（nodes/edges/params/生長/驗證） |
+| `app/src/lib/components/features/composer/graph-controller.svelte.ts` | 模型層（nodes/edges/params/生長、送驗證、執行、存檔與打開） |
+| `app/src/lib/components/features/composer/SavedGraphRow.svelte` | Open ▾ 清單的一列（Phase 4 從編輯器抽出，gallery 共用） |
 | `app/src/lib/components/features/composer/graph/layout.ts` | 座標引擎（純函式） |
 | `app/src/lib/components/features/composer/graph/layers.ts` | 拓樸分層 |
+| `app/src/lib/components/features/composer/graph/NodeCard.svelte` | 單顆卡片（分類色、摘要、紅框／⚠） |
 | `app/src/lib/components/features/composer/graph/NodeInspector.svelte` | 右欄檢視器 |
+| `app/src/lib/components/features/composer/graph/ParamField.svelte` | 依參數宣告畫一格欄位 |
 | `app/src/lib/components/features/composer/graph/node-options.ts` | picker 過濾純函式 |
 | `app/src/lib/components/features/composer/index.ts` | barrel |
+| `app/src/routes/gallery/pages/composer/+page.svelte` | gallery catalog（Phase 4） |
 
-### 需要**修改**的既有檔案（全部是加法）
+### **修改**的既有檔案（全部是加法）
 
 `app/src/lib/nav.ts`（加一列）、`app/src/lib/types.ts`（graph 型別）、
 `app/src/lib/components/ui/icon-registry.ts`（幾顆圖示）、`app/src-tauri/src/main.rs`（註冊 command）、
@@ -258,12 +311,29 @@ recipe 持久化（D2 的 JSON 檔）、已保存清單面板、常駐 ⚠（`is
 
 ---
 
-## 9. 待確認事項（review 時請回答）
+## 9. 待確認事項 → 拍板紀錄
 
-1. **§3 的壞消息接受嗎？** 圖的深度只有 2 層、要靠「留空＝吃上游」才串得起來。
-   如果覺得這樣的圖價值不夠，Phase 0 做完可以喊停，成本只有 ~900 行後端（而且那份
-   manifest ＋ registry 本身對 `commands/pipeline.rs` 的重構也有價值）。
-2. **五個決策 D1–D5 有沒有要改的？**
-3. **Phase 0 做完是否要先停下來看結果**，再決定走不走 Phase 1？（建議：要）
-4. **`SaveReport` 出口節點要不要提前到 Phase 0？** 它會讓 `metadata` / `analysis`
-   兩個槽有消費者，圖立刻多一層深度。成本約 80 行。
+1. ~~**§3 的壞消息接受嗎？**~~ → **接受**。Phase 1 照計畫往下做；加上提前的 `save_report`，
+   實際深度是 3 層。
+2. ~~**五個決策 D1–D5 有沒有要改的？**~~ → **都沒改**。D1 的理由在 monorepo 之後換了（見 §4）。
+3. ~~**Phase 0 做完是否要先停下來看結果**~~ → **有**：Phase 1 的進入條件就是 Phase 0 驗收的
+   串接圖那條（`PLAN_composer_phase1_frontend.md` 開頭），通過後才開始。
+4. ~~**`SaveReport` 出口節點要不要提前到 Phase 0？**~~ → **提前了**（見 §3）。
+
+---
+
+## 10. 與計畫的偏離
+
+各階段的細部偏離寫在各自的文件：Phase 0 在 `PLAN_composer_phase0_backend.md` §11，
+Phase 1 在 `PLAN_composer_phase1_frontend.md` §9b。這裡只列主計畫層級的：
+
+| 計畫寫 | 實際 | 為什麼 |
+|---|---|---|
+| D1 的理由：media-core 是 submodule | 理由不成立，決策不變 | 見 §4 D1 |
+| Phase 0 三支 command | Phase 0 四支（多了 `cancel_graph_run`），Phase 2 再加四支，共 8 支 | 取消需要自己的入口 |
+| runner 約 80 行 | `runner.rs` 約 330 行 | 多了取消登記、`RunGuard` 單一出口、輸出路徑收集、非 critical step 記成警告 |
+| 未知參數擋下不能跑 | 警告，執行時忽略 | 舊圖要打得開、跑得動（見 §5「Phase 1 之後的修正」） |
+| Phase 2 的常駐 ⚠（`issues` 三張表） | 後端每則訊息帶節點，卡片紅框／橘 ⚠ | 驗證規則只留後端一份，前端不重算 |
+| Phase 2 候選 `SaveReport` | Phase 0 就做了 | 見 §3 |
+| Phase 3 先不排期 | 決定不做；「點警告跳到那顆」併進 Phase 2 | 見 §5 |
+| 規模到 Phase 2 約 2500–3000 行 | 到 Phase 4：後端約 2,800 行、測試另約 1,500 行、前端約 2,400 行 | 見 §7 |

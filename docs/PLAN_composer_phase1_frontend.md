@@ -1,9 +1,15 @@
 # PLAN — `/composer` Phase 1：畫布最小可用
 
-## 這份文檔是什麼（2026-08-07）
+## 這份文檔是什麼（2026-08-07 寫；2026-10-19 改寫成 as-built）
+
+**✅ 2026-08-07 完成**（驗收狀態見 §10）。
 
 **Phase 1 的實作規格**：`/composer` 分頁、圖編輯器四個邊、生長模型、picker 過濾、
 座標引擎、右欄檢視器、執行與結果。
+
+這份已改寫成 as-built：規格和推理保留原樣，各節後面的「as-built」說明現在的 code；
+跟規格不同的地方集中在 §9b。之後 Phase 2 加上的存檔和「問題標在節點上」，範圍與做法
+寫在主計畫 `PLAN_composer_graph_editor.md` §5。
 
 前置：`PLAN_composer_phase0_backend.md` 必須先完成並驗收——本階段的 picker 與右欄
 **完全由 `list_graph_methods` 驅動**，前端不硬編任何 step 名字。
@@ -36,6 +42,15 @@ app/src/lib/components/features/composer/
 `app/src/lib/components/ui/icon-registry.ts`（`workflow` / `plus` / `play` / `trash` 等）、
 `app/src/lib/events.ts`（`graph:progress` / `graph:complete` / `graph:error` 監聽）。
 
+> **as-built**：
+> - 檔案照這張圖，另外多了 `SavedGraphRow.svelte`（Phase 4 從 `GraphEditor` 抽出的 Open ▾ 清單列）。
+> - 實際行數約為：`GraphEditor.svelte` 960、`graph-controller.svelte.ts` 450、`layout.ts` 190、
+>   `layers.ts` 50、`node-options.ts` 210、`NodeCard.svelte` 110、`NodeInspector.svelte` 220、
+>   `ParamField.svelte` 120。
+> - `events.ts` 沒有改：唯一要聽的 `graph:progress` 由 `GraphEditor` 自己 `listen`（見 §9b 的
+>   try/catch）。`graph:complete`／`graph:error` 不聽，結果和錯誤直接看 `execute_graph` 的回傳。
+> - icon-registry 只補了 `zoom_in`／`zoom_out`，其他圖示原本就有。
+
 ---
 
 ## 2. 分層界線（本案的一條線）
@@ -50,6 +65,10 @@ app/src/lib/components/features/composer/
 
 repo 慣例同步遵守：`lib/` 全域零 `$effect`——計時器與生命週期（`$effect` ＋ `onDestroy`）
 全在元件。Svelte 5 runes（`$state` / `$derived` / `$props`），不用 legacy store。
+
+> **as-built**：controller 的轉換方法實際叫 `toRecipe()`／`loadRecipe()`。`issues` 不在
+> controller，驗證全交給後端（見 §9b）。Phase 2 在 controller 加了存檔狀態：`openId`、
+> `dirty`（拿現在的 `toRecipe()` 字串跟存檔點比）、`savedAt`，以及 `save()`／`open()`。
 
 ---
 
@@ -73,6 +92,10 @@ type ParamsMap = Record<string, Record<string, unknown>>;   // nodeId → { key:
   （id 會被重用，留著會悄悄套到別顆上）。
 - **`nextSeq` 取「最大 n{k} ＋ 1」而非節點數**——刪過節點的圖不連號。
 - **座標不進 wire**：存結構不存位置，每次載入重排（決定性）。沒有手動拖曳所以無損失。
+
+> **as-built**：`CanvasNode` 實際只有 `{ id, ref, kind? }`。顯示名每次由 `labelOfNode` 從 manifest
+> 反查，不存。`kind` 只在打開的存檔裡有、而且那個方法已經不在 manifest 時才會用到：
+> 否則打開再存一次，它會被當成 `method`。
 
 ---
 
@@ -138,6 +161,14 @@ function suppliedAt(point: InsertPoint, g: GraphModel, meta: MethodMeta[]): Set<
   之後，`group_similar_images` / `annotate_video` / `process_files` 要排在最前），
   其餘照 manifest 序。排序不動篩選
 - 兩區皆空要給誠實理由（`emptyReason`），不是空白選單
+
+> **as-built**（以 `node-options.ts` 為準）：
+> - 分三區（Source／Method／Output），停用列寫出理由，例如 `Already in this graph`、
+>   `A graph can only have one source`。
+> - 排序：停用列沉底；接著是 manifest 的 `pickerRank: 'last'`（`process_files`，它只吃來源、
+>   接不上別的 step，2026-10 起排最後）；再來是能直接吃到上游剛寫的槽的；需要先填參數的
+>   （amber 列）排在同組後面。
+> - 上面例子裡的 `process_files` 其實不讀 `extract_frames_to_disk` 寫的槽，不會排到最前。
 
 ---
 
@@ -228,6 +259,15 @@ const CATEGORY_CLASS = {
   且上游真的接上了就在下面加一行灰字顯示會取到什麼
 - 清成空值＝整個 key 拿掉（回到「沒設過」）；**不取整**（threshold 0.9 取整變 0）
 
+> **as-built**（以 `GraphEditor.svelte`、`ParamField.svelte` 為準）：
+> - 右欄沒有拖寬，也不存 localStorage：固定 280，視窗窄時讓步到最少 220，畫布至少留 340
+>   （仍是「夾在 derived、不寫回」）。
+> - `ParamField` 自己畫控制項，外層包 `FormField`：bool 是 checkbox、int／float 是 number、
+>   string 是 text、enum 是 `<select>`，path／dir 是唯讀的檔名欄＋清除鍵＋Browse
+>   （為什麼不用 `FilePicker` 見 §9b）。
+> - placeholder 依情況寫 `Required`、`Default: …` 或 `From upstream`，manifest 的 `hint`
+>   顯示在欄位下方。沒有另外一行顯示「會取到哪個路徑」；卡片摘要寫 `…: from upstream`。
+
 ### 卡面唯讀摘要
 
 一行、定高（`nowrap` ＋ `ellipsis`）——`params` 不在重排觸發裡，行高一變線就歪。
@@ -248,20 +288,28 @@ const CATEGORY_CLASS = {
 
 **Phase 1 的結果呈現先做最簡**：一張 `Card` 列 JSON 摘要即可，不做圖表、不做縮圖預覽。
 
+> **as-built**：
+> - Run 不是「按下去才驗證」：編輯後 200ms 就送 `validate_graph`，判定能跑之前 Run 是灰的。
+>   原因顯示在狀態列；Phase 2 起也標在那顆節點的卡片上，點狀態列的錯誤會跳到那顆。
+> - 執行中 Run 換成 Cancel，按下後顯示 `Stopping after current step…`（取消在兩顆 step
+>   之間生效）。
+> - 結果放在底部的 `Panel`（標頭有 `StatusBadge` 標 completed／cancelled），列出各槽摘要、
+>   寫出的檔案路徑和執行時的警告。取消的執行也會顯示停下前的產出。
+
 ---
 
 ## 9. Phase 1 刻意不做
 
 | 項目 | 去哪 |
 |---|---|
-| 存載、已保存清單、`openDoc` / `dirty` / 覆蓋確認 | Phase 2 |
+| 存載、已保存清單、`openDoc` / `dirty` / 覆蓋確認 | Phase 2（as-built：已做，見主計畫 §5） |
 | 自動存檔 | 不做（主計畫 §6：我們留儲存鈕，省掉整段複雜度） |
-| 小地圖、畫布搜尋、⚠ 導航、群組收合 | Phase 3（且不排期） |
-| ⌘K 方法目錄浮層 | Phase 3。picker 已經夠用了 |
+| 小地圖、畫布搜尋、⚠ 導航、群組收合 | Phase 3（且不排期）。as-built：Phase 3 決定不做；「點警告跳到那顆」併進 Phase 2 |
+| ⌘K 方法目錄浮層 | Phase 3。picker 已經夠用了（as-built：不做） |
 | 匯出／匯入（lower / lift） | 不做（沒有模式一） |
-| compact（<860px）版面 | 誠實放棄：不畫編輯器，一句話 ＋ 提示改用桌面寬度 |
+| compact（<860px）版面 | 誠實放棄：不畫編輯器，一句話 ＋ 提示改用桌面寬度（as-built：連提示也沒做，任何寬度都畫編輯器，靠右欄最少 220、畫布最少 340 撐住） |
 | i18n | 全 app 尚未 i18n（`svelte-i18n` 在 package.json 但 `app/src/` 沒用），單頁翻譯會不一致 |
-| gallery catalog | Phase 4 |
+| gallery catalog | Phase 4（as-built：已做，`/gallery/pages/composer`） |
 
 ---
 
@@ -276,6 +324,11 @@ const CATEGORY_CLASS = {
 | `NODE_H = 28` / `NODE_H_SUM = 45` / `LAYER_GAP = 40` / `PAD = 26` | `34` / `54` / `56` / `30` | 抄參考專案的數字對我們的中英混排字級偏擠，實際調過 |
 | — | `listen()` 包 try/catch | 在 Tauri 殼外它會**同步 throw**，而 `$effect` 裡未捕捉的 throw 會讓整頁空白。丟掉即時進度遠比丟掉整個編輯器好 |
 | — | icon-registry 補 `zoom_in` / `zoom_out` | 原本沒有 |
+| `events.ts` 加三個 graph 事件的監聽 | `events.ts` 沒動，`GraphEditor` 只 `listen('graph:progress')` | 結果和錯誤本來就由 `execute_graph` 的回傳帶回，再聽一次是重複 |
+| 右欄預設 260、可拖寬、寬度存 localStorage | 固定 280，只在窄視窗時讓步 | 沒做拖寬；「夾在 derived 不寫回」照做 |
+| bool 用 `ToggleSwitch` | checkbox | `ParamField` 全部自己畫，跟同一欄的其他控制項對齊 |
+| compact（<860px）時不畫編輯器、只給提示 | 沒做，任何寬度都畫 | 右欄和畫布各有最小寬度撐住 |
+| picker：吃得到上游剛寫的槽就排最前 | 還要先看停用、`pickerRank` | `process_files` 接不上別的 step，2026-10 起由 manifest 的 `pickerRank: 'last'` 排到最後 |
 
 ## 10. 驗收 — 2026-08-07 狀態
 

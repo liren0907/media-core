@@ -80,6 +80,16 @@ export const galleryGroups: GalleryGroup[] = [
         ],
       },
       {
+        id: 'composer',
+        label: 'Composer',
+        href: '/gallery/pages/composer',
+        children: [
+          { id: 'composer-nodecard', label: 'NodeCard', href: '/gallery/pages/composer#nodecard' },
+          { id: 'composer-paramfield', label: 'ParamField', href: '/gallery/pages/composer#paramfield' },
+          { id: 'composer-savedgraphrow', label: 'SavedGraphRow', href: '/gallery/pages/composer#savedgraphrow' },
+        ],
+      },
+      {
         id: 'camera',
         label: 'Camera',
         href: '/gallery/pages/camera',

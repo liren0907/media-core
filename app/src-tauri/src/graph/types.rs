@@ -99,19 +99,112 @@ pub struct GraphVerdict {
     pub reason: Option<String>,
     /// Non-blocking findings — the graph still runs.
     pub warnings: Vec<String>,
+    /// The same messages as `reason` and `warnings`, each with the node it belongs to,
+    /// so the canvas can mark that node. Validation still stops at the first error, so
+    /// there is at most one error here.
+    pub issues: Vec<GraphIssue>,
     /// Topological execution order (node ids). Empty when the graph is invalid.
     pub order: Vec<String>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum IssueSeverity {
+    /// The graph cannot run.
+    Error,
+    Warning,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GraphIssue {
+    pub severity: IssueSeverity,
+    /// The node the message is about — for a missing input, the node that needs it.
+    /// None when it is about the graph as a whole (no source, a cycle, ...).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub node_id: Option<String>,
+    pub message: String,
+}
+
+impl GraphIssue {
+    pub fn warning(node_id: Option<&str>, message: impl Into<String>) -> Self {
+        Self {
+            severity: IssueSeverity::Warning,
+            node_id: node_id.map(str::to_string),
+            message: message.into(),
+        }
+    }
+}
+
 impl GraphVerdict {
     pub fn invalid(reason: impl Into<String>) -> Self {
+        Self::rejected(None, reason.into())
+    }
+
+    /// Invalid because of one node.
+    pub fn invalid_at(node_id: &str, reason: impl Into<String>) -> Self {
+        Self::rejected(Some(node_id), reason.into())
+    }
+
+    /// Runnable; `reason` and `warnings` are derived from the issues so the two
+    /// can never disagree.
+    pub fn runnable(order: Vec<String>, issues: Vec<GraphIssue>) -> Self {
+        Self {
+            valid: true,
+            reason: None,
+            warnings: issues.iter().map(|i| i.message.clone()).collect(),
+            issues,
+            order,
+        }
+    }
+
+    fn rejected(node_id: Option<&str>, reason: String) -> Self {
         Self {
             valid: false,
-            reason: Some(reason.into()),
+            issues: vec![GraphIssue {
+                severity: IssueSeverity::Error,
+                node_id: node_id.map(str::to_string),
+                message: reason.clone(),
+            }],
+            reason: Some(reason),
             warnings: Vec::new(),
             order: Vec::new(),
         }
     }
+}
+
+// ============================================================================
+// SAVED GRAPHS
+// ============================================================================
+
+/// One row of the saved-graphs list. Whether it can run is judged afresh on every
+/// listing, never remembered from when it was saved.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GraphListItem {
+    pub id: String,
+    pub label: String,
+    pub node_count: usize,
+    /// The file's modification time in ms since the Unix epoch — when it was last saved.
+    pub modified_ms: u64,
+    pub valid: bool,
+    /// Why it cannot run, as `GraphVerdict::reason`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+    /// Set when the file cannot be read back; such a row can only be deleted.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub broken: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SavedGraph {
+    pub id: String,
+    /// What was actually written. The canvas takes its parameters back from this, so
+    /// the canvas and the file cannot disagree.
+    pub recipe: GraphRecipe,
+    /// How many undeclared parameters were dropped on the way.
+    pub removed_params: usize,
 }
 
 // ============================================================================

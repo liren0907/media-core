@@ -1,9 +1,15 @@
 # PLAN — `/composer` Phase 0：後端骨架
 
-## 這份文檔是什麼（2026-08-07）
+## 這份文檔是什麼（2026-08-07 寫；2026-10-19 改寫成 as-built）
+
+**✅ 2026-08-07 完成**（驗收見 §8）。
 
 **Phase 0 的實作規格**：manifest ＋ registry ＋ validate ＋ runner ＋ command。
 **這階段前端一行都不改**，做完就能用手寫的 JSON 圖跑出真實結果。
+
+這份已改寫成 as-built：規格和推理保留原樣，各節後面的「as-built」說明現在的 code；
+Phase 0 當時的偏離和之後的改動（2026-10 的 review 修正、Phase 2 的存檔與問題標示）
+都集中在 §11。
 
 前置閱讀：`REFERENCE_composer_method_manifest.md`（埠宣告）、
 `PLAN_composer_graph_editor.md`（主計畫 ＋ 五個決策）。
@@ -35,6 +41,11 @@ app/src-tauri/src/commands/graph.rs   Tauri command 層
 `app/src-tauri/src/main.rs`（`generate_handler!` 加 3 支）。
 
 **`crates/media-core/` 零 diff。**
+
+> **as-built**：manifest 是 3 個來源＋11 顆 media-core step＋`save_report`，共 15 項；
+> `main.rs` 在 Phase 0 加了 4 支（多了 `cancel_graph_run`），Phase 2 再加 4 支存檔 command。
+> 後來多的檔：`store.rs`（Phase 2 存檔）、`steps/mod.rs`、四支測試檔
+> `tests.rs`／`tests_run.rs`／`tests_manifest.rs`／`tests_store.rs`。
 
 ---
 
@@ -94,6 +105,9 @@ pub type NodeParams = std::collections::BTreeMap<String, serde_json::Value>;
 
 **一張圖恰好一顆 source 節點**（G4）。多來源＝多張圖分開跑，v1 不做。
 
+> **as-built**：Phase 2 的存檔就是把這份 `GraphRecipe` 原樣寫成 JSON 檔，沒有另一種格式。
+> `label` 和 `edges` 缺了照樣讀得進來（`#[serde(default)]`）。
+
 ---
 
 ## 3. `manifest.rs`
@@ -146,6 +160,16 @@ pub enum FallbackSource {
 初版填 **11 顆 media-core step ＋ `save_report`**。逐顆的內容照
 `REFERENCE_composer_method_manifest.md` §2 抄。
 
+> **as-built**（以 `manifest.rs` 為準）：
+> - 不是 `OnceLock<Vec<…>>`，是編譯期的靜態表 `pub const METHODS: &[MethodMeta]`；三個來源也在表裡。
+> - `MethodMeta` 多了 `kind`（source／method／sink）、`description`、`picker_rank`（`process_files` 是 `last`）。
+> - `SlotRef` 多了 `optional`（沒人供給也能跑，`save_report` 的兩個輸入）和
+>   `satisfied_by_param`（填了這個參數就不需要上游）。
+> - `ParamSpec` 多了 `hint`（欄位下方的說明）和 `output`（這個路徑是 step 寫出的檔，
+>   執行結果的 `outputs` 照它收集）；`options` 是 `ParamOption { value, label }`。
+> - `FallbackSource` 只有 `VideoProcessOutputDir`。`annotate_frame` 的 `inputPath` 留空時
+>   用來源檔，這在 registry 裡直接處理，不是一個 `FallbackSource`。
+
 ---
 
 ## 4. `registry.rs` — 字串 → step 工廠
@@ -193,6 +217,9 @@ pub fn build_step(
 配套一支小 helper（`ParamsExt`）把 `serde_json::Value` 取值收斂成
 `bool_/int/float/str/path/dir/enum_` ＋ `*_opt` 兩組，錯誤訊息帶 key 名，**中文原句**
 （跟 repo 既有 `Result<T, String>` 慣例一致，前端 `Error.message` 原樣顯示）。
+
+> **as-built**：helper 是 `registry::Params`（`bool`／`int`／`float`／`str`／`path` 回
+> `Option`，`req_str`／`req_path` 是必填），錯誤訊息是英文（見 §11）。
 
 ---
 
@@ -244,6 +271,16 @@ pub fn run_graph(
 **約 80–120 行。** `media-core` 的 `PipelineStep` / `MediaContext` 原樣使用，
 `Pipeline<T>` 這個 struct 我們單純不用（既有的 14 支 command 繼續用它，零 diff）。
 
+> **as-built**：「建構推遲到每顆要跑的前一刻」照做。外面多包了兩層：
+> - `run_graph(app, …)` → `execute_run(…, emit)` → `run_graph_with(…, emit)`。事件輸出是注入的，
+>   測試不用 `AppHandle` 也跑得動。
+> - `execute_run` 建一個 `RunGuard`：不論 `run_graph_with` 是回傳、失敗、在取消檢查點停下
+>   還是 panic，它的 `Drop` 都是唯一出口，負責清掉取消登記、發 `graph:finished`。
+>
+> `run_graph_with` 自己先跑一次 `validate`，不靠呼叫端。取消不是錯誤：檢查到取消就回
+> `status: cancelled` 的結果，帶著已完成的產出。每顆成功後，它在 manifest 標成 `output` 的
+> 參數路徑收進結果的 `outputs`。整支 `runner.rs` 約 330 行。
+
 ### 執行語意的三點記帳
 
 1. **拓樸線性化不是真並行**。畫面上的分岔在執行時是依序跑。資料本來就在黑板上不在
@@ -266,6 +303,19 @@ pub fn run_graph(
 
 取消用 `AtomicBool`，存在 `OnceLock<Mutex<HashMap<String, Arc<AtomicBool>>>>`——
 與 `commands/events.rs` 的 `ACTIVE_PIPELINES` 同一個 pattern。
+
+> **as-built**：上面三個事件都有，多了一個 `graph:finished`。各自什麼時候發：
+>
+> | 事件 | 什麼時候發 |
+> |---|---|
+> | `graph:progress` | 每顆 step 開始、結束各一次 |
+> | `graph:complete` | 只在整張圖跑完時發 |
+> | `graph:error` | 只在 critical 的 step 失敗時發 |
+> | `graph:finished` | `{ runId, status: 'completed'\|'cancelled'\|'failed', message? }`，每次執行不論怎麼結束都恰好發一次（包括 panic） |
+>
+> run id 由前端先產生、跟著 `execute_graph` 送進來（沒給才由後端產生），所以按下 Run
+> 之後馬上按 Cancel 也找得到這次執行。同一個 id 已在執行中就拒絕。前端目前只聽
+> `graph:progress`，結果與錯誤直接看 `execute_graph` 的回傳。
 
 ---
 
@@ -300,6 +350,18 @@ pub fn run_graph(
 - 孤兒節點（沒有任何邊連到它）——不是壞圖，是還沒畫完
 
 錯誤訊息**全部中文原句**，前端原樣顯示，後端是裁判。
+
+> **as-built**（以 `validate.rs` 為準）：
+> - 執行前的判官叫 `validate`，不叫 `validate_runnable`；它自己先跑 `validate_integrity`。
+> - G3 的「params 的 key 都是宣告過的」改成**警告**，執行時忽略未知參數（2026-10）。
+>   這樣 manifest 改版後，舊圖照樣打得開、跑得動。
+> - G6 的供給照**祖先**判：上游一路往回找得到寫這個槽的節點才算，不是「拓樸序上排在前面」就算。
+>   拓樸序只是把畫面線性化的一種排法，看祖先才是使用者畫的那張圖。
+> - 警告多兩條：未知參數；出口節點讀的槽沒有一個有人供給（執行到它會失敗）。
+> - 遇到第一個錯就停，一次只回一個錯。
+> - 每則錯誤和警告都另外放進 `GraphVerdict.issues`，帶上它屬於哪顆節點（Phase 2），
+>   讓畫布標在那顆上。缺上游的錯掛在需要它的下游那顆；有環、沒有來源、同槽多寫入者
+>   這類整張圖的問題不掛節點。`reason` 和 `warnings` 由同一批訊息產生，維持原本的形狀。
 
 ---
 
@@ -339,6 +401,25 @@ pub struct GraphRunResult {
 `execute_graph` 要在 `std::thread::spawn` 裡跑（沿用既有 14 支 command 的做法——
 opencv 的東西不能在 async runtime 上直接跑）。
 
+> **as-built**（以 `commands/graph.rs` 為準）：
+>
+> | command | 簽章 | 用途 |
+> |---|---|---|
+> | `list_graph_methods` | `() -> Result<Vec<&MethodMeta>, String>` | 直接回 manifest |
+> | `validate_graph` | `(recipe) -> Result<GraphVerdict, String>` | `{ valid, reason?, warnings, issues, order }`，壞圖不算 command 錯誤 |
+> | `execute_graph` | `(app, recipe, run_id: Option<String>) -> Result<GraphRunResult, String>` | 在 `spawn_blocking` 裡跑，step panic 變成錯誤訊息 |
+> | `cancel_graph_run` | `(run_id) -> Result<bool, String>` | `false`＝這個 id 已經結束或從沒開始 |
+> | `list_graphs` | `(app) -> Result<Vec<GraphListItem>, String>` | Phase 2：存過的圖，新的在前，每列重新判定跑不跑得動 |
+> | `load_graph` | `(app, id) -> Result<GraphRecipe, String>` | Phase 2 |
+> | `save_graph` | `(app, id: Option<String>, recipe) -> Result<SavedGraph, String>` | Phase 2：沒 id＝新存一份，有 id＝覆蓋；回傳實際寫進去的 recipe 和清掉的未知參數數量 |
+> | `delete_graph` | `(app, id) -> Result<(), String>` | Phase 2 |
+>
+> 用 `spawn_blocking`，不用 `std::thread::spawn`：等待 blocking pool 時 async worker 是空出來的，
+> 而且 await 那個 handle 能把 step 的 panic 轉成一般錯誤。`GraphRunResult` 另外多了 `status`
+> （`completed`／`cancelled`）和 `outputs`（成功的 step 寫出的路徑）。DTO 名稱是
+> `HlsResultDto`／`AnnotationResultDto`／`VideoProcessResultDto`／`ProcessResultDto`，
+> 都在 `graph/types.rs`；`analysis` 照計畫重用 `commands/pipeline.rs` 的 `AnalysisResult`。
+
 ---
 
 ## 8. 驗收（Phase 0 的 Definition of Done）— ✅ 2026-08-07 完成
@@ -348,6 +429,11 @@ opencv 的東西不能在 async runtime 上直接跑）。
 > （22 支圖形驗證 ＋ 4 支真實執行，測試檔 `src/graph/tests.rs`、`src/graph/tests_run.rs`）。
 > 執行類測試用 ffmpeg 合成一支 2 秒 160×120 的 testsrc 當 fixture，ffmpeg 不在就明講
 > 跳過而不是靜默通過。
+>
+> **現在（2026-10-19）**：`cargo test -p media-app --bin media-app graph::` 共 **52** 個——
+> `tests` 30、`tests_run` 11、`tests_manifest` 2、`tests_store` 9。`tests_manifest` 把每顆
+> media-core step 實際跑一次，比對它寫的槽跟 manifest 宣告的一樣；它沒有 ffmpeg 就**失敗**，
+> 不跳過（會自己跳過的檢查永遠是綠的）。
 
 
 1. `cargo check` 0 errors（baseline：只有 `db/queries.rs:288` 那個既有 dead_code 警告）
@@ -385,7 +471,7 @@ opencv 的東西不能在 async runtime 上直接跑）。
 
 | 項目 | 為什麼 |
 |---|---|
-| 存載（`store.rs`、JSON 檔 CRUD） | Phase 2。Phase 0 用手寫 JSON 驗收就夠 |
+| 存載（`store.rs`、JSON 檔 CRUD） | Phase 2。Phase 0 用手寫 JSON 驗收就夠（as-built：Phase 2 做了，見 §7） |
 | 任何前端 | 這階段的價值就在於「不碰前端也能知道值不值得做」 |
 | 真並行執行 | 拓樸線性化已經正確，並行是效能題不是正確性題 |
 | `benchmark` 那兩顆 step | `BenchmarkContext` 泛型不同，見 manifest §3 |
@@ -406,6 +492,8 @@ opencv 的東西不能在 async runtime 上直接跑）。
 
 ## 11. 實作時偏離本文檔的地方（以 code 為準）
 
+前六列是 Phase 0 當時（2026-08-07）的偏離；之後的是 2026-10 review 修正和 Phase 2 帶來的改動。
+
 | 文檔原本寫 | 實際做法 | 為什麼 |
 |---|---|---|
 | 錯誤訊息「全部中文原句」 | **英文** | 那是照抄參考專案（中文介面）的慣例。本 repo 的 nav label、既有後端錯誤訊息全是英文，跟著走才一致 |
@@ -413,3 +501,10 @@ opencv 的東西不能在 async runtime 上直接跑）。
 | `NodeParams` 型別檢查只在 validate | validate（對 manifest）＋ registry（取值時）**兩道** | registry 那道是防禦性的：驗過的圖才會進來，但錯誤訊息要能指出是哪個 key |
 | 三條路徑繼承鏈 | **兩條**（`process_files` 接不上） | 見 `REFERENCE_composer_method_manifest.md` §4 |
 | `saveMode` 交給 step 自己的預設 | registry 明確補 `single_directory` | media-core 的 `SaveMode::default()` 是 `MultipleDirectory`，會讓 `output_dir` 變成幀目錄的**父目錄**，繼承鏈整條指錯地方。見 manifest §5 第一列 |
+| G6：拓樸序上之前有人寫過就算 | 照祖先判 | 拓樸序只是一種排法；祖先才是使用者畫的圖，比較嚴、也比較誠實 |
+| `execute_graph` 在 `std::thread::spawn` 裡跑；三個事件 | `spawn_blocking` ＋ `RunGuard`，多一個 `graph:finished` | 一次執行只有一個出口：完成、取消、失敗、panic 都會清掉登記、發恰好一次 `graph:finished`。所以 workspace 不能設 `panic = "abort"`（2026-10） |
+| 取消回 `Err("已取消")` | 回 `Ok`，`status: cancelled`，帶著停下前的產出 | 取消是使用者的決定，不是失敗（2026-10） |
+| run id 由後端產生 | 前端先產生、跟著 `execute_graph` 送出 | 按 Run 之後馬上按 Cancel，那時還沒收到任何事件也取消得到（2026-10） |
+| G3：未宣告的參數不能跑 | 警告，執行時忽略 | manifest 改版後舊圖要打得開、跑得動（2026-10） |
+| `GraphVerdict { valid, reason?, warnings, order? }` | 多了 `issues`，每則帶節點；`order` 一律回 | Phase 2：問題標在出問題的那顆節點上 |
+| 4 支 command | 8 支（多了存、列、讀、刪） | Phase 2 存檔；後端在 `graph/store.rs`，存前只過 `validate_integrity`、清掉未宣告的參數 |

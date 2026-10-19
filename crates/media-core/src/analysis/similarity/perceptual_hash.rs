@@ -1,104 +1,85 @@
-use opencv::{
-    core::{Mat, Size},
-    imgproc,
-    prelude::*,
-};
+use opencv::core::Mat;
 
 use super::analyzer::SimilarityMethodImpl;
 use crate::analysis::config::PerceptualHashConfig;
+use crate::analysis::hashing::Hasher;
 use crate::analysis::types::AnalysisError;
 
-/// Perceptual hash (aHash) based image similarity
+/// Perceptual hash (aHash) based image similarity.
+///
+/// The hashing itself is `Hasher`'s, so the crate has a single aHash.
 pub struct PerceptualHashMethod {
-    hash_size: i32,
+    hasher: Hasher,
 }
 
 impl PerceptualHashMethod {
     #[allow(dead_code)]
     pub fn new(_resize_width: i32, _resize_height: i32) -> Result<Self, AnalysisError> {
         Ok(Self {
-            hash_size: PerceptualHashConfig::default().hash_size,
+            hasher: Hasher::new(PerceptualHashConfig::default().hash_size),
         })
     }
 
     /// Create with custom configuration
     pub fn with_config(config: &PerceptualHashConfig) -> Result<Self, AnalysisError> {
         Ok(Self {
-            hash_size: config.hash_size,
+            hasher: Hasher::new(config.hash_size),
         })
-    }
-
-    fn compute_phash(&self, img: &Mat) -> Result<Vec<u8>, AnalysisError> {
-        // Convert to grayscale
-        let mut gray = Mat::default();
-        imgproc::cvt_color_def(img, &mut gray, imgproc::COLOR_BGR2GRAY)?;
-
-        // Resize to hash_size x hash_size
-        let mut resized = Mat::default();
-        imgproc::resize_def(
-            &gray,
-            &mut resized,
-            Size::new(self.hash_size, self.hash_size),
-        )?;
-
-        // Convert to f64 for mean calculation
-        let mut float_img = Mat::default();
-        resized.convert_to_def(&mut float_img, opencv::core::CV_64F)?;
-
-        // Calculate mean
-        let mean = opencv::core::mean_def(&float_img)?;
-        let avg = mean[0];
-
-        // Generate hash: each bit is 1 if pixel > mean, 0 otherwise
-        let total_bits = self.hash_size * self.hash_size;
-        let num_bytes = ((total_bits + 7) / 8) as usize;
-        let mut hash = Vec::with_capacity(num_bytes);
-        let mut current_byte: u8 = 0;
-        let mut bit_count = 0;
-
-        for row in 0..self.hash_size {
-            for col in 0..self.hash_size {
-                let pixel = *float_img.at_2d::<f64>(row, col)?;
-                if pixel > avg {
-                    current_byte |= 1 << (7 - bit_count);
-                }
-                bit_count += 1;
-                if bit_count == 8 {
-                    hash.push(current_byte);
-                    current_byte = 0;
-                    bit_count = 0;
-                }
-            }
-        }
-
-        // Push remaining bits if any
-        if bit_count > 0 {
-            hash.push(current_byte);
-        }
-
-        Ok(hash)
-    }
-
-    fn hamming_distance(&self, hash1: &[u8], hash2: &[u8]) -> u32 {
-        hash1
-            .iter()
-            .zip(hash2.iter())
-            .map(|(a, b)| (a ^ b).count_ones())
-            .sum()
     }
 }
 
 impl SimilarityMethodImpl for PerceptualHashMethod {
     fn compute_similarity(&mut self, img1: &Mat, img2: &Mat) -> Result<f64, AnalysisError> {
-        let hash1 = self.compute_phash(img1)?;
-        let hash2 = self.compute_phash(img2)?;
+        let hash1 = self.hasher.compute_phash_from_mat(img1)?;
+        let hash2 = self.hasher.compute_phash_from_mat(img2)?;
 
-        let distance = self.hamming_distance(&hash1, &hash2);
-        let max_distance = (self.hash_size * self.hash_size) as u32;
+        // Similarity in 0-1, where 1 is identical
+        Ok(self.hasher.calculate_similarity(&hash1, &hash2))
+    }
+}
 
-        // Convert distance to similarity (0-1, where 1 is identical)
-        let similarity = 1.0 - (distance as f64 / max_distance as f64);
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use opencv::core::{CV_8UC3, Scalar, Vec3b};
+    use opencv::prelude::*;
 
-        Ok(similarity)
+    /// A 64×64 grey image whose pixel value is `f(row, col)`.
+    fn image(f: impl Fn(i32, i32) -> u8) -> Mat {
+        let mut img =
+            Mat::new_rows_cols_with_default(64, 64, CV_8UC3, Scalar::all(0.0)).unwrap();
+        for row in 0..64 {
+            for col in 0..64 {
+                let v = f(row, col);
+                *img.at_2d_mut::<Vec3b>(row, col).unwrap() = Vec3b::from([v, v, v]);
+            }
+        }
+        img
+    }
+
+    #[test]
+    fn similarity_of_generated_images_is_unchanged() {
+        let horizontal = image(|_, c| (c * 4) as u8);
+        let vertical = image(|r, _| (r * 4) as u8);
+        let inverted = image(|_, c| 255 - (c * 4) as u8);
+        let checker = image(|r, c| if (r / 8 + c / 8) % 2 == 0 { 0 } else { 255 });
+        let diagonal = image(|r, c| ((r + c) * 2) as u8);
+
+        let pairs = [
+            (&horizontal, &horizontal),
+            (&horizontal, &vertical),
+            (&horizontal, &inverted),
+            (&horizontal, &checker),
+            (&vertical, &diagonal),
+            (&checker, &diagonal),
+        ];
+        let mut method = PerceptualHashMethod::with_config(&PerceptualHashConfig::default()).unwrap();
+        let scores: Vec<f64> = pairs
+            .iter()
+            .map(|(a, b)| method.compute_similarity(a, b).unwrap())
+            .collect();
+
+        // Recorded from the implementation before it was switched to `Hasher`.
+        assert_eq!(scores, vec![1.0, 0.5, 0.0, 0.5, 0.75, 0.4375]);
     }
 }

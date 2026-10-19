@@ -48,7 +48,7 @@ DEFINE FIELD file_size       ON media_file TYPE int;       -- bytes
 DEFINE FIELD file_type       ON media_file TYPE string;    -- "image" | "video"
 DEFINE FIELD mime_type       ON media_file TYPE string;    -- e.g. "image/jpeg"
 DEFINE FIELD content_hash    ON media_file TYPE string;    -- BLAKE3 全檔 hash
-DEFINE FIELD phash           ON media_file TYPE string;    -- perceptual hash (hex string, 64-bit)
+DEFINE FIELD phash           ON media_file TYPE string;    -- perceptual hash (base64；實作是 img_hash 的 DoubleGradient，40-bit)
 DEFINE FIELD thumbnail       ON media_file TYPE bytes;     -- 縮圖 (JPEG, ~200px, 存 blob)
 DEFINE FIELD scan_source     ON media_file TYPE record<scan_source>;
 DEFINE FIELD created_at      ON media_file TYPE datetime DEFAULT time::now();
@@ -152,7 +152,7 @@ app/src-tauri/src/
     │
     ▼
 [Stage 3] 感知指紋 — Perceptual Hash
-    │  對圖片：image decode → img_hash 計算 pHash (64-bit)
+    │  對圖片：image decode → img_hash 計算 pHash（實作：DoubleGradient，40-bit；dHash 是 Gradient，64-bit）
     │  對影片：ffmpeg 提取 N 個關鍵幀 → 每幀算 pHash → 取代表值
     │  同時生成縮圖 (200px JPEG)
     │  寫入 DB
@@ -160,7 +160,7 @@ app/src-tauri/src/
     ▼
 [Stage 4] 近似比對
     │  新檔案的 pHash 與 DB 中所有既有 pHash 做 Hamming distance 比較
-    │  閾值建議：distance ≤ 8 為「相似」（64-bit hash 中容許 8 bit 差異）
+    │  門檻（實作）：最多幾 % 位元不同，預設 16%，照雜湊實際位數換算（pHash 40-bit 容許 6 bit、dHash 64-bit 容許 10 bit）
     │  使用 BK-tree 加速（從 DB 載入建樹，或常駐記憶體）
     │  命中 → 建立 duplicate_group (match_type = "similar")
     │
@@ -417,6 +417,8 @@ ffmpeg -i input.mp4 -vf "select='not(mod(n,INTERVAL))'" -frames:v 10 -vsync vfn 
 | > 15 | 不同的圖片 |
 
 建議預設閾值 **≤ 8**，並在設定頁面開放使用者調整。
+
+> 實作：上表的距離以 64-bit 為準。`/dedup` 的門檻滑桿是「最多幾 % 位元不同」（0–100%，預設 16%），後端照雜湊實際的位數換算成距離、無條件捨去：pHash 開關（UI 顯示 Double gradient，40-bit）是 6、dHash（64-bit）是 10；相似分數是 `1 - 距離 / 位數`。
 
 ### 7.4 支援的檔案格式白名單
 

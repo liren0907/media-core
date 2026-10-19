@@ -44,7 +44,7 @@
       note: 'features/dedup · results column',
       children: [
         { name: 'Panel', href: '#panel' },
-        { name: 'ToggleSwitch', href: '#toggleswitch', note: 'BLAKE3 / pHash / dHash' },
+        { name: 'ToggleSwitch', href: '#toggleswitch', note: 'BLAKE3 / Double gradient / dHash' },
         { name: 'RunButton', href: '#runbutton', note: 'Fingerprint / Compare' },
         {
           name: 'ProgressPanel',
@@ -80,7 +80,7 @@
 </Panel>`;
 
   const toggleCode = `<ToggleSwitch bind:checked={useBlake3} label="BLAKE3" />
-<ToggleSwitch bind:checked={usePHash} label="pHash" />
+<ToggleSwitch bind:checked={usePHash} label="Double gradient" />
 <ToggleSwitch bind:checked={useDHash} label="dHash" />`;
 
   const runButtonCode = `<RunButton
@@ -165,12 +165,12 @@
   <GallerySection
     id="toggleswitch"
     title="ToggleSwitch"
-    description="ActionBar's algorithm pickers — BLAKE3 (exact), pHash and dHash (perceptual)."
+    description="ActionBar's algorithm pickers — BLAKE3 (exact), Double gradient and dHash (perceptual)."
     link={{ href: '/gallery/toggleswitch', label: 'Component page' }}
   >
     <Showcase code={toggleCode}>
       <ToggleSwitch bind:checked={demoBlake3} label="BLAKE3" />
-      <ToggleSwitch bind:checked={demoPHash} label="pHash" />
+      <ToggleSwitch bind:checked={demoPHash} label="Double gradient" />
       <ToggleSwitch bind:checked={demoDHash} label="dHash" />
     </Showcase>
   </GallerySection>

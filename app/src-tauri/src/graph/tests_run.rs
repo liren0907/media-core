@@ -51,7 +51,7 @@ fn metadata_recipe(video: &Path) -> GraphRecipe {
 }
 
 /// A 2 second colour-bar clip. Returns None when ffmpeg is not on PATH.
-fn fixture_video(dir: &Path) -> Option<PathBuf> {
+pub(super) fn fixture_video(dir: &Path) -> Option<PathBuf> {
     let path = dir.join("fixture.mp4");
     let status = std::process::Command::new("ffmpeg")
         .args([

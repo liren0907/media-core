@@ -80,13 +80,4 @@ impl VideoAnnotation {
 
         Ok(response.to_string())
     }
-
-    pub fn cleanup_tmp_files() -> Result<(), String> {
-        let tmp_dir = Path::new("tmp");
-        if tmp_dir.exists() {
-            fs::remove_dir_all(tmp_dir)
-                .map_err(|e| format!("Failed to cleanup tmp directory: {}", e))?;
-        }
-        Ok(())
-    }
 }

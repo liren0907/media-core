@@ -358,7 +358,8 @@ pub async fn compare_source(
     }
 
     let include_self_flag = include_self.unwrap_or(false);
-    let threshold_val = threshold.unwrap_or(matcher::similar::DEFAULT_SIMILARITY_THRESHOLD);
+    // Percent of differing bits (0–100); the matcher converts it per hash length.
+    let threshold_val = threshold.unwrap_or(matcher::similar::DEFAULT_SIMILARITY_THRESHOLD_PERCENT);
     let algos = algorithms.unwrap_or_else(|| vec!["blake3".into(), "pHash".into()]);
 
     let use_blake3 = algos.iter().any(|a| a == "blake3");
@@ -596,7 +597,8 @@ pub async fn compare_targets(
         return Err("No target directories to compare against.".to_string());
     }
 
-    let threshold_val = threshold.unwrap_or(matcher::similar::DEFAULT_SIMILARITY_THRESHOLD);
+    // Percent of differing bits (0–100); the matcher converts it per hash length.
+    let threshold_val = threshold.unwrap_or(matcher::similar::DEFAULT_SIMILARITY_THRESHOLD_PERCENT);
     let algos = algorithms.unwrap_or_else(|| vec!["blake3".into(), "pHash".into()]);
     let use_blake3 = algos.iter().any(|a| a == "blake3");
     let use_phash = algos.iter().any(|a| a == "pHash");

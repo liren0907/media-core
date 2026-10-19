@@ -16,7 +16,8 @@
   let progress = $state<DedupCompareProgressEvent | null>(null);
   let filter = $state<'all' | 'exact' | 'similar'>('all');
   let includeSelf = $state(true);
-  let threshold = $state(10);
+  // Largest % of differing bits that still counts as similar
+  let threshold = $state(16);
 
   function sourceIdStr(source: DedupSource): string {
     return source.id ?? '';
@@ -122,8 +123,8 @@
 
       <div class="flex items-center gap-1.5">
         <label class="text-[10px] text-slate-500 whitespace-nowrap">Threshold</label>
-        <input type="range" min="0" max="64" bind:value={threshold} class="w-16 h-1 accent-[#137fec]" />
-        <span class="text-meta w-8 text-right">{threshold}</span>
+        <input type="range" min="0" max="100" bind:value={threshold} class="w-16 h-1 accent-[#137fec]" />
+        <span class="text-meta w-8 text-right">{threshold}%</span>
       </div>
 
       <RunButton

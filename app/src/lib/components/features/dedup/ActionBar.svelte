@@ -21,8 +21,8 @@
   let usePHash = $state(true);
   let useDHash = $state(false);
 
-  // Compare config
-  let threshold = $state(10);
+  // Compare config: largest % of differing bits that still counts as similar
+  let threshold = $state(16);
 
   // Processing state
   let isFingerprintRunning = $state(false);
@@ -135,7 +135,7 @@
       <!-- Algorithm toggles -->
       <div class="flex items-center gap-2 border-r border-slate-200 dark:border-[#2a3441] pr-3">
         <ToggleSwitch bind:checked={useBlake3} label="BLAKE3" />
-        <ToggleSwitch bind:checked={usePHash} label="pHash" />
+        <ToggleSwitch bind:checked={usePHash} label="Double gradient" />
         <ToggleSwitch bind:checked={useDHash} label="dHash" />
       </div>
 
@@ -143,8 +143,8 @@
       <div class="flex items-center gap-2 border-r border-slate-200 dark:border-[#2a3441] pr-3">
         <div class="flex items-center gap-1">
           <label class="text-[10px] text-slate-500 whitespace-nowrap">Threshold</label>
-          <input type="range" min="0" max="64" bind:value={threshold} class="w-14 h-1 accent-[#137fec]" />
-          <span class="text-meta w-6 text-right">{threshold}</span>
+          <input type="range" min="0" max="100" bind:value={threshold} class="w-14 h-1 accent-[#137fec]" />
+          <span class="text-meta w-8 text-right">{threshold}%</span>
         </div>
       </div>
 

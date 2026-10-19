@@ -108,7 +108,7 @@
       <div class="flex flex-col gap-2">
         <label class="text-stat-label">Algorithms</label>
         <ToggleSwitch bind:checked={useBlake3} label="BLAKE3 (exact match)" />
-        <ToggleSwitch bind:checked={usePHash} label="pHash (perceptual)" />
+        <ToggleSwitch bind:checked={usePHash} label="Double gradient (40-bit)" />
         <ToggleSwitch bind:checked={useDHash} label="dHash (difference)" />
       </div>
 

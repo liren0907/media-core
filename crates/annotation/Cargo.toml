@@ -2,6 +2,7 @@
 name = "annotation"
 version = "0.1.0"
 edition = "2021"
+description = "Draws object-detection results (boxes and labels from a detection JSON) on every frame of a video"
 
 [dependencies]
 opencv = { workspace = true }

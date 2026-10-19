@@ -39,6 +39,7 @@ pub struct VideoProcessResult {
 ///
 /// # Example
 /// ```rust
+/// # use media_core::video_process::{ExtractFramesToDisk, ExtractionMode, SaveMode};
 /// let step = ExtractFramesToDisk::new("output/frames")
 ///     .interval(30)
 ///     .mode(ExtractionMode::Parallel)

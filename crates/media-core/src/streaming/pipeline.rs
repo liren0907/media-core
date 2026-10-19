@@ -11,6 +11,8 @@ use crate::streaming::strategy::SamplingStrategy;
 ///
 /// # Example
 /// ```rust
+/// # use media_core::streaming::pipeline::ExtractFrames;
+/// # use media_core::streaming::{ExtractionMode, SamplingStrategy};
 /// let step = ExtractFrames::new(SamplingStrategy::EveryNth(30))
 ///     .with_scale(0.5)
 ///     .with_mode(ExtractionMode::Sequential);

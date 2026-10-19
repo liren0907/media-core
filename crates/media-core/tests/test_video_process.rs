@@ -1,6 +1,7 @@
+mod common;
+
 use media_core::video_process::{ExtractionMode, FrameExtractor, SaveMode};
 use std::fs;
-use std::path::Path;
 use tempfile::tempdir;
 
 /// Test FrameExtractor with OpenCVInterval mode (Example 2 from binary)
@@ -8,11 +9,7 @@ use tempfile::tempdir;
 fn test_frame_extractor_opencv_interval() {
     println!("=== Test: FrameExtractor OpenCVInterval ===");
 
-    let video_path = "data/test.mp4";
-    if !Path::new(video_path).exists() {
-        println!("⚠️  Skipping: data/test.mp4 not found");
-        return;
-    }
+    let video_path = common::test_video();
 
     let output_dir = tempdir().expect("Failed to create temp dir");
     let output_path = output_dir.path().to_str().unwrap();
@@ -47,11 +44,7 @@ fn test_frame_extractor_opencv_interval() {
 fn test_frame_extractor_parallel() {
     println!("=== Test: FrameExtractor Parallel ===");
 
-    let video_path = "data/test.mp4";
-    if !Path::new(video_path).exists() {
-        println!("⚠️  Skipping: data/test.mp4 not found");
-        return;
-    }
+    let video_path = common::test_video();
 
     let output_dir = tempdir().expect("Failed to create temp dir");
     let output_path = output_dir.path().to_str().unwrap();
@@ -88,11 +81,7 @@ fn test_frame_extractor_parallel() {
 fn test_frame_extractor_multiple_directory() {
     println!("=== Test: FrameExtractor MultipleDirectory ===");
 
-    let video_path = "data/test.mp4";
-    if !Path::new(video_path).exists() {
-        println!("⚠️  Skipping: data/test.mp4 not found");
-        return;
-    }
+    let video_path = common::test_video();
 
     let output_dir = tempdir().expect("Failed to create temp dir");
     let output_path = output_dir.path().to_str().unwrap();

@@ -90,7 +90,7 @@ Everything lives under the Tauri app data dir (`app.path().app_data_dir()`):
    uses `convertFileSrc(filePath)` on the absolute path returned by the backend.
 
 macOS mic access requires `NSMicrophoneUsageDescription`, provided via
-`src-tauri/Info.plist` (Tauri merges it into the bundle).
+`app/src-tauri/Info.plist` (Tauri merges it into the bundle).
 
 ## ASR engine (`src/asr.rs`)
 
@@ -171,7 +171,7 @@ All commands return `Result<T, String>`; response structs use
 
 ## Vendored whisper-rs and the bindgen × OpenCV conflict
 
-`src-tauri/crates/whisper-rs` is a vendored copy of whisper-rs 0.15.1 (FFI
+`crates/whisper-rs` is a vendored copy of whisper-rs 0.15.1 (FFI
 bindings to whisper.cpp, built via CMake) with one critical local change:
 **bindgen is removed from `whisper-rs-sys`**.
 

@@ -18,7 +18,7 @@
 ## 1. 模組地圖
 
 ```
-src-tauri/src/graph/
+app/src-tauri/src/graph/
 ├── mod.rs           出口 ＋ 對外 re-export
 ├── types.rs         wire 格式：GraphRecipe / GraphNode / GraphEdge / NodeParams
 ├── manifest.rs      方法宣告表（11 顆 step ＋ 1 顆自訂 sink）
@@ -28,13 +28,13 @@ src-tauri/src/graph/
 └── steps/
     └── save_report.rs   app 側自訂 step（見 manifest §4）
 
-src-tauri/src/commands/graph.rs   Tauri command 層
+app/src-tauri/src/commands/graph.rs   Tauri command 層
 ```
 
-修改的既有檔案（純加法）：`src-tauri/src/commands/mod.rs`（`pub mod graph;`）、
-`src-tauri/src/main.rs`（`generate_handler!` 加 3 支）。
+修改的既有檔案（純加法）：`app/src-tauri/src/commands/mod.rs`（`pub mod graph;`）、
+`app/src-tauri/src/main.rs`（`generate_handler!` 加 3 支）。
 
-**`src-tauri/crates/media-core/` 零 diff。**
+**`crates/media-core/` 零 diff。**
 
 ---
 

@@ -4,8 +4,8 @@
 //! run in milliseconds. Actually executing steps is verified separately.
 
 use super::manifest::{self, ParamKind, METHODS};
-use super::types::GraphRecipe;
-use super::validate;
+use super::types::{GraphRecipe, NodeParams};
+use super::{registry, validate};
 
 fn recipe(value: serde_json::Value) -> GraphRecipe {
     serde_json::from_value(value).expect("test recipe should deserialize")
@@ -289,8 +289,10 @@ fn a_missing_required_parameter_is_rejected() {
     assert!(v.reason.as_deref().unwrap_or("").contains("Output directory"));
 }
 
+/// What a saved graph looks like after the manifest renames or drops a parameter:
+/// it must still open and run, with the stale key reported and otherwise ignored.
 #[test]
-fn an_undeclared_parameter_is_rejected() {
+fn an_undeclared_parameter_is_ignored_with_a_warning() {
     let g = recipe(serde_json::json!({
         "nodes": [
             file_source("/tmp/sample.mp4"),
@@ -301,8 +303,38 @@ fn an_undeclared_parameter_is_rejected() {
     }));
 
     let v = validate::validate(&g);
-    assert!(!v.valid);
-    assert!(v.reason.as_deref().unwrap_or("").contains("windowLines"));
+    assert!(v.valid, "an unknown parameter must not block the run: {:?}", v.reason);
+    assert!(
+        v.warnings
+            .iter()
+            .any(|w| w.contains("ignores unknown parameter 'windowLines'")),
+        "expected a warning naming the stale key, got {:?}",
+        v.warnings
+    );
+}
+
+/// saveMode is the one manifest default the registry applies itself; the value
+/// must come from the manifest, not from a second copy in the registry. That the
+/// default really is single-directory at run time is proven by
+/// `tests_run::executes_a_chain_that_inherits_the_upstream_directory`, which leaves
+/// saveMode out and still finds the frames.
+#[test]
+fn the_save_mode_default_lives_in_the_manifest() {
+    assert_eq!(
+        manifest::default_str("extract_frames_to_disk", "saveMode"),
+        Some("single_directory")
+    );
+
+    let source: NodeParams =
+        serde_json::from_value(serde_json::json!({ "path": "/tmp/sample.mp4" })).unwrap();
+    let ctx = registry::build_context("file", &source).expect("file source builds");
+    let params: NodeParams =
+        serde_json::from_value(serde_json::json!({ "outputDir": "/tmp/frames" })).unwrap();
+
+    assert!(
+        registry::build_step("extract_frames_to_disk", &params, &ctx).is_ok(),
+        "the step should build with saveMode left out"
+    );
 }
 
 #[test]

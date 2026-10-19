@@ -16,9 +16,9 @@
 ## 1. 檔案地圖
 
 ```
-src/routes/composer/+page.svelte                         分頁殼（PageContent ＋ GraphEditor）
+app/src/routes/composer/+page.svelte                         分頁殼（PageContent ＋ GraphEditor）
 
-src/lib/components/features/composer/
+app/src/lib/components/features/composer/
 ├── index.ts                          barrel
 ├── GraphEditor.svelte                編輯器本體（~700 行）：四個邊 ＋ 所有畫面狀態
 ├── graph-controller.svelte.ts        模型層（~450 行）：nodes/edges/params/生長/驗證/執行
@@ -32,9 +32,9 @@ src/lib/components/features/composer/
 ```
 
 修改的既有檔案（純加法）：
-`src/lib/nav.ts`（一列）、`src/lib/types.ts`（graph 型別鏡像）、
-`src/lib/components/ui/icon-registry.ts`（`workflow` / `plus` / `play` / `trash` 等）、
-`src/lib/events.ts`（`graph:progress` / `graph:complete` / `graph:error` 監聽）。
+`app/src/lib/nav.ts`（一列）、`app/src/lib/types.ts`（graph 型別鏡像）、
+`app/src/lib/components/ui/icon-registry.ts`（`workflow` / `plus` / `play` / `trash` 等）、
+`app/src/lib/events.ts`（`graph:progress` / `graph:complete` / `graph:error` 監聽）。
 
 ---
 
@@ -260,7 +260,7 @@ const CATEGORY_CLASS = {
 | ⌘K 方法目錄浮層 | Phase 3。picker 已經夠用了 |
 | 匯出／匯入（lower / lift） | 不做（沒有模式一） |
 | compact（<860px）版面 | 誠實放棄：不畫編輯器，一句話 ＋ 提示改用桌面寬度 |
-| i18n | 全 app 尚未 i18n（`svelte-i18n` 在 package.json 但 `src/` 沒用），單頁翻譯會不一致 |
+| i18n | 全 app 尚未 i18n（`svelte-i18n` 在 package.json 但 `app/src/` 沒用），單頁翻譯會不一致 |
 | gallery catalog | Phase 4 |
 
 ---

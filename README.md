@@ -14,6 +14,7 @@ crates/
   audio-core/     audio recording I/O and audio/SRT metadata analysis
   whisper-rs/     vendored whisper.cpp bindings (ASR), pregenerated FFI bindings
 app/              desktop app (Tauri 2 backend in app/src-tauri, SvelteKit frontend in app/src)
+examples/         standalone example programs (local sample media is gitignored)
 docs/             architecture notes and plans
 ```
 

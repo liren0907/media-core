@@ -136,7 +136,7 @@ File ─┬→ ExtractMetadata ────────────────�
 
 | # | 決策 | 拍板 | 理由 |
 |---|---|---|---|
-| D1 | manifest / registry 放哪 | **app 側 `src-tauri/src/graph/`** | `media-core` 是 git submodule（v0.4.0，另一個 repo），目前工作流一直排除它。放 app 側＝media-core 全程零 diff、不用跨 repo 升版 |
+| D1 | manifest / registry 放哪 | **app 側 `app/src-tauri/src/graph/`** | `media-core` 是 git submodule（v0.4.0，另一個 repo），目前工作流一直排除它。放 app 側＝media-core 全程零 diff、不用跨 repo 升版 |
 | D2 | recipe 存哪 | **`{app_data_dir}/composer/graphs/*.json`** | SurrealDB 有（dedup 在用）但 schema 是 dedup 專用。JSON 檔最簡單、可手改、可版控、debug 時 `cat` 得出來。Phase 2 真的需要查詢再搬 DB |
 | D3 | 分頁路徑 | **`/composer`** | 沿用參考文檔的詞彙，溝通成本最低。`/pipeline` 會跟既有 `commands/pipeline.rs` 的「單一 pipeline」語意打架 |
 | D4 | 圖框架 | **不引進，手刻** | `package.json` 目前沒有 svelte-flow / xyflow / dagre / elk。svelte-flow 自帶 state model 會跟 Svelte 5 runes 打架。參考文檔的 `layout.ts` 是 235 行純函式，抄得動 |
@@ -150,7 +150,7 @@ File ─┬→ ExtractMetadata ────────────────�
 
 ### Phase 0 — 後端骨架（無畫面）
 
-`src-tauri/src/graph/`：`manifest.rs`（14 顆 step 宣告）＋ `registry.rs`（字串→step 工廠）
+`app/src-tauri/src/graph/`：`manifest.rs`（14 顆 step 宣告）＋ `registry.rs`（字串→step 工廠）
 ＋ `validate.rs`（G1–G5 ＋ topo）＋ `runner.rs`（逐顆建構的執行器）＋
 `commands/graph.rs`（3 支 command）。
 
@@ -225,36 +225,36 @@ recipe 持久化（D2 的 JSON 檔）、已保存清單面板、常駐 ⚠（`is
 
 | 檔案 | 角色 |
 |---|---|
-| `src-tauri/src/graph/mod.rs` | 模組出口 |
-| `src-tauri/src/graph/types.rs` | wire 格式：`GraphRecipe` / `GraphNode` / `GraphEdge` / `NodeParams` |
-| `src-tauri/src/graph/manifest.rs` | 方法宣告表（14 顆 step 的埠 ＋ 參數 ＋ 家族） |
-| `src-tauri/src/graph/registry.rs` | `node_ref` ＋ params ＋ context → `Box<dyn PipelineStep<MediaContext>>` |
-| `src-tauri/src/graph/validate.rs` | `topo_order` ＋ G1–G7 |
-| `src-tauri/src/graph/runner.rs` | 逐顆建構 ＋ 執行 ＋ 進度事件 |
-| `src-tauri/src/graph/store.rs` | JSON 檔 CRUD（Phase 2） |
-| `src-tauri/src/commands/graph.rs` | Tauri command 層 |
+| `app/src-tauri/src/graph/mod.rs` | 模組出口 |
+| `app/src-tauri/src/graph/types.rs` | wire 格式：`GraphRecipe` / `GraphNode` / `GraphEdge` / `NodeParams` |
+| `app/src-tauri/src/graph/manifest.rs` | 方法宣告表（14 顆 step 的埠 ＋ 參數 ＋ 家族） |
+| `app/src-tauri/src/graph/registry.rs` | `node_ref` ＋ params ＋ context → `Box<dyn PipelineStep<MediaContext>>` |
+| `app/src-tauri/src/graph/validate.rs` | `topo_order` ＋ G1–G7 |
+| `app/src-tauri/src/graph/runner.rs` | 逐顆建構 ＋ 執行 ＋ 進度事件 |
+| `app/src-tauri/src/graph/store.rs` | JSON 檔 CRUD（Phase 2） |
+| `app/src-tauri/src/commands/graph.rs` | Tauri command 層 |
 
 ### 前端（Phase 1）
 
 | 檔案 | 角色 |
 |---|---|
-| `src/routes/composer/+page.svelte` | 分頁殼 |
-| `src/lib/components/features/composer/GraphEditor.svelte` | 編輯器本體（畫面狀態） |
-| `src/lib/components/features/composer/graph-controller.svelte.ts` | 模型層（nodes/edges/params/生長/驗證） |
-| `src/lib/components/features/composer/graph/layout.ts` | 座標引擎（純函式） |
-| `src/lib/components/features/composer/graph/layers.ts` | 拓樸分層 |
-| `src/lib/components/features/composer/graph/NodeInspector.svelte` | 右欄檢視器 |
-| `src/lib/components/features/composer/graph/node-options.ts` | picker 過濾純函式 |
-| `src/lib/components/features/composer/index.ts` | barrel |
+| `app/src/routes/composer/+page.svelte` | 分頁殼 |
+| `app/src/lib/components/features/composer/GraphEditor.svelte` | 編輯器本體（畫面狀態） |
+| `app/src/lib/components/features/composer/graph-controller.svelte.ts` | 模型層（nodes/edges/params/生長/驗證） |
+| `app/src/lib/components/features/composer/graph/layout.ts` | 座標引擎（純函式） |
+| `app/src/lib/components/features/composer/graph/layers.ts` | 拓樸分層 |
+| `app/src/lib/components/features/composer/graph/NodeInspector.svelte` | 右欄檢視器 |
+| `app/src/lib/components/features/composer/graph/node-options.ts` | picker 過濾純函式 |
+| `app/src/lib/components/features/composer/index.ts` | barrel |
 
 ### 需要**修改**的既有檔案（全部是加法）
 
-`src/lib/nav.ts`（加一列）、`src/lib/types.ts`（graph 型別）、
-`src/lib/components/ui/icon-registry.ts`（幾顆圖示）、`src-tauri/src/main.rs`（註冊 command）、
-`src-tauri/src/commands/mod.rs`（`pub mod graph;`）、
-`src/lib/components/features/gallery/sections.ts`（Phase 4）。
+`app/src/lib/nav.ts`（加一列）、`app/src/lib/types.ts`（graph 型別）、
+`app/src/lib/components/ui/icon-registry.ts`（幾顆圖示）、`app/src-tauri/src/main.rs`（註冊 command）、
+`app/src-tauri/src/commands/mod.rs`（`pub mod graph;`）、
+`app/src/lib/components/features/gallery/sections.ts`（Phase 4）。
 
-**`src-tauri/crates/media-core/` 全程零 diff。**
+**`crates/media-core/` 全程零 diff。**
 
 ---
 

@@ -141,6 +141,7 @@ pub fn validate(recipe: &GraphRecipe) -> GraphVerdict {
 
     // ---- G3: every node resolves to a manifest entry, params are well formed ----
     let mut metas: HashMap<&str, &'static MethodMeta> = HashMap::new();
+    let mut param_warnings: Vec<String> = Vec::new();
     for node in &recipe.nodes {
         let Some(meta) = manifest::find(&node.node_ref) else {
             return GraphVerdict::invalid(format!(
@@ -157,8 +158,9 @@ pub fn validate(recipe: &GraphRecipe) -> GraphVerdict {
                 meta.kind.as_str()
             ));
         }
-        if let Err(reason) = check_params(meta, &node.params()) {
-            return GraphVerdict::invalid(reason);
+        match check_params(meta, &node.params()) {
+            Ok(warnings) => param_warnings.extend(warnings),
+            Err(reason) => return GraphVerdict::invalid(reason),
         }
         metas.insert(node.node_id.as_str(), meta);
     }
@@ -280,10 +282,13 @@ pub fn validate(recipe: &GraphRecipe) -> GraphVerdict {
         }
     }
 
+    let mut warnings = param_warnings;
+    warnings.extend(collect_warnings(recipe, &metas, &available));
+
     GraphVerdict {
         valid: true,
         reason: None,
-        warnings: collect_warnings(recipe, &metas, &available),
+        warnings,
         order,
     }
 }
@@ -388,12 +393,18 @@ fn source_label(kind: SourceKind) -> &'static str {
     }
 }
 
-fn check_params(meta: &MethodMeta, params: &NodeParams) -> Result<(), String> {
-    for key in params.keys() {
-        if meta.param(key).is_none() {
-            return Err(format!("'{}' has no parameter called '{}'", meta.label, key));
-        }
-    }
+/// Checks the declared parameters; returns a warning per undeclared one.
+///
+/// An undeclared key is ignored, not fatal: a saved graph must still open after the
+/// manifest renames or drops a parameter, and the stale key is neither shown nor
+/// removable in the UI. The run never sees it either — the registry only reads the
+/// keys it declares.
+fn check_params(meta: &MethodMeta, params: &NodeParams) -> Result<Vec<String>, String> {
+    let warnings = params
+        .keys()
+        .filter(|key| meta.param(key).is_none())
+        .map(|key| format!("'{}' ignores unknown parameter '{}'", meta.label, key))
+        .collect();
 
     for spec in meta.params {
         if !is_set(params, spec.key) {
@@ -450,7 +461,7 @@ fn check_params(meta: &MethodMeta, params: &NodeParams) -> Result<(), String> {
         }
     }
 
-    Ok(())
+    Ok(warnings)
 }
 
 fn type_error(meta: &MethodMeta, label: &str, expected: &str) -> String {

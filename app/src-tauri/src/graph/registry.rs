@@ -10,6 +10,7 @@ use std::path::PathBuf;
 
 use media_core::pipeline::{MediaContext, PipelineStep};
 
+use super::manifest;
 use super::steps::SaveReport;
 use super::types::NodeParams;
 
@@ -302,8 +303,15 @@ pub fn build_step(
             // inheriting it would look in the wrong place, and media-core's own
             // frame count (which only scans the top level) would always report 0.
             // Single-directory keeps `output_dir` equal to "where the frames are",
-            // which is what the inheritance contract needs.
-            s = s.save_mode(match p.str("saveMode")?.unwrap_or("single_directory") {
+            // which is what the inheritance contract needs. The value itself is the
+            // manifest's declared default, so it is written down in one place only.
+            let save_mode = match p.str("saveMode")? {
+                Some(v) => v,
+                None => manifest::default_str(node_ref, "saveMode").ok_or_else(|| {
+                    format!("{}: the manifest declares no default for 'saveMode'", node_ref)
+                })?,
+            };
+            s = s.save_mode(match save_mode {
                 "multiple_directory" => SaveMode::MultipleDirectory,
                 "single_directory" => SaveMode::SingleDirectory,
                 other => return Err(unknown_option(node_ref, "saveMode", other)),

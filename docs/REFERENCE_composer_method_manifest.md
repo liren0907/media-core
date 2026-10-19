@@ -289,13 +289,13 @@ File ─┬→ extract_metadata ────────────────
 再加上 fan-out（一個來源同時餵多顆）與 fan-in（`save_report` 收兩條入邊），圖是有
 內容的。
 
-### 補一顆就多一層（**Phase 0 已實作**，`src-tauri/src/graph/steps/save_report.rs`）
+### 補一顆就多一層（**Phase 0 已實作**，`app/src-tauri/src/graph/steps/save_report.rs`）
 
 `metadata` / `analysis` 兩個槽沒有消費者，是最可惜的一點。在 **app 側**自己寫一顆
 `PipelineStep<MediaContext>`（不用改 media-core，trait 是 pub 的）：
 
 ```rust
-// src-tauri/src/graph/steps/save_report.rs
+// app/src-tauri/src/graph/steps/save_report.rs
 pub struct SaveReport { output_path: PathBuf, include: ReportParts }
 // reads: metadata + analysis（至少一個）  writes: 無（純出口，寫檔）
 ```

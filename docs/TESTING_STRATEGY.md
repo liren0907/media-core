@@ -150,7 +150,7 @@ exports.config = {
 
   capabilities: [{
     'tauri:options': {
-      application: './src-tauri/target/release/media-app',
+      application: '../target/release/media-app',
     },
   }],
 

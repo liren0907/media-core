@@ -213,6 +213,9 @@ pub struct ParamSpec {
     /// Extra guidance shown under the field.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub hint: Option<&'static str>,
+    /// The value is a path this step writes. The runner reports it in the run
+    /// result, which is how the UI learns where the file went.
+    pub output: bool,
 }
 
 impl ParamSpec {
@@ -228,6 +231,7 @@ impl ParamSpec {
             max: None,
             fallback_from: None,
             hint: None,
+            output: false,
         }
     }
     const fn required(mut self) -> Self {
@@ -270,11 +274,24 @@ impl ParamSpec {
         self.hint = Some(h);
         self
     }
+    const fn output(mut self) -> Self {
+        self.output = true;
+        self
+    }
 }
 
 // ============================================================================
 // METHOD META
 // ============================================================================
+
+/// Where the picker lists a method among the others it could place.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PickerRank {
+    Normal,
+    /// Listed after every other placeable method of its kind.
+    Last,
+}
 
 #[derive(Debug, Clone, Copy, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -292,6 +309,7 @@ pub struct MethodMeta {
     /// Needs `ffmpeg` on PATH. A bundled .app launched from Finder does not
     /// inherit the shell PATH — flagged so the UI can warn.
     pub requires_ffmpeg: bool,
+    pub picker_rank: PickerRank,
 }
 
 impl MethodMeta {
@@ -393,6 +411,7 @@ pub const METHODS: &[MethodMeta] = &[
         writes: &[SlotWrite::new(Slot::Source, WriteMode::Replace)],
         params: &[ParamSpec::new("path", ParamKind::Path, "File path").required()],
         requires_ffmpeg: false,
+        picker_rank: PickerRank::Normal,
     },
     MethodMeta {
         id: "stream",
@@ -405,6 +424,7 @@ pub const METHODS: &[MethodMeta] = &[
         writes: &[SlotWrite::new(Slot::Source, WriteMode::Replace)],
         params: &[ParamSpec::new("url", ParamKind::Str, "Stream URL").required()],
         requires_ffmpeg: false,
+        picker_rank: PickerRank::Normal,
     },
     MethodMeta {
         id: "camera",
@@ -419,6 +439,7 @@ pub const METHODS: &[MethodMeta] = &[
             .def_int(0)
             .min(0.0)],
         requires_ffmpeg: false,
+        picker_rank: PickerRank::Normal,
     },
     // ---------------------------------------------------------------- methods
     MethodMeta {
@@ -433,6 +454,7 @@ pub const METHODS: &[MethodMeta] = &[
         params: &[ParamSpec::new("includeThumbnail", ParamKind::Bool, "Include thumbnail")
             .def_bool(false)],
         requires_ffmpeg: false,
+        picker_rank: PickerRank::Normal,
     },
     MethodMeta {
         id: "detect_motion",
@@ -459,6 +481,7 @@ pub const METHODS: &[MethodMeta] = &[
                 .hint("Leave blank to skip writing debug images."),
         ],
         requires_ffmpeg: false,
+        picker_rank: PickerRank::Normal,
     },
     MethodMeta {
         id: "group_similar_images",
@@ -490,6 +513,7 @@ pub const METHODS: &[MethodMeta] = &[
                 .hint("Applies to whichever method is selected."),
         ],
         requires_ffmpeg: false,
+        picker_rank: PickerRank::Normal,
     },
     MethodMeta {
         id: "compare_images",
@@ -512,6 +536,7 @@ pub const METHODS: &[MethodMeta] = &[
                 .max(1.0),
         ],
         requires_ffmpeg: false,
+        picker_rank: PickerRank::Normal,
     },
     MethodMeta {
         id: "extract_frames",
@@ -539,6 +564,7 @@ pub const METHODS: &[MethodMeta] = &[
                 .def_str("seek"),
         ],
         requires_ffmpeg: false,
+        picker_rank: PickerRank::Normal,
     },
     MethodMeta {
         id: "extract_frames_to_disk",
@@ -557,15 +583,17 @@ pub const METHODS: &[MethodMeta] = &[
             ParamSpec::new("extractionMode", ParamKind::Enum, "Extraction mode")
                 .options(OPT_EXTRACTION_MODE)
                 .def_str("opencv_interval"),
-            // Defaulted in the registry rather than left to media-core, whose own
-            // default (MultipleDirectory) would put the frames in a subdirectory and
-            // break the output_dir inheritance downstream nodes rely on.
+            // The registry applies this default itself (reading it from here) rather
+            // than leaving it to media-core, whose own default (MultipleDirectory)
+            // would put the frames in a subdirectory and break the output_dir
+            // inheritance downstream nodes rely on.
             ParamSpec::new("saveMode", ParamKind::Enum, "Save mode")
                 .options(OPT_SAVE_MODE)
                 .def_str("single_directory")
                 .hint("Split directories nest frames under the output directory, so downstream steps cannot inherit it."),
         ],
         requires_ffmpeg: false,
+        picker_rank: PickerRank::Normal,
     },
     MethodMeta {
         id: "convert_to_hls",
@@ -588,6 +616,7 @@ pub const METHODS: &[MethodMeta] = &[
             ParamSpec::new("level", ParamKind::Str, "H.264 level").def_str("3.0"),
         ],
         requires_ffmpeg: true,
+        picker_rank: PickerRank::Normal,
     },
     MethodMeta {
         id: "capture_frame",
@@ -600,6 +629,7 @@ pub const METHODS: &[MethodMeta] = &[
         writes: &[SlotWrite::new(Slot::ExtractedFrames, WriteMode::Append)],
         params: &[],
         requires_ffmpeg: false,
+        picker_rank: PickerRank::Normal,
     },
     MethodMeta {
         id: "annotate_frame",
@@ -622,6 +652,7 @@ pub const METHODS: &[MethodMeta] = &[
                 .def_str("top_left"),
         ],
         requires_ffmpeg: false,
+        picker_rank: PickerRank::Normal,
     },
     MethodMeta {
         id: "annotate_video",
@@ -649,6 +680,7 @@ pub const METHODS: &[MethodMeta] = &[
                 .min(0.0),
         ],
         requires_ffmpeg: false,
+        picker_rank: PickerRank::Normal,
     },
     MethodMeta {
         id: "process_files",
@@ -667,6 +699,10 @@ pub const METHODS: &[MethodMeta] = &[
             ParamSpec::new("overwrite", ParamKind::Bool, "Overwrite existing").def_bool(false),
         ],
         requires_ffmpeg: false,
+        // Takes its input only from the source, and nothing reads what it writes: it
+        // can neither build on another step nor be built on. Listed last so the steps
+        // that chain are seen first.
+        picker_rank: PickerRank::Last,
     },
     // ------------------------------------------------------------------ sinks
     MethodMeta {
@@ -684,10 +720,13 @@ pub const METHODS: &[MethodMeta] = &[
         ],
         writes: &[],
         params: &[
-            ParamSpec::new("outputPath", ParamKind::Path, "Output JSON file").required(),
+            ParamSpec::new("outputPath", ParamKind::Path, "Output JSON file")
+                .required()
+                .output(),
             ParamSpec::new("pretty", ParamKind::Bool, "Pretty-print").def_bool(true),
         ],
         requires_ffmpeg: false,
+        picker_rank: PickerRank::Normal,
     },
 ];
 
@@ -697,6 +736,14 @@ pub const METHODS: &[MethodMeta] = &[
 
 pub fn find(node_ref: &str) -> Option<&'static MethodMeta> {
     METHODS.iter().find(|m| m.id == node_ref)
+}
+
+/// The text default a method declares for one of its parameters.
+pub fn default_str(node_ref: &str, key: &str) -> Option<&'static str> {
+    match find(node_ref)?.param(key)?.default {
+        Some(DefaultValue::Str(s)) => Some(s),
+        _ => None,
+    }
 }
 
 pub fn source_kind_of(node_ref: &str) -> Option<SourceKind> {

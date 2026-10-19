@@ -1,3 +1,5 @@
+mod common;
+
 use media_core::annotation::{
     AnnotationConfig, AnnotationType, DataSource, FrameAnnotator, TextPosition, VideoOutputConfig,
 };
@@ -5,52 +7,50 @@ use opencv::{core::Mat, imgcodecs, prelude::*};
 use std::path::Path;
 use tempfile::tempdir;
 
-// Helper: Ensure test image exists
-fn ensure_test_image() -> bool {
-    let input_image = Path::new("data/test.jpg");
-    if !input_image.exists() {
-        let test_video = Path::new("data/test.mp4");
-        if test_video.exists() {
-            if let Ok(mut cap) =
-                opencv::videoio::VideoCapture::from_file("data/test.mp4", opencv::videoio::CAP_ANY)
-            {
-                let mut frame = Mat::default();
-                if cap.read(&mut frame).unwrap_or(false) && !frame.empty() {
-                    let _ =
-                        imgcodecs::imwrite("data/test.jpg", &frame, &opencv::core::Vector::new());
-                }
-            }
-        }
+// Helper: The test video's first frame as an image, written next to the video once
+fn ensure_test_image() -> &'static str {
+    let input_image = "data/test.jpg";
+    if !Path::new(input_image).exists() {
+        let mut cap =
+            opencv::videoio::VideoCapture::from_file(common::test_video(), opencv::videoio::CAP_ANY)
+                .expect("Failed to open the test video");
+        let mut frame = Mat::default();
+        assert!(
+            cap.read(&mut frame).expect("Failed to read the test video") && !frame.empty(),
+            "The test video has no first frame"
+        );
+        assert!(
+            imgcodecs::imwrite(input_image, &frame, &opencv::core::Vector::new())
+                .expect("Failed to write the test image"),
+            "Failed to write {input_image}"
+        );
     }
-    input_image.exists()
+    input_image
 }
 
 // Helper: Create test frames in a temp directory (avoids race conditions)
-fn create_test_frames() -> Option<tempfile::TempDir> {
-    let test_video = Path::new("data/test.mp4");
-    if !test_video.exists() {
-        return None;
-    }
-
-    let temp_dir = tempdir().ok()?;
+fn create_test_frames() -> tempfile::TempDir {
+    let temp_dir = tempdir().expect("Failed to create temp dir");
     let frames_path = temp_dir.path();
 
-    if let Ok(mut cap) =
-        opencv::videoio::VideoCapture::from_file("data/test.mp4", opencv::videoio::CAP_ANY)
-    {
-        for i in 0..10 {
-            let mut frame = Mat::default();
-            if cap.read(&mut frame).unwrap_or(false) && !frame.empty() {
-                let path = frames_path.join(format!("frame_{:04}.jpg", i));
-                let _ = imgcodecs::imwrite(
-                    path.to_str().unwrap(),
-                    &frame,
-                    &opencv::core::Vector::new(),
-                );
-            }
-        }
+    let mut cap =
+        opencv::videoio::VideoCapture::from_file(common::test_video(), opencv::videoio::CAP_ANY)
+            .expect("Failed to open the test video");
+    for i in 0..10 {
+        let mut frame = Mat::default();
+        assert!(
+            cap.read(&mut frame).expect("Failed to read the test video") && !frame.empty(),
+            "The test video has fewer than 10 frames"
+        );
+        let path = frames_path.join(format!("frame_{:04}.jpg", i));
+        assert!(
+            imgcodecs::imwrite(path.to_str().unwrap(), &frame, &opencv::core::Vector::new())
+                .expect("Failed to write a test frame"),
+            "Failed to write {}",
+            path.display()
+        );
     }
-    Some(temp_dir)
+    temp_dir
 }
 
 // ============================================================================
@@ -62,16 +62,13 @@ fn create_test_frames() -> Option<tempfile::TempDir> {
 fn test_single_frame_annotation() {
     println!("=== Test: Example 1 - Single Frame Annotation ===");
 
-    if !ensure_test_image() {
-        println!("⚠️  Skipping: data/test.jpg not found");
-        return;
-    }
+    let input_image = ensure_test_image();
 
     let output_dir = tempdir().expect("Failed to create temp dir");
     let output_path = output_dir.path().join("annotated_frame.jpg");
 
     let config = AnnotationConfig {
-        input: DataSource::Image("data/test.jpg".to_string()),
+        input: DataSource::Image(input_image.to_string()),
         output_path: output_path.to_str().unwrap().to_string(),
         text_position: TextPosition::TopLeft,
         annotation_type: AnnotationType::Filename,
@@ -91,13 +88,7 @@ fn test_single_frame_annotation() {
 fn test_video_from_frames_filename() {
     println!("=== Test: Example 2 - Video from Frames (Filename) ===");
 
-    let frames_dir = match create_test_frames() {
-        Some(dir) => dir,
-        None => {
-            println!("⚠️  Skipping: data/test.mp4 not found");
-            return;
-        }
-    };
+    let frames_dir = create_test_frames();
 
     let output_dir = tempdir().expect("Failed to create temp dir");
     let output_path = output_dir.path().join("annotated_filename.mp4");
@@ -127,13 +118,7 @@ fn test_video_from_frames_filename() {
 fn test_video_from_frames_timestamp() {
     println!("=== Test: Example 3 - Video from Frames (Timestamp) ===");
 
-    let frames_dir = match create_test_frames() {
-        Some(dir) => dir,
-        None => {
-            println!("⚠️  Skipping: data/test.mp4 not found");
-            return;
-        }
-    };
+    let frames_dir = create_test_frames();
 
     let output_dir = tempdir().expect("Failed to create temp dir");
     let output_path = output_dir.path().join("annotated_timestamp.mp4");
@@ -163,13 +148,7 @@ fn test_video_from_frames_timestamp() {
 fn test_video_from_frames_custom_text() {
     println!("=== Test: Example 4 - Video from Frames (Custom Text) ===");
 
-    let frames_dir = match create_test_frames() {
-        Some(dir) => dir,
-        None => {
-            println!("⚠️  Skipping: data/test.mp4 not found");
-            return;
-        }
-    };
+    let frames_dir = create_test_frames();
 
     let output_dir = tempdir().expect("Failed to create temp dir");
     let output_path = output_dir.path().join("annotated_custom.mp4");

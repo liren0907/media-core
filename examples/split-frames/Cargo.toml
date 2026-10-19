@@ -1,0 +1,6 @@
+[package]
+name = "split-frames"
+version = "0.1.0"
+edition = "2024"
+publish = false
+description = "Hard-links frame folders into upload-sized parts, splitting the big ones into numbered folders"

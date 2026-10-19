@@ -333,7 +333,12 @@ export interface GraphParamSpec {
   /** Present = this parameter can inherit from an upstream node's output. */
   fallbackFrom?: string;
   hint?: string;
+  /** The value is a path the step writes; a run reports it in `GraphRunResult.outputs`. */
+  output: boolean;
 }
+
+/** Where the picker lists a method among the others it could place. */
+export type GraphPickerRank = 'normal' | 'last';
 
 export interface GraphMethodMeta {
   id: string;
@@ -346,6 +351,7 @@ export interface GraphMethodMeta {
   writes: GraphSlotWrite[];
   params: GraphParamSpec[];
   requiresFfmpeg: boolean;
+  pickerRank: GraphPickerRank;
 }
 
 export type GraphNodeParams = Record<string, unknown>;
@@ -405,8 +411,21 @@ export interface GraphProcessResult {
   success: boolean;
 }
 
+/** How a run ended. A returned result is `completed` or `cancelled`; a failed run rejects. */
+export type GraphRunStatus = 'completed' | 'cancelled' | 'failed';
+
+/** A path a step wrote to, named by a parameter the manifest declares as an output. */
+export interface GraphRunOutput {
+  nodeId: string;
+  nodeRef: string;
+  key: string;
+  path: string;
+}
+
 export interface GraphRunResult {
   runId: string;
+  /** A cancelled run still carries what the steps before the stop produced. */
+  status: GraphRunStatus;
   metadata: MediaMetadata | null;
   analysis: AnalysisResult | null;
   /** Frame payloads are not returned — only how many were produced. */
@@ -415,6 +434,8 @@ export interface GraphRunResult {
   annotationResult: GraphAnnotationResult | null;
   videoProcessResult: GraphVideoProcessResult | null;
   processResult: GraphProcessResult | null;
+  /** Paths written by steps that succeeded, in execution order. */
+  outputs: GraphRunOutput[];
   warnings: string[];
 }
 

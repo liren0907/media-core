@@ -190,6 +190,10 @@ export function optionsAt(point: InsertPoint, model: PickerModel): PickerSection
         const ab = a.blocked ? 1 : 0;
         const bb = b.blocked ? 1 : 0;
         if (ab !== bb) return ab - bb;
+        // Then the manifest's own ordering hint, ahead of anything judged here.
+        const al = a.meta.pickerRank === 'last' ? 1 : 0;
+        const bl = b.meta.pickerRank === 'last' ? 1 : 0;
+        if (al !== bl) return al - bl;
         if (ab === 1) return 0;
         const ar = rank(a.meta);
         const br = rank(b.meta);

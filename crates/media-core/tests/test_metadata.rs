@@ -1,3 +1,5 @@
+mod common;
+
 use media_core::metadata::get_media_info;
 use std::path::Path;
 
@@ -7,11 +9,7 @@ fn test_get_media_info() {
     println!("=== Test: Get Media Info ===");
 
     // Setup path
-    let input_video = Path::new("data/test.mp4");
-    if !input_video.exists() {
-        println!("⚠️ Skipping test: data/test.mp4 not found");
-        return;
-    }
+    let input_video = Path::new(common::test_video());
 
     // Call get_media_info
     // We include thumbnail generation to test that path too

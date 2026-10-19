@@ -8,3 +8,12 @@
 
 # Claude Code
 .claude/
+
+# Local media for the examples and what they write (large, never versioned)
+/examples/videos/
+/examples/frames/
+/examples/frames-split/
+
+# Local dev planning notes (not versioned); the pre-existing tracked file stays tracked
+/docs/dev/*
+!/docs/dev/dev_ogp_annotation.md

@@ -92,7 +92,7 @@ DEFINE FIELD created_at   ON duplicate_group TYPE datetime DEFAULT time::now();
 ### 3.1 模組拆分
 
 ```
-src-tauri/src/
+app/src-tauri/src/
 ├── main.rs              -- Tauri 啟動入口
 ├── lib.rs               -- 模組註冊
 ├── db/

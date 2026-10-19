@@ -1939,6 +1939,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "af9673d8203fcb076b19dfd17e38b3d4ae9f44959416ea532ce72415a6020365"
 
 [[package]]
+name = "extract-frames"
+version = "0.1.0"
+dependencies = [
+ "opencv",
+]
+
+[[package]]
 name = "fastnum"
 version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7088,6 +7095,10 @@ dependencies = [
  "base64ct",
  "der",
 ]
+
+[[package]]
+name = "split-frames"
+version = "0.1.0"
 
 [[package]]
 name = "stable_deref_trait"

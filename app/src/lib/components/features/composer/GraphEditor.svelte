@@ -67,9 +67,9 @@
     try {
       listen<GraphProgressEvent>('graph:progress', (event) => {
         if (cancelled) return;
-        // execute_graph mints the run id internally and only returns it at the end,
-        // so the first progress event is how the UI learns what to cancel.
-        graph.runId = event.payload.runId;
+        // Events are app-wide: anything but the run this editor started (or one that
+        // arrives after it returned) is not ours to show.
+        if (!graph.running || event.payload.runId !== graph.runId) return;
         graph.activeNodeId = event.payload.phase === 'start' ? event.payload.nodeId : '';
         graph.progress = event.payload.progressPercent;
       })
@@ -279,11 +279,6 @@
   }
 
   // ------------------------------------------------------------------- run
-  async function run() {
-    selected = selected || '';
-    await graph.run();
-  }
-
   const resultRows = $derived.by(() => {
     const result = graph.result;
     if (!result) return [] as { label: string; value: string }[];
@@ -316,6 +311,9 @@
         label: 'Processed',
         value: `${p.filesProcessed} ok · ${p.filesFailed} failed · ${formatFileSize(p.totalSizeBytes)}`,
       });
+    }
+    for (const output of result.outputs) {
+      rows.push({ label: graph.metaOf(output.nodeRef)?.label ?? output.nodeRef, value: output.path });
     }
     return rows;
   });
@@ -358,12 +356,17 @@
     {#if graph.running}
       <button
         onclick={() => graph.cancel()}
-        class="flex items-center gap-1 px-2 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-[10px] font-bold transition-colors"
+        disabled={graph.cancelling}
+        class="flex items-center gap-1 px-2 py-1 bg-red-500 hover:bg-red-600 disabled:bg-slate-400 disabled:cursor-wait text-white rounded text-[10px] font-bold transition-colors"
       >
-        <Icon name="stop" class="text-[14px]" /> Cancel
+        {#if graph.cancelling}
+          <Icon name="progress_activity" class="text-[14px] animate-spin" /> Stopping after current step…
+        {:else}
+          <Icon name="stop" class="text-[14px]" /> Cancel
+        {/if}
       </button>
     {:else}
-      <RunButton loading={false} disabled={!canRun} onclick={run} />
+      <RunButton loading={false} disabled={!canRun} onclick={() => graph.run()} />
     {/if}
   </div>
 
@@ -588,6 +591,12 @@
         {verdict.warnings.length} warning{verdict.warnings.length === 1 ? '' : 's'}
       </span>
     {/if}
+
+    {#if !graph.running && graph.result?.status === 'cancelled'}
+      <span class="ml-auto flex items-center gap-1 text-slate-500">
+        <Icon name="stop" class="text-[13px]" /> Cancelled
+      </span>
+    {/if}
   </div>
 
   {#if verdict?.warnings?.length}
@@ -607,21 +616,26 @@
   {:else if graph.result}
     <Panel title="Result" icon="analytics">
       {#snippet actions()}
-        <StatusBadge status="completed" />
+        <StatusBadge status={graph.result?.status ?? 'completed'} />
       {/snippet}
       <div class="p-3 flex flex-col gap-1.5">
-        {#if resultRows.length === 0}
+        {#if graph.result.status === 'cancelled'}
+          <p class="text-xs text-slate-500">
+            {resultRows.length === 0
+              ? 'Cancelled before any step produced a result.'
+              : 'Cancelled. Showing what the steps before the stop produced.'}
+          </p>
+        {:else if resultRows.length === 0}
           <p class="text-xs text-slate-500">The graph ran, but produced nothing to show.</p>
-        {:else}
-          {#each resultRows as row (row.label)}
-            <div class="flex gap-3 text-xs">
-              <span class="w-32 shrink-0 text-slate-500">{row.label}</span>
-              <span class="flex-1 min-w-0 font-mono text-slate-900 dark:text-white break-all">
-                {row.value}
-              </span>
-            </div>
-          {/each}
         {/if}
+        {#each resultRows as row (`${row.label}|${row.value}`)}
+          <div class="flex gap-3 text-xs">
+            <span class="w-32 shrink-0 text-slate-500">{row.label}</span>
+            <span class="flex-1 min-w-0 font-mono text-slate-900 dark:text-white break-all">
+              {row.value}
+            </span>
+          </div>
+        {/each}
         {#each graph.result.warnings as warning (warning)}
           <p class="text-[11px] text-amber-600 dark:text-amber-400">{warning}</p>
         {/each}

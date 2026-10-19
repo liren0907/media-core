@@ -24,23 +24,29 @@ pub async fn validate_graph(recipe: GraphRecipe) -> Result<GraphVerdict, String>
 
 /// Validate, then execute in topological order.
 ///
-/// Runs on a dedicated thread: the steps underneath are blocking and several of
-/// them touch OpenCV, which must not run on the async executor.
+/// Runs on the blocking pool: the steps underneath are blocking and several of
+/// them touch OpenCV, which must not run on the async executor — and awaiting the
+/// pool, unlike joining a thread, leaves the async worker free meanwhile.
+///
+/// `run_id` lets the caller know the id before the first progress event, so a
+/// cancel issued right after Run already reaches this run. Without one, an id is
+/// generated here.
 #[command]
 pub async fn execute_graph(
     app: tauri::AppHandle,
     recipe: GraphRecipe,
+    run_id: Option<String>,
 ) -> Result<GraphRunResult, String> {
-    let run_id = uuid::Uuid::new_v4().to_string();
-    let cancel = runner::register_run(&run_id);
+    let run_id = run_id.unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+    let cancel = runner::register_run(&run_id)?;
 
-    let handle = std::thread::spawn(move || {
-        let result = runner::run_graph(&app, &recipe, &run_id, &cancel);
-        runner::finish_run(&run_id);
-        result
-    });
-
-    handle.join().map_err(|_| "The graph run panicked".to_string())?
+    // Registry cleanup and `graph:finished` happen inside, on every path; see
+    // `runner::RunGuard`.
+    tauri::async_runtime::spawn_blocking(move || {
+        runner::run_graph(&app, &recipe, &run_id, &cancel)
+    })
+    .await
+    .map_err(|_| runner::PANICKED.to_string())?
 }
 
 #[command]

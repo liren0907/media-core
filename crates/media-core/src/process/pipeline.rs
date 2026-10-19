@@ -37,6 +37,7 @@ pub struct ProcessFilesResult {
 ///
 /// # Example
 /// ```rust
+/// # use media_core::process::{ProcessFiles, ProcessingMode};
 /// let step = ProcessFiles::new("output/processed")
 ///     .mode(ProcessingMode::DirectoryProcess)
 ///     .overwrite(true);

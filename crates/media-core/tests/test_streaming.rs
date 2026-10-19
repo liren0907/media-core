@@ -1,16 +1,13 @@
+mod common;
+
 use media_core::streaming::{ExtractionMode, FrameData, SamplingStrategy, StreamExtractor};
-use std::path::Path;
 
 /// Example 1: Single Frame Mode (Custom strategy with single index)
 #[test]
 fn test_stream_extractor_single_frame() {
     println!("=== Test: StreamExtractor Single Frame ===");
 
-    let video_path = "data/test.mp4";
-    if !Path::new(video_path).exists() {
-        println!("⚠️  Skipping: data/test.mp4 not found");
-        return;
-    }
+    let video_path = common::test_video();
 
     let mut extractor = StreamExtractor::new(video_path, None).expect("Failed to create extractor");
     extractor.set_strategy(SamplingStrategy::Custom(vec![0]));
@@ -31,11 +28,7 @@ fn test_stream_extractor_single_frame() {
 fn test_stream_extractor_every_nth() {
     println!("=== Test: StreamExtractor EveryNth ===");
 
-    let video_path = "data/test.mp4";
-    if !Path::new(video_path).exists() {
-        println!("⚠️  Skipping: data/test.mp4 not found");
-        return;
-    }
+    let video_path = common::test_video();
 
     let mut extractor = StreamExtractor::new(video_path, Some(SamplingStrategy::EveryNth(50)))
         .expect("Failed to create extractor");
@@ -58,11 +51,7 @@ fn test_stream_extractor_every_nth() {
 fn test_stream_extractor_first_n() {
     println!("=== Test: StreamExtractor FirstN ===");
 
-    let video_path = "data/test.mp4";
-    if !Path::new(video_path).exists() {
-        println!("⚠️  Skipping: data/test.mp4 not found");
-        return;
-    }
+    let video_path = common::test_video();
 
     let mut extractor = StreamExtractor::new(video_path, None).expect("Failed to create extractor");
     extractor.set_strategy(SamplingStrategy::FirstN(5));
@@ -83,11 +72,7 @@ fn test_stream_extractor_first_n() {
 fn test_stream_extractor_range() {
     println!("=== Test: StreamExtractor Range ===");
 
-    let video_path = "data/test.mp4";
-    if !Path::new(video_path).exists() {
-        println!("⚠️  Skipping: data/test.mp4 not found");
-        return;
-    }
+    let video_path = common::test_video();
 
     let mut extractor = StreamExtractor::new(video_path, None).expect("Failed to create extractor");
     extractor.set_strategy(SamplingStrategy::Range(0, 10));
@@ -108,11 +93,7 @@ fn test_stream_extractor_range() {
 fn test_stream_extractor_scale_factor() {
     println!("=== Test: StreamExtractor Scale Factor ===");
 
-    let video_path = "data/test.mp4";
-    if !Path::new(video_path).exists() {
-        println!("⚠️  Skipping: data/test.mp4 not found");
-        return;
-    }
+    let video_path = common::test_video();
 
     let mut extractor = StreamExtractor::new(video_path, Some(SamplingStrategy::FirstN(1)))
         .expect("Failed to create extractor");

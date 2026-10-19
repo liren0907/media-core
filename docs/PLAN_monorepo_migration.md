@@ -2,12 +2,14 @@
 
 ## 這份文檔是什麼（2026-09-26）
 
+**✅ 2026-09-26 完成**：C1 `a152640` → C2 `cc56bbc` → C3 `e4d7857` → C4 `b5ff931`。
+
 **搬遷計畫**：以 **media-core repo 為容器**，把 media-app 的完整歷史併進來，重組成
 「Cargo workspace ＋ Tauri app」的 monorepo。完成後 **media-core 就是唯一的開發 repo**，
 media-app 封存不再使用。
 
-這是 PLAN 不是 REFERENCE。§3 的 M1–M5 已拍板，**M6、M7 仍待拍板**（步驟暫照建議排）。
-搬完後應改寫成 as-built，並把 `.claude/CLAUDE.md` 更新成新結構。
+這份已改寫成 as-built：原本的計畫和推理都保留，§3 的 M1–M7 全部已拍板；§5 各階段後面補上
+「實際執行」，跟計畫不同的地方集中在 §11「與計畫的偏離」。
 
 本文檔寫在 media-app 的 `docs/`，會在階段 0 跟 composer 一起 commit；搬完後它會出現在
 新 repo 的根目錄 `docs/`。
@@ -68,15 +70,15 @@ app 一個使用者，它只剩成本。以下全部是 2026-09-26 實查結果�
 | M3 | 版面 | **virtual workspace 根 ＋ `crates/` ＋ `app/`**（§4） | 若 core 留在根目錄，它的 `Cargo.toml` 就是 workspace 根，`[profile.release] panic = "abort"` 會套用到 app（R3）；core 的 12 個 bin 也會和 `app/` 擠在同一層 | ✅ |
 | M4 | 時機 | **composer 原樣收尾、推上去之後才搬** | 未 commit 的檔案和大搬家混在一起，出事很難拆；composer review 的 14 項發現搬完後在新 repo 修 | ✅ |
 | M5 | media-app 的 `main` | **fast-forward 追上 `dev`，兩條都 push** | 封存前兩條分支停在同一點，封存的就是完整最終狀態 | ✅ |
-| M6 | core 的 `[profile.*]` | 建議：**從 core 的 `Cargo.toml` 刪掉，不提到 workspace 根；在 core README 記一筆原因**。不採「提到根目錄」 | 這些設定現在本來就沒生效（依賴的 profile 一律被忽略），刪掉只是明文化；若提到根目錄，`panic = "abort"` 會讓 `commands/graph.rs` 的 `handle.join()` 接不到 panic，整個 app 閃退 | ⏳ 待拍板 |
-| M7 | 根目錄要不要放代理用的 `package.json` | 建議：**不放**，前端指令一律在 `app/` 下執行。不採「放一個只轉發 `yarn --cwd app …` 的 `package.json`」 | 根目錄保持「只有 Cargo workspace ＋ docs」；之後嫌麻煩再加，成本很低 | ⏳ 待拍板 |
+| M6 | core 的 `[profile.*]` | **從 core 的 `Cargo.toml` 刪掉，不提到 workspace 根；原因記在 `crates/media-core/README.md` 的「Build Profiles」段**。不採「提到根目錄」 | 這些設定現在本來就沒生效（依賴的 profile 一律被忽略），刪掉只是明文化；若提到根目錄，`panic = "abort"` 會讓 `commands/graph.rs` 的 `handle.join()` 接不到 panic，整個 app 閃退 | ✅ |
+| M7 | 根目錄要不要放代理用的 `package.json` | **不放**：前端指令在 `app/` 下執行，或用 `yarn --cwd app …`。不採「放一個只轉發 `yarn --cwd app …` 的 `package.json`」 | 根目錄保持「只有 Cargo workspace ＋ docs」；之後嫌麻煩再加，成本很低 | ✅ |
 
 ---
 
 ## 4. 目標版面
 
 ```
-media-core/                      ← repo 根（GitHub liren0907/media-core；本機 ~/Desktop/code/media-core）
+media-core/                      ← repo 根（GitHub liren0907/media-core）
   Cargo.toml                     ← 只有 [workspace]；opencv 等共用版本寫在這
   Cargo.lock                     ← 沿用 media-app 的 src-tauri/Cargo.lock
   README.md                      ← 新寫：monorepo 總覽與怎麼跑
@@ -113,6 +115,8 @@ media-core/                      ← repo 根（GitHub liren0907/media-core；�
 
 ### 根目錄 `Cargo.toml` 草稿
 
+最終版見根目錄的 `Cargo.toml`。
+
 ```toml
 [workspace]
 resolver = "2"                   # virtual workspace 預設是 "1"，必須明寫才維持現行行為
@@ -128,6 +132,8 @@ opencv = { version = "0.98", default-features = false, features = ["features2d",
 submodule 工作目錄裡那份未 commit 的修改不需要另外保存。不放任何 `[profile.*]`（M6）。
 
 ### 根目錄 `.gitignore` 草稿
+
+最終版見根目錄的 `.gitignore`。
 
 ```gitignore
 # OS / editor
@@ -161,6 +167,8 @@ submodule 工作目錄裡那份未 commit 的修改不需要另外保存。不�
 
 ✅ 關卡：`origin/main` ＝ `origin/dev` ＝ 本機 `feat/graph-editor` 的 HEAD。**從這一刻起 media-app 不再有任何新 commit。**
 
+**實際執行**：照計畫完成。media-app 的 `main`、`dev` 都停在 `690ec9a`（加入本文檔的那個 commit），之後沒有新 commit。
+
 ### 階段 1：準備 media-core 本機 clone（在 `~/Desktop/code/media-core`）
 
 | # | 誰 | 做什麼 |
@@ -168,6 +176,9 @@ submodule 工作目錄裡那份未 commit 的修改不需要另外保存。不�
 | 1.1 | 你 | `git fetch origin` → `git switch main` → `git pull --ff-only` |
 | 1.2 | 你 | `git status` 應只有被忽略的未追蹤檔（`data/` 等），沒有修改 |
 | 1.3 | 你 | `git tag pre-monorepo`（只留本機，回滾用）→ `git switch -c chore/monorepo` |
+
+**實際執行**：`chore/monorepo` 一開始從本機過期的 `dev`（`650711d`）切出，發現後先 fast-forward 到
+`7e25dde`（＝ `main` ＝ `v0.4.0`）才開始 C1，所以 C1 的起點跟計畫一致（§11 偏離 1）。
 
 ### 階段 2：在暫存目錄改寫 media-app 的歷史（Claude；不碰任何正式 repo）
 
@@ -189,6 +200,10 @@ submodule 工作目錄裡那份未 commit 的修改不需要另外保存。不�
 
 > 暫存目錄是 session 級的。2.1 到 C2 的 fetch 請在同一個 session 內完成；真的遺失就重跑階段 2（可重現）。
 
+**實際執行**：照計畫。改寫後 media-app 的每個 commit 都換了 hash，例如 composer Phase 0＋1 在
+media-app 是 `84af148`、在這裡是 `a913a39`，本文檔的 commit 是 `690ec9a` → `d10d5ca`。要找
+media-app 時代的 commit，請用 commit 訊息搜尋。
+
 ### 階段 3：在 `chore/monorepo` 上重組（4 個 commit，每個都要過關卡）
 
 **C1 — core 搬進 `crates/media-core/`**
@@ -202,6 +217,9 @@ submodule 工作目錄裡那份未 commit 的修改不需要另外保存。不�
 ✅ 關卡：`git status` 乾淨；`git log --follow --oneline crates/media-core/src/lib.rs` 看得到 2025-04 起的歷史；`crates/media-core/data/test.mp4` 存在。
 （這一步不跑 `cargo`：core 此時還是 opencv 0.93.5，在這台機器上本來就可能編不過。）
 
+**實際執行**：權限規則擋住 `git mv`，改成用一般的 `mv` 搬，再由你 `git add -A` 登記，git 照樣
+認得出是改名（§11 偏離 2）。關卡的 `--follow` 只追得到 2025-06-07，原因見偏離 8。
+
 **C2 — 併入 media-app 歷史**
 
 | # | 誰 | 做什麼 |
@@ -210,6 +228,8 @@ submodule 工作目錄裡那份未 commit 的修改不需要另外保存。不�
 
 ✅ 關卡：根目錄有 `app/`、`crates/`（4 個 crate）、`docs/`；`git log --oneline -- app/src-tauri/src/graph` 看得到 composer 的 commit；`git blame app/src/lib/nav.ts` 顯示原作者與原日期。
 （這一步也還不能編：`app/src-tauri/Cargo.toml` 的 path 依賴還指著舊位置，C3 修。）
+
+**實際執行**：照計畫，merge 訊息就是建議的 `chore(repo): import media-app history into app/`。
 
 **C3 — Cargo workspace**
 
@@ -230,6 +250,9 @@ submodule 工作目錄裡那份未 commit 的修改不需要另外保存。不�
 
 > 第一次在根目錄 build 會全部重編（target 目錄換位置，opencv 綁定生成要好幾分鐘）。
 
+**實際執行**：編譯卡住的地方不是預想的 opencv（R1、R2），而是工具鏈：Xcode 的 linker 跟 SDK
+版本對不上，`aws-lc-sys` 連結失敗，升級 Xcode 後解決（§11 偏離 3）。
+
 **C4 — app 的路徑、工具、文件**
 
 | # | 誰 | 做什麼 |
@@ -247,6 +270,15 @@ submodule 工作目錄裡那份未 commit 的修改不需要另外保存。不�
 3. 你在 `app/` 下跑 `yarn tauri dev`：app 能開；`/composer` 能 Run；`/audio`（whisper-rs 搬過）、`/annotator`（annotation 搬過）、dedup 各點一下
 4. 改一個 `crates/media-core/src/` 的檔：`tauri dev` 會重編、且不會無限重編（R4）
 
+**實際執行**：
+
+- commit 訊息實際是 `chore(repo): fix app paths and tooling after move into app/, add monorepo README + core profile note`
+  （計畫寫的是 `chore(app): …`），把 3.12 的 README 和 profile 說明也寫進訊息。
+- 3.10：`TAURI_DEV_WATCHER_IGNORE` 已從 `app/package.json` 刪掉。R4 的成因是 submodule 裡的巢狀
+  `.git`，搬遷後已經不存在。
+- 3.11、3.12 照計畫：`app/.gitignore` 的兩行已刪；根目錄 `README.md` 新寫，core README 加了
+  「Build Profiles」段。
+
 ### 階段 4：併回主線（在 media-core）
 
 | # | 誰 | 做什麼 |
@@ -255,15 +287,19 @@ submodule 工作目錄裡那份未 commit 的修改不需要另外保存。不�
 | 4.2 | 你 | media-core 的 `dev` 是過期殘留（落後 7、領先 0）：fast-forward 到 `main` 再 push，之後照你在 media-app 的 dev → main 流程走 |
 | 4.3 | 你 | `git remote remove app-import`；刪掉已合併的本機分支 `feature-pipeline`、`chore/monorepo` |
 
+**實際執行**：`main`、`dev` 用 `git fetch . <來源>:<目標>` 直接移動，不切換分支（§11 偏離 4）。
+推上 GitHub 之前，先把兩個不該進版控的測試媒體檔從歷史移除（偏離 5、6）。完成時 GitHub 的
+`main`、`dev` 都在 `b5ff931`。
+
 ### 階段 5：收尾（不急，可以隔幾天）
 
-| # | 誰 | 做什麼 |
-|---|---|---|
-| 5.1 | 你 | media-app 的 README 加一行「已併入 liren0907/media-core」，push 後在 GitHub 設 archive |
-| 5.2 | Claude | 改寫新位置的 memory：路徑全部更新；「staging 排除 submodule」規則作廢；composer 的 14 項 review 帳本沿用 |
-| 5.3 | Claude | `docs/` 裡寫死 `src-tauri/…` 路徑或提到 submodule 的文件（約 9 份）更新；`crates/media-core/docs/RELEASE_WORKFLOW.md` 檢查是否還適用；本文檔改寫成 as-built |
-| 5.4 | 你 | 確認一切正常後刪本機 `~/Desktop/code/media-app`；舊的 memory 目錄可一併刪 |
-| 5.5 | 你 | 刪掉 `pre-monorepo` tag（本機） |
+| # | 誰 | 做什麼 | 實際執行 |
+|---|---|---|---|
+| 5.1 | 你 | media-app 的 README 加一行「已併入 liren0907/media-core」，push 後在 GitHub 設 archive | ⏳ 尚未完成（2026-10-15） |
+| 5.2 | Claude | 改寫新位置的 memory：路徑全部更新；「staging 排除 submodule」規則作廢；composer 的 14 項 review 帳本沿用 | ✅ |
+| 5.3 | Claude | `docs/` 裡寫死 `src-tauri/…` 路徑或提到 submodule 的文件（約 9 份）更新；`crates/media-core/docs/RELEASE_WORKFLOW.md` 檢查是否還適用；本文檔改寫成 as-built | ✅ 路徑更新了 11 份；`RELEASE_WORKFLOW.md` 是通用的 dev → main＋tag 流程、沒有 submodule 步驟，不用改；本文檔就是 as-built 版 |
+| 5.4 | 你 | 確認一切正常後刪本機 `~/Desktop/code/media-app`；舊的 memory 目錄可一併刪 | 不用做：那份本機 checkout 已經不在；舊的 memory 目錄要不要刪另外決定 |
+| 5.5 | 你 | 刪掉 `pre-monorepo` tag（本機） | 不用做：現在的 clone 沒有這個 tag |
 
 ---
 
@@ -299,7 +335,7 @@ submodule 工作目錄裡那份未 commit 的修改不需要另外保存。不�
 
 | 事情 | 以前 | 以後 |
 |---|---|---|
-| 工作資料夾 | `~/Desktop/code/media-app` | `~/Desktop/code/media-core` |
+| 工作資料夾 | media-app 的 clone | media-core 的 clone |
 | 開發 app | 根目錄 `yarn tauri dev` | `app/` 下 `yarn tauri dev` |
 | 型別檢查 | 根目錄 `yarn run check` | `yarn --cwd app run check` |
 | Rust 檢查／測試 | `src-tauri/` 下 `cargo …` | 根目錄 `cargo … -p media-app`；core 單獨 `cargo test -p media_core` |
@@ -330,5 +366,22 @@ submodule 工作目錄裡那份未 commit 的修改不需要另外保存。不�
 | 2026-09-26 | M3 | virtual workspace 根 ＋ `crates/` ＋ `app/` |
 | 2026-09-26 | M4 | composer 原樣收尾、推上去後再搬 |
 | 2026-09-26 | M5 | media-app 的 `main` fast-forward 追上 `dev` |
-| — | M6 | 待拍板 |
-| — | M7 | 待拍板 |
+| 2026-09-26 | M6 | core 的 `[profile.*]` 刪掉、不提到 workspace 根，原因記在 core README |
+| 2026-09-26 | M7 | 根目錄不放 `package.json`，前端指令在 `app/` 下執行 |
+
+---
+
+## 11. 與計畫的偏離
+
+實際執行時跟上面計畫不同的地方。第 6 列的簽章陷阱，以後只要改寫歷史就會再遇到。
+
+| # | 哪一步 | 計畫 | 實際 |
+|---|---|---|---|
+| 1 | 階段 1 | 從更新後的 `main` 切出 `chore/monorepo` | 一開始從本機過期的 `dev`（`650711d`）切出；發現後先 fast-forward 到 `7e25dde` 才開始 C1，C1 的起點不受影響 |
+| 2 | C1 | 用 `git mv` 搬追蹤檔 | 權限規則擋住 `git mv`：改成用一般的 `mv` 搬檔，再由你 `git add -A` 登記；git 照樣認得出是改名 |
+| 3 | C3 | 最可能出事的是 opencv（R1、R2） | 卡在工具鏈：Xcode 26.6 的 linker 配上 Command Line Tools 27.0 的 SDK，`aws-lc-sys` 連結失敗（tapi unknown architecture）。解法是升級到 Xcode 27.0 並執行 `sudo xcodebuild -license accept`（license 沒同意時連 `/usr/bin/git` 都會被擋） |
+| 4 | 階段 4 | `git switch main && git merge --ff-only …` | 用 `git fetch . <來源>:<目標>` 移動 `main`、`dev`，不切換分支 |
+| 5 | 階段 4 之前 | （沒有這一步） | 推上 GitHub 之前，把兩個不該進版控的測試媒體檔（`app/src-tauri/tests/resources/test_video.mp4`、`test_image.jpg`）從歷史移除 |
+| 6 | 第 5 列的歷史改寫 | （沒有這一步） | filter-repo 一律會剝掉 commit 的 `gpgsig`，所以在 GitHub 網頁合併的 PR commit（`a776f85`、`33b680c`）連同所有後代都會換 hash。只改寫還沒發佈的部分：`--refs <branch> ^<已發佈的 ref> --prune-degenerate never`，而且先在暫存 clone 演練 |
+| 7 | 3.2 | 搬 `crates/media-core/{config,data,references}` | 照搬，另外也把 `app/{reference,deprecated,data}`、whisper-rs 的測試模型搬到新位置。這批不受 git 管理的資料後來跟著本機 checkout 一起遺失；程式碼不受影響（都在 GitHub） |
+| 8 | C1 關卡 | `git log --follow crates/media-core/src/lib.rs` 看得到 2025-04 起的歷史 | 這句不準：repo 的第一個 commit（`57f2abb`）是 2025-04-29，但 `lib.rs` 是 2025-06-07（`d7cfdf4`）才建立，所以只追得到那天；更早的歷史都還在，只是不在這個檔案上 |

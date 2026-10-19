@@ -20,10 +20,13 @@ use std::sync::{Arc, Mutex, OnceLock};
 use tauri::Emitter;
 
 use super::types::{
-    analysis_to_dto, AnnotationResultDto, GraphRecipe, GraphRunResult, HlsResultDto,
-    ProcessResultDto, VideoProcessResultDto,
+    analysis_to_dto, AnnotationResultDto, GraphNode, GraphRecipe, GraphRunResult, HlsResultDto,
+    ProcessResultDto, RunOutputDto, RunStatus, VideoProcessResultDto,
 };
-use super::{registry, validate};
+use super::{manifest, registry, validate};
+
+/// The error a run returns when a step panics.
+pub const PANICKED: &str = "The graph run panicked";
 
 // ============================================================================
 // CANCELLATION REGISTRY
@@ -34,12 +37,18 @@ fn active_runs() -> &'static Mutex<HashMap<String, Arc<AtomicBool>>> {
     ACTIVE.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
-pub fn register_run(run_id: &str) -> Arc<AtomicBool> {
-    let flag = Arc::new(AtomicBool::new(false));
-    if let Ok(mut runs) = active_runs().lock() {
-        runs.insert(run_id.to_string(), flag.clone());
+/// Refuses an id that is already running: its cancel flag and its `graph:finished`
+/// belong to the run that registered it first.
+pub fn register_run(run_id: &str) -> Result<Arc<AtomicBool>, String> {
+    let mut runs = active_runs()
+        .lock()
+        .map_err(|_| "The run registry is unavailable".to_string())?;
+    if runs.contains_key(run_id) {
+        return Err(format!("A run with id '{}' is already in progress", run_id));
     }
-    flag
+    let flag = Arc::new(AtomicBool::new(false));
+    runs.insert(run_id.to_string(), flag.clone());
+    Ok(flag)
 }
 
 pub fn finish_run(run_id: &str) {
@@ -73,9 +82,71 @@ pub fn run_graph(
     run_id: &str,
     cancel: &AtomicBool,
 ) -> Result<GraphRunResult, String> {
-    run_graph_with(recipe, run_id, cancel, &|event, payload| {
+    execute_run(recipe, run_id, cancel, &|event, payload| {
         let _ = app.emit(event, payload);
     })
+}
+
+/// One registered run, start to finish (the caller registers it first, with
+/// `register_run`). This is the only way the app runs a graph:
+/// whatever `run_graph_with` does — return, fail, stop at a cancel check, or panic —
+/// the guard's `Drop` is the single exit.
+pub fn execute_run(
+    recipe: &GraphRecipe,
+    run_id: &str,
+    cancel: &AtomicBool,
+    emit: Emit<'_>,
+) -> Result<GraphRunResult, String> {
+    let mut guard = RunGuard::new(run_id, emit);
+    let result = run_graph_with(recipe, run_id, cancel, emit);
+    guard.settle(&result);
+    result
+}
+
+/// Clears the registry entry and emits `graph:finished` when dropped — including
+/// while a panic unwinds through it, which is why the workspace must never set
+/// `panic = "abort"`.
+pub struct RunGuard<'a> {
+    run_id: String,
+    emit: Emit<'a>,
+    outcome: Option<(RunStatus, Option<String>)>,
+}
+
+impl<'a> RunGuard<'a> {
+    pub fn new(run_id: &str, emit: Emit<'a>) -> Self {
+        Self {
+            run_id: run_id.to_string(),
+            emit,
+            outcome: None,
+        }
+    }
+
+    fn settle(&mut self, result: &Result<GraphRunResult, String>) {
+        self.outcome = Some(match result {
+            Ok(r) => (r.status, None),
+            Err(e) => (RunStatus::Failed, Some(e.clone())),
+        });
+    }
+}
+
+impl Drop for RunGuard<'_> {
+    fn drop(&mut self) {
+        // Never settled means the run did not return: it is unwinding from a panic.
+        let (status, message) = self
+            .outcome
+            .take()
+            .unwrap_or_else(|| (RunStatus::Failed, Some(PANICKED.to_string())));
+
+        // Unregister first, so a listener reacting to `graph:finished` can no
+        // longer cancel a run that is already over.
+        finish_run(&self.run_id);
+
+        let mut payload = serde_json::json!({ "runId": self.run_id, "status": status });
+        if let Some(message) = message {
+            payload["message"] = serde_json::Value::String(message);
+        }
+        (self.emit)("graph:finished", payload);
+    }
 }
 
 pub fn run_graph_with(
@@ -90,6 +161,7 @@ pub fn run_graph_with(
     }
 
     let mut warnings = verdict.warnings;
+    let mut outputs = Vec::new();
     let order = verdict.order;
 
     let source = recipe
@@ -112,8 +184,10 @@ pub fn run_graph_with(
             continue;
         }
 
+        // Cancelling is the user's call, not a failure: hand back what the steps
+        // before the stop produced.
         if cancel.load(Ordering::Relaxed) {
-            return Err("Cancelled".to_string());
+            return Ok(project(run_id, RunStatus::Cancelled, ctx, outputs, warnings));
         }
 
         emit_progress(emit, run_id, node, index, total, "start");
@@ -122,7 +196,7 @@ pub fn run_graph_with(
         let step = registry::build_step(&node.node_ref, &node.params(), &ctx)?;
 
         match step.execute(&mut ctx) {
-            Ok(()) => {}
+            Ok(()) => outputs.extend(declared_outputs(node)),
             Err(e) => {
                 if step.is_critical() {
                     let message = format!("{}", e);
@@ -144,7 +218,7 @@ pub fn run_graph_with(
         emit_progress(emit, run_id, node, index, total, "done");
     }
 
-    let result = project(run_id, ctx, warnings);
+    let result = project(run_id, RunStatus::Completed, ctx, outputs, warnings);
 
     emit(
         "graph:complete",
@@ -158,10 +232,32 @@ pub fn run_graph_with(
     Ok(result)
 }
 
+/// The paths a node's parameters name as outputs, per the manifest. Collected only
+/// after the step has succeeded, so a failed step never claims a file.
+fn declared_outputs(node: &GraphNode) -> Vec<RunOutputDto> {
+    let Some(meta) = manifest::find(&node.node_ref) else {
+        return Vec::new();
+    };
+    let params = node.params();
+    meta.params
+        .iter()
+        .filter(|spec| spec.output)
+        .filter_map(|spec| {
+            let path = params.get(spec.key)?.as_str()?.trim();
+            (!path.is_empty()).then(|| RunOutputDto {
+                node_id: node.node_id.clone(),
+                node_ref: node.node_ref.clone(),
+                key: spec.key.to_string(),
+                path: path.to_string(),
+            })
+        })
+        .collect()
+}
+
 fn emit_progress(
     emit: Emit<'_>,
     run_id: &str,
-    node: &super::types::GraphNode,
+    node: &GraphNode,
     index: usize,
     total: usize,
     phase: &str,
@@ -191,11 +287,14 @@ fn emit_progress(
 /// handles) and none of media-core's result structs derive Serialize.
 fn project(
     run_id: &str,
+    status: RunStatus,
     ctx: media_core::pipeline::MediaContext,
+    outputs: Vec<RunOutputDto>,
     warnings: Vec<String>,
 ) -> GraphRunResult {
     GraphRunResult {
         run_id: run_id.to_string(),
+        status,
         metadata: ctx.metadata,
         analysis: ctx.analysis.as_ref().map(analysis_to_dto),
         // Frame payloads are base64 and can be enormous; only the count goes back.
@@ -226,6 +325,7 @@ fn project(
             processing_mode: r.processing_mode,
             success: r.success,
         }),
+        outputs,
         warnings,
     }
 }

@@ -38,9 +38,14 @@ export class GraphController {
 
   verdict = $state<GraphVerdict | null>(null);
   validating = $state(false);
+  /** Bumped by every revalidation, so a slow answer to an older graph is dropped. */
+  private validateSeq = 0;
 
   running = $state(false);
+  /** Minted here before the run starts, so Cancel works from the first moment. */
   runId = $state('');
+  /** Cancel was pressed; the run stops after its current step. */
+  cancelling = $state(false);
   /** Node currently executing, for the progress highlight. */
   activeNodeId = $state('');
   progress = $state(0);
@@ -278,44 +283,63 @@ export class GraphController {
   }
 
   async revalidate() {
+    const seq = ++this.validateSeq;
     if (this.nodes.length === 0) {
       this.verdict = null;
+      this.validating = false;
       return;
     }
     this.validating = true;
+    let verdict: GraphVerdict;
     try {
-      this.verdict = await invoke<GraphVerdict>('validate_graph', { recipe: this.toRecipe() });
+      verdict = await invoke<GraphVerdict>('validate_graph', { recipe: this.toRecipe() });
     } catch (e) {
-      this.verdict = { valid: false, reason: String(e), warnings: [], order: [] };
+      verdict = { valid: false, reason: String(e), warnings: [], order: [] };
     }
+    // The graph changed while this one was in flight; the newer check has the say.
+    if (seq !== this.validateSeq) return;
+    this.verdict = verdict;
     this.validating = false;
   }
 
   // ------------------------------------------------------------------- run
 
   async run() {
+    const runId = crypto.randomUUID();
+    this.runId = runId;
     this.running = true;
+    this.cancelling = false;
     this.runError = '';
     this.result = null;
     this.progress = 0;
     this.activeNodeId = '';
     try {
-      this.result = await invoke<GraphRunResult>('execute_graph', { recipe: this.toRecipe() });
-      this.progress = 100;
+      const result = await invoke<GraphRunResult>('execute_graph', {
+        recipe: this.toRecipe(),
+        runId,
+      });
+      this.result = result;
+      if (result.status === 'completed') this.progress = 100;
     } catch (e) {
       this.runError = String(e);
     }
     this.running = false;
+    this.cancelling = false;
     this.activeNodeId = '';
   }
 
   async cancel() {
-    if (!this.runId) return;
+    if (!this.running || this.cancelling) return;
+    this.cancelling = true;
+    let accepted = false;
     try {
-      await invoke('cancel_graph_run', { runId: this.runId });
+      accepted = await invoke<boolean>('cancel_graph_run', { runId: this.runId });
     } catch {
-      // A finished run has already been dropped from the registry; nothing to do.
+      // Treated like an unknown id below.
     }
+    // false = the run already ended and its result is on the way; if it somehow is
+    // still running, Cancel comes back so it can be pressed again.
+    if (!accepted) this.cancelling = false;
   }
 }
 

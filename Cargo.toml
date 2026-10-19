@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"                   # virtual workspace defaults to "1"; keep the resolver the app has always used
-members = ["crates/*", "app/src-tauri"]
+members = ["crates/*", "app/src-tauri", "examples/extract-frames", "examples/split-frames"]   # listed, not examples/*: examples/ also holds data folders
 exclude = ["crates/media-core/examples/media_core_app"]   # points at the old repo name, already broken
 
 [workspace.dependencies]

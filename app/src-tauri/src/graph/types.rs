@@ -122,6 +122,16 @@ impl GraphVerdict {
 // and none of media-core's result structs derive Serialize. So the runner projects
 // the blackboard onto these DTOs.
 
+/// How a run ended — carried by the `graph:finished` event, which every run emits
+/// exactly once whichever way it ends, and by `GraphRunResult` when it returns.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum RunStatus {
+    Completed,
+    Cancelled,
+    Failed,
+}
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HlsResultDto {
@@ -160,10 +170,24 @@ pub struct ProcessResultDto {
     pub success: bool,
 }
 
+/// A path a step wrote to, taken from a parameter the manifest declares as an output.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RunOutputDto {
+    pub node_id: String,
+    pub node_ref: String,
+    /// The parameter that named the path.
+    pub key: String,
+    pub path: String,
+}
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GraphRunResult {
     pub run_id: String,
+    /// `Completed` or `Cancelled`. A cancelled run still returns whatever the steps
+    /// before the stop produced; a failed run returns an error instead.
+    pub status: RunStatus,
     pub metadata: Option<MediaMetadata>,
     pub analysis: Option<AnalysisResult>,
     /// Frame payloads are deliberately not returned — only how many were produced.
@@ -172,6 +196,8 @@ pub struct GraphRunResult {
     pub annotation_result: Option<AnnotationResultDto>,
     pub video_process_result: Option<VideoProcessResultDto>,
     pub process_result: Option<ProcessResultDto>,
+    /// Paths written by steps that succeeded, in execution order.
+    pub outputs: Vec<RunOutputDto>,
     /// Non-critical step failures and validation warnings, in order.
     pub warnings: Vec<String>,
 }

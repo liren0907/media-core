@@ -11,7 +11,7 @@
 - [x] System metrics commands (`commands/system.rs`)
 - [x] Event system for real-time updates (`commands/events.rs`)
 - [x] Batch processing with progress tracking and cancellation
-- [x] Frontend event utilities (`src/lib/events.ts`)
+- [x] Frontend event utilities (`app/src/lib/events.ts`)
 
 ### Frontend Pages (完成)
 - [x] Dashboard - real-time system metrics

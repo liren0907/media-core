@@ -2,6 +2,7 @@
 
 ## Table of Contents
 
+- [Test Video](#test-video)
 - [Config Generation Tests](#config-generation-tests)
 - [RTSP Stream Extraction Tests](#rtsp-stream-extraction-tests)
 - [HLS Conversion Tests](#hls-conversion-tests)
@@ -11,6 +12,25 @@
 - [Benchmark Module Tests](#benchmark-module-tests)
 - [Streaming Module Tests](#streaming-module-tests)
 - [Video Process Module Tests](#video-process-module-tests)
+
+---
+
+## Test Video
+
+Most integration tests read `data/test.mp4`. It is not stored in git: the first test that needs it
+runs `script/gen_test_data.sh`, which uses FFmpeg to generate a 10-second synthetic clip (640×360,
+30 fps, a moving test pattern with a 1 kHz tone). To create or recreate it by hand:
+
+```bash
+sh script/gen_test_data.sh          # does nothing if the file exists
+sh script/gen_test_data.sh --force  # regenerate
+```
+
+Without FFmpeg the video cannot be generated, and the tests that need it fail with the reason
+instead of being skipped.
+
+Run the commands in this file from `crates/media-core/`, or add `-p media_core` when running them
+from the repository root.
 
 ---
 
@@ -41,21 +61,26 @@ cargo test --test test_config_generation
 
 ### Prerequisites
 - FFmpeg installed
+- [MediaMTX](https://github.com/bluenviron/mediamtx) installed (`brew install mediamtx` on macOS)
+- A live stream at `rtsp://localhost:8554/mystream`, served by `script/rtsp_test_server.sh`
 
-**Note**: Tests work without a real RTSP server (uses `run_once` timeout).
+Both tests read a live stream, so they are marked `#[ignore]`: a plain `cargo test` lists them as
+ignored instead of failing. The script starts MediaMTX and loops `data/test.mp4` into it (generating
+the video first if needed) until you press Ctrl-C, which stops both.
 
 ### Run All RTSP Tests
 ```bash
-cargo test --test test_rtsp_extraction -- --nocapture
+sh script/rtsp_test_server.sh                                     # Terminal 1
+cargo test --test test_rtsp_extraction -- --ignored --nocapture   # Terminal 2
 ```
 
 ### Run Individual Tests
 ```bash
 # FFmpeg mode
-cargo test test_rtsp_stream_extraction -- --nocapture
+cargo test --test test_rtsp_extraction test_rtsp_stream_extraction -- --ignored --nocapture
 
 # HLS mode
-cargo test test_hls_streaming -- --nocapture
+cargo test --test test_rtsp_extraction test_hls_streaming -- --ignored --nocapture
 ```
 
 ### Test Comparison
@@ -67,18 +92,14 @@ cargo test test_hls_streaming -- --nocapture
 
 ### Troubleshooting
 
-**FFmpeg not found**: Install FFmpeg
-```bash
-brew install ffmpeg  # macOS
-sudo apt-get install ffmpeg  # Ubuntu
-```
+**The tests fail within a second**: nothing is serving the stream; start `script/rtsp_test_server.sh` first.
 
-**With real RTSP server** (optional):
+**`mediamtx did not start`**: another program is listening on port 8554.
+
+**FFmpeg or MediaMTX not found**: Install them
 ```bash
-cd data/rtsp
-./run_mtx_server.sh              # Terminal 1
-./run_rtsp-streaming.sh          # Terminal 2
-cargo test --test test_rtsp_extraction -- --nocapture  # Terminal 3
+brew install ffmpeg mediamtx  # macOS
+sudo apt-get install ffmpeg   # Ubuntu; MediaMTX: https://github.com/bluenviron/mediamtx/releases
 ```
 
 ---
@@ -94,7 +115,7 @@ cargo test --test test_rtsp_extraction -- --nocapture  # Terminal 3
 
 ### Prerequisites
 - FFmpeg installed
-- Test video at `data/test.mp4`
+- Test video `data/test.mp4`, generated automatically (see [Test Video](#test-video))
 
 ### Run
 ```bash
@@ -128,7 +149,7 @@ cargo test --test test_hls_conversion -- --nocapture
 
 ### Prerequisites
 
--   Test video at `data/test.mp4`.
+-   Test video `data/test.mp4`, generated automatically (see [Test Video](#test-video))
 
 ### Run
 
@@ -160,7 +181,7 @@ cargo test --test test_process_module -- --nocapture
 
 ### Prerequisites
 
--   Test video at `data/test.mp4`.
+-   Test video `data/test.mp4`, generated automatically (see [Test Video](#test-video))
 
 ### Run
 
@@ -189,7 +210,7 @@ cargo test --test test_metadata -- --nocapture
 
 ### Prerequisites
 
-- Test video at `data/test.mp4`
+- Test video `data/test.mp4`, generated automatically (see [Test Video](#test-video))
 - FFmpeg installed
 
 ### Run
@@ -253,7 +274,7 @@ cargo test --test test_benchmark -- --nocapture
 
 ### Prerequisites
 
-- Test video at `data/test.mp4`
+- Test video `data/test.mp4`, generated automatically (see [Test Video](#test-video))
 
 ### Run
 
@@ -266,7 +287,7 @@ cargo test --test test_streaming -- --nocapture
 | Test | Strategy | Output | Duration |
 | :--- | :--- | :--- | :--- |
 | `test_stream_extractor_single_frame` | Custom | 1 frame | <1s |
-| `test_stream_extractor_every_nth` | EveryNth(50) | ~39 frames | ~1s |
+| `test_stream_extractor_every_nth` | EveryNth(50) | 6 frames | ~1s |
 | `test_stream_extractor_first_n` | FirstN(5) | 5 frames | <1s |
 | `test_stream_extractor_range` | Range(0,10) | 10 frames | <1s |
 | `test_stream_extractor_scale_factor` | FirstN(1) | Size comparison | ~2s |
@@ -285,7 +306,7 @@ cargo test --test test_streaming -- --nocapture
 
 ### Prerequisites
 
-- Test video at `data/test.mp4`
+- Test video `data/test.mp4`, generated automatically (see [Test Video](#test-video))
 
 ### Run
 

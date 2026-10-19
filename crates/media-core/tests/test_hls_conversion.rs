@@ -1,3 +1,5 @@
+mod common;
+
 use media_core::hls::{HLSConverter, HLSVodConfig};
 use std::fs;
 use std::path::PathBuf;
@@ -43,18 +45,8 @@ fn test_hls_config_generation() {
 fn test_hls_conversion() {
     println!("=== Test: HLS Conversion ===");
 
-    let input_path = PathBuf::from("data/test.mp4");
+    let input_path = PathBuf::from(common::test_video());
     let output_dir = PathBuf::from("hls_test_output");
-
-    // Check if test video exists
-    if !input_path.exists() {
-        println!(
-            "⚠️  Skipping test: test video not found at {}",
-            input_path.display()
-        );
-        println!("   Place a test video at 'data/test.mp4' to run this test");
-        return;
-    }
 
     // Clean up previous test output
     if output_dir.exists() {

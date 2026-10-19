@@ -1,0 +1,9 @@
+[package]
+name = "extract-frames"
+version = "0.1.0"
+edition = "2024"
+publish = false
+description = "Writes every frame of each video in a folder into its own folder of JPEGs"
+
+[dependencies]
+opencv = { workspace = true }

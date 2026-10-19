@@ -15,7 +15,7 @@ Provide a fully isolated sandbox inside the app for previewing
 
 ## 2. Why the Existing Player Is Not Enough
 
-The in-app media player ([`src/lib/components/media/VideoPlayer.svelte`](../src/lib/components/media/VideoPlayer.svelte))
+The in-app media player ([`app/src/lib/components/media/VideoPlayer.svelte`](../app/src/lib/components/media/VideoPlayer.svelte))
 is a plain `<video>` element. A 360° asset is a 2:1 **equirectangular
 projection** — a flattened sphere. Rendered as a flat rectangle it looks
 like a stretched world map, not a panoramic scene.
@@ -35,11 +35,11 @@ This is what the demo page provides, entirely on the client side with
 All new code is confined to two directories:
 
 ```
-src/routes/demo-360/
+app/src/routes/demo-360/
   +page.svelte                         Tabbed shell (Photo | Video)
   +page.ts                             export const prerender = true
 
-src/lib/components/features/demo360/
+app/src/lib/components/features/demo360/
   Panoramic360Viewer.svelte            Three.js renderer + pointer controls
   PhotoDemo.svelte                     File picker + viewer host (image)
   VideoDemo.svelte                     File picker + <video> + playback UI + viewer host
@@ -48,7 +48,7 @@ src/lib/components/features/demo360/
 ```
 
 The only touch point outside this tree is the sidebar nav entry added in
-[`src/routes/+layout.svelte`](../src/routes/+layout.svelte) and
+[`app/src/routes/+layout.svelte`](../app/src/routes/+layout.svelte) and
 `three` / `@types/three` in `package.json`.
 
 ## 4. Runtime Architecture
@@ -291,15 +291,15 @@ consistent.
 
 This demo does not depend on nor mutate:
 
-- Any other route under `src/routes/`.
-- `src/lib/components/media/VideoPlayer.svelte` or any other shared
+- Any other route under `app/src/routes/`.
+- `app/src/lib/components/media/VideoPlayer.svelte` or any other shared
   player.
-- `src/lib/types.ts`, `src/lib/config.svelte.ts`, `src/lib/events.ts`.
-- Anything inside `src-tauri/`.
+- `app/src/lib/types.ts`, `app/src/lib/config.svelte.ts`, `app/src/lib/events.ts`.
+- Anything inside `app/src-tauri/`.
 
 Only outward-facing additions:
 
-- One sidebar entry in `src/routes/+layout.svelte` (and a matching
+- One sidebar entry in `app/src/routes/+layout.svelte` (and a matching
   header title case).
 - `three` and `@types/three` in `package.json`.
 
@@ -348,12 +348,12 @@ Three.js payload; every other route loads only when visited.
 If and when this moves out of "demo" status, natural next steps are:
 
 1. **Backend metadata detection** — extend
-   `src-tauri/src/commands/metadata.rs` with a `detect_spherical`
+   `app/src-tauri/src/commands/metadata.rs` with a `detect_spherical`
    command that invokes ffprobe and checks EXIF. Return
    `{ is_panoramic: bool, projection: '...' }`.
 2. **Shared type** — add `projection: 'flat' | 'equirect' | 'cubemap'`
    to whichever media metadata struct is already flowing through
-   `src/lib/types.ts`, but **only** once consumers exist.
+   `app/src/lib/types.ts`, but **only** once consumers exist.
 3. **Integration into existing previews** — dedup / analysis thumbnails
    of 360° assets could open the panoramic viewer in a modal instead of
    the flat player. The viewer already accepts any `HTMLImageElement` /

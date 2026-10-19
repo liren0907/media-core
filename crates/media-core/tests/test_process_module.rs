@@ -1,3 +1,5 @@
+mod common;
+
 use media_core::process::{
     ProcessConfig, VideoExtractionConfig, create_video_processor, generate_default_config,
 };
@@ -43,11 +45,7 @@ fn test_video_extraction() {
     println!("=== Test: Video Extraction (Skip Mode) ===");
 
     // Setup paths
-    let input_video = Path::new("data/test.mp4");
-    if !input_video.exists() {
-        println!("⚠️ Skipping test: data/test.mp4 not found");
-        return;
-    }
+    let input_video = Path::new(common::test_video());
 
     let output_root = tempdir().expect("Failed to create temp output dir");
     let output_path_str = output_root.path().to_str().unwrap();
@@ -112,11 +110,7 @@ fn test_video_creation() {
     println!("=== Test: Video Creation (Time-lapse Mode) ===");
 
     // Setup paths
-    let input_video = Path::new("data/test.mp4");
-    if !input_video.exists() {
-        println!("⚠️ Skipping test: data/test.mp4 not found");
-        return;
-    }
+    let input_video = Path::new(common::test_video());
 
     let output_root = tempdir().expect("Failed to create temp output dir");
     let output_path_str = output_root.path().to_str().unwrap();

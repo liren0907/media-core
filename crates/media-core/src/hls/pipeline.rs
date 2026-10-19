@@ -35,6 +35,7 @@ pub struct HLSResult {
 ///
 /// # Example
 /// ```rust
+/// # use media_core::hls::ConvertToHLS;
 /// let step = ConvertToHLS::new("output/hls")
 ///     .segment_duration(10)
 ///     .playlist_name("stream.m3u8");

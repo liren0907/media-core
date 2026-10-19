@@ -14,7 +14,7 @@ The implementation provides a unified interface between the Svelte frontend and 
 │  Dashboard │ ViewVideo │ Analysis │ Stream │ HLS Viewer         │
 │  Camera    │ Inferencer │ Multi-Stream                          │
 │                                                                  │
-│  src/lib/events.ts (Event utilities & batch processing)         │
+│  app/src/lib/events.ts (Event utilities & batch processing)     │
 └──────────────────────────┬──────────────────────────────────────┘
                            │ invoke() + listen()
                            ▼
@@ -42,7 +42,7 @@ The implementation provides a unified interface between the Svelte frontend and 
 
 ## Backend Commands
 
-### Pipeline Commands (`src-tauri/src/commands/pipeline.rs`)
+### Pipeline Commands (`app/src-tauri/src/commands/pipeline.rs`)
 
 All pipeline commands follow a consistent pattern:
 1. Accept a configuration struct (deserialized from frontend JSON)
@@ -294,7 +294,7 @@ const result = await invoke('execute_full_analysis_pipeline', {
 
 ---
 
-### System Metrics Commands (`src-tauri/src/commands/system.rs`)
+### System Metrics Commands (`app/src-tauri/src/commands/system.rs`)
 
 #### Get System Metrics
 
@@ -387,7 +387,7 @@ const history = await invoke('get_throughput_history', { periodSeconds: 3600 });
 
 ## Frontend Pages
 
-### Dashboard (`src/routes/+page.svelte`)
+### Dashboard (`app/src/routes/+page.svelte`)
 
 Real-time system monitoring dashboard with:
 
@@ -402,7 +402,7 @@ Real-time system monitoring dashboard with:
 
 ---
 
-### Video Player (`src/routes/viewVideo/+page.svelte`)
+### Video Player (`app/src/routes/viewVideo/+page.svelte`)
 
 Enhanced video player with full metadata extraction:
 
@@ -415,7 +415,7 @@ Uses `execute_metadata_pipeline` for comprehensive metadata extraction.
 
 ---
 
-### Analysis Page (`src/routes/analysis/+page.svelte`)
+### Analysis Page (`app/src/routes/analysis/+page.svelte`)
 
 Three-mode analysis interface:
 
@@ -447,19 +447,19 @@ Three-mode analysis interface:
 
 | File | Purpose |
 |------|---------|
-| `src-tauri/src/commands/pipeline.rs` | Pipeline executor commands (600 lines) |
-| `src-tauri/src/commands/system.rs` | System metrics commands (350 lines) |
-| `src/routes/analysis/+page.svelte` | Analysis UI page |
+| `app/src-tauri/src/commands/pipeline.rs` | Pipeline executor commands (600 lines) |
+| `app/src-tauri/src/commands/system.rs` | System metrics commands (350 lines) |
+| `app/src/routes/analysis/+page.svelte` | Analysis UI page |
 
 ### Modified Files
 
 | File | Changes |
 |------|---------|
-| `src-tauri/src/commands/mod.rs` | Added `pipeline` and `system` modules |
-| `src-tauri/src/main.rs` | Registered 15 new commands |
-| `src/routes/+page.svelte` | Dashboard with real metrics |
-| `src/routes/viewVideo/+page.svelte` | Pipeline-based metadata |
-| `src/routes/+layout.svelte` | Added Analysis and Video Player nav links |
+| `app/src-tauri/src/commands/mod.rs` | Added `pipeline` and `system` modules |
+| `app/src-tauri/src/main.rs` | Registered 15 new commands |
+| `app/src/routes/+page.svelte` | Dashboard with real metrics |
+| `app/src/routes/viewVideo/+page.svelte` | Pipeline-based metadata |
+| `app/src/routes/+layout.svelte` | Added Analysis and Video Player nav links |
 
 ---
 
@@ -561,7 +561,7 @@ The application supports real-time event-driven updates from the backend using T
 | `stream:status` | `StreamStatusEvent` | Stream state changes |
 | `system:metrics` | `SystemMetricsEvent` | System resource metrics |
 
-### Frontend Event Utilities (`src/lib/events.ts`)
+### Frontend Event Utilities (`app/src/lib/events.ts`)
 
 ```typescript
 import { 

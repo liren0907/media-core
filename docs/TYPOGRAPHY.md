@@ -1,7 +1,7 @@
 # Typography Tokens
 
 This project uses **semantic typography classes** defined in
-[`src/app.css`](../src/app.css) rather than sprinkling raw Tailwind
+[`app/src/app.css`](../app/src/app.css) rather than sprinkling raw Tailwind
 size/weight/colour classes across every component. The goal is
 single-source-of-truth styling: change a token once and every
 semantically-related element updates consistently.
@@ -14,7 +14,7 @@ semantically-related element updates consistently.
    `--font-body`, `--font-display`, `--font-mono` in `:root`.
 
 2. **Semantic tokens** live in `@layer components` inside
-   `src/app.css`. Because Tailwind's `utilities` layer ships after
+   `app/src/app.css`. Because Tailwind's `utilities` layer ships after
    `components` in the cascade, **any Tailwind utility written on the
    same element overrides the token's defaults** — this is intentional
    and how we compose.
@@ -111,7 +111,7 @@ role's default colour in either order in your `class` attribute.
 ## Updating a Token (“the whole point”)
 
 Need every panel header to be a touch bigger? Edit **one line** in
-`src/app.css`:
+`app/src/app.css`:
 
 ```css
 .text-section-title {
@@ -162,11 +162,11 @@ To add a new token:
    - Color-only tokens in the lower block (after roles)
 3. Update this document with a row in the token table.
 4. If migrating existing usages, add a regex to
-   `scripts/migrate-typography.sh` so the consolidation is repeatable.
+   `app/scripts/migrate-typography.sh` so the consolidation is repeatable.
 
 ## Related Files
 
-- [`src/app.css`](../src/app.css) — token definitions
+- [`app/src/app.css`](../app/src/app.css) — token definitions
 - [`tailwind.config.js`](../tailwind.config.js) — font-family wiring
-- [`scripts/migrate-typography.sh`](../scripts/migrate-typography.sh)
+- [`app/scripts/migrate-typography.sh`](../app/scripts/migrate-typography.sh)
   — migration helper (rounds 1–3)

@@ -1,7 +1,11 @@
+// Both tests read a live stream, so they are ignored by default. Start the stream with
+// `sh script/rtsp_test_server.sh`, then run them in another terminal with `--ignored`.
+
 use media_core::{CaptureConfig, HLSConfig, RTSPCapture, SavingOption};
 use std::path::Path;
 
 #[test]
+#[ignore = "needs an RTSP server at rtsp://localhost:8554/mystream; run script/rtsp_test_server.sh"]
 fn test_rtsp_stream_extraction() {
     let test_config = CaptureConfig {
         rtsp_url: "rtsp://localhost:8554/mystream".to_string(),
@@ -74,6 +78,7 @@ fn test_rtsp_stream_extraction() {
 }
 
 #[test]
+#[ignore = "needs an RTSP server at rtsp://localhost:8554/mystream; run script/rtsp_test_server.sh"]
 fn test_hls_streaming() {
     // Create HLS configuration with enabled flag
     let hls_config = HLSConfig {
